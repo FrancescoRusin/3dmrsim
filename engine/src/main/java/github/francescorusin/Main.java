@@ -1,6 +1,6 @@
 /*-
  * ========================LICENSE_START=================================
- * mrsim3d
+ * engine
  * %%
  * Copyright (C) 2024 Francesco Rusin
  * %%
