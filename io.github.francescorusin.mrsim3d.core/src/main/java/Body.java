@@ -21,15 +21,13 @@
 import geometry.BoundingBox;
 
 public interface Body {
-  public enum type {
+  enum type {
     SOFT,
     RIGID,
     UNMOVABLE
   }
 
   double mass();
-
   BoundingBox boundingBox();
-
   type type();
 }
