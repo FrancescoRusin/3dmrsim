@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>github.francescorusin</groupId>
+    <groupId>io.github.francescorusin</groupId>
     <artifactId>mrsim3d</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
     <modules>
-        <module>engine</module>
-        <module>core</module>
+        <module>io.github.francescorusin.mrsim3d.engine</module>
+        <module>io.github.francescorusin.mrsim3d.core</module>
     </modules>
 
     <properties>
