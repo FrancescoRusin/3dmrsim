@@ -1,6 +1,6 @@
 /*-
  * ========================LICENSE_START=================================
- * core
+ * engine
  * %%
  * Copyright (C) 2024 Francesco Rusin
  * %%
@@ -17,20 +17,9 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package github.francescorusin;
 
-import github.francescorusin.geometry.BoundingBox;
-
-public interface Body {
-  public enum type {
-    SOFT,
-    RIGID,
-    UNMOVABLE
+public class Main {
+  public static void main(String[] args) {
+    System.out.println("Hello world!");
   }
-
-  double mass();
-
-  BoundingBox boundingBox();
-
-  type type();
 }

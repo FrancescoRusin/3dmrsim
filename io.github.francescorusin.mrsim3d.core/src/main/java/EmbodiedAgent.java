@@ -17,6 +17,14 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package github.francescorusin;
 
-public interface Agent {}
+import geometry.BoundingBox;
+import java.util.List;
+
+public interface EmbodiedAgent extends Agent {
+  List<Body> bodyParts();
+
+  default BoundingBox boundingBox() {
+    return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
+  }
+}

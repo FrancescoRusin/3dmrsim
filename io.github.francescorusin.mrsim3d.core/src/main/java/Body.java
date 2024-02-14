@@ -17,10 +17,19 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package github.francescorusin.geometry;
 
-public record Vector3D(double x, double y, double z) {
-  public double norm() {
-    return Math.sqrt(x * x + y * y + z * z);
+import geometry.BoundingBox;
+
+public interface Body {
+  public enum type {
+    SOFT,
+    RIGID,
+    UNMOVABLE
   }
+
+  double mass();
+
+  BoundingBox boundingBox();
+
+  type type();
 }

@@ -1,6 +1,6 @@
 /*-
  * ========================LICENSE_START=================================
- * engine
+ * core
  * %%
  * Copyright (C) 2024 Francesco Rusin
  * %%
@@ -17,10 +17,5 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package github.francescorusin;
 
-public class Main {
-  public static void main(String[] args) {
-    System.out.println("Hello world!");
-  }
-}
+public interface Agent {}

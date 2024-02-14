@@ -17,15 +17,13 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package github.francescorusin;
 
-import github.francescorusin.geometry.BoundingBox;
-import java.util.List;
+import java.util.Collection;
 
-public interface EmbodiedAgent extends Agent {
-  List<Body> bodyParts();
+public interface Snapshot {
+  Collection<EmbodiedAgent> agents();
 
-  default BoundingBox boundingBox() {
-    return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
-  }
+  Collection<Body> bodies();
+
+  double t();
 }
