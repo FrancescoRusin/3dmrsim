@@ -18,18 +18,22 @@
  * =========================LICENSE_END==================================
  */
 import java.util.List;
+
+import org.ode4j.ode.DSpace;
 import org.ode4j.ode.DWorld;
 import org.ode4j.ode.OdeHelper;
 
 public class Ode4jEngine implements Engine {
   private static int initialize = OdeHelper.initODE2(0);
   private DWorld world;
+  private DSpace space;
   protected double time;
   protected List<EmbodiedAgent> agents;
   protected List<Body> passiveBodies;
 
   public Ode4jEngine() {
     world = OdeHelper.createWorld();
+    space = OdeHelper.createHashSpace(null);
   }
 
   public List<EmbodiedAgent> getAgents() {

@@ -10,6 +10,15 @@
     </parent>
 
     <artifactId>mrsim3d.engine</artifactId>
+    <packaging>jar</packaging>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+    </build>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>

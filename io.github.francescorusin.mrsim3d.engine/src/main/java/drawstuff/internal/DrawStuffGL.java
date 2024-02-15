@@ -46,7 +46,6 @@ package drawstuff.internal;
 import static drawstuff.DrawStuff.*;
 
 import drawstuff.DrawStuff.dsFunctions;
-
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -86,7 +85,7 @@ public class DrawStuffGL extends LwJGL implements DrawStuffApi {
 
   static {
     String s = System.getProperty("file.separator");
-    DEFAULT_PATH_TO_TEXTURES = ".." + s + "textures" + s;
+    DEFAULT_PATH_TO_TEXTURES = ".." + s + "src/main/textures" + s;
   }
 
   private static final double M_PI = Math.PI;
@@ -227,6 +226,7 @@ public class DrawStuffGL extends LwJGL implements DrawStuffApi {
       PushbackInputStream f = null;
       try {
         InputStream is = getClass().getResourceAsStream(filename);
+
         if (is == null) throw new IllegalArgumentException("File not found: " + filename);
         f = new PushbackInputStream(new BufferedInputStream(is));
         // if (f == null) dsError ("Can't open image file `%s'",filename);
