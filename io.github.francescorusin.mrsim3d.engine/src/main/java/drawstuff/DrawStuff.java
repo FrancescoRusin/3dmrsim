@@ -88,8 +88,7 @@ public class DrawStuff {
 
   // texturepath.h
   // Sourceforge tests require the textures in the drawstuff folder
-  public static String DRAWSTUFF_TEXTURE_PATH =
-      "C:\\Users\\Francesco\\IdeaProjects\\mrsim3d\\io.github.francescorusin.mrsim3d.engine\\src\\main\\java\\drawstuff\\textures";
+  public static String DRAWSTUFF_TEXTURE_PATH = "textures";
 
   // version.h
   /* high byte is major version, low byte is minor version */

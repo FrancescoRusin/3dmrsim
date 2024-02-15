@@ -46,10 +46,8 @@ package drawstuff.internal;
 import static drawstuff.DrawStuff.*;
 
 import drawstuff.DrawStuff.dsFunctions;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
+
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
@@ -1035,22 +1033,22 @@ public class DrawStuffGL extends LwJGL implements DrawStuffApi {
 
     //		strcpy (s,prefix);
     //		strcat (s,"/sky.ppm");
-    sky_texture = new Texture(prefix + "\\sky.ppm");
+    sky_texture = new Texture(prefix + "/sky.ppm");
     texture[DS_TEXTURE_NUMBER.DS_SKY.ordinal()] = sky_texture;
 
     //		strcpy (s,prefix);
     //		strcat (s,"/ground.ppm");
-    ground_texture = new Texture(prefix + "\\ground.ppm");
+    ground_texture = new Texture(prefix + "/ground.ppm");
     texture[DS_TEXTURE_NUMBER.DS_GROUND.ordinal()] = ground_texture;
 
     //		strcpy (s,prefix);
     //		strcat (s,"/wood.ppm");
-    wood_texture = new Texture(prefix + "\\wood.ppm");
+    wood_texture = new Texture(prefix + "/wood.ppm");
     texture[DS_TEXTURE_NUMBER.DS_WOOD.ordinal()] = wood_texture;
 
     //		strcpy (s,prefix);
     //		strcat (s,"/checkered.ppm");
-    checkered_texture = new Texture(prefix + "\\checkered.ppm");
+    checkered_texture = new Texture(prefix + "/checkered.ppm");
     texture[DS_TEXTURE_NUMBER.DS_CHECKERED.ordinal()] = checkered_texture;
   }
 
