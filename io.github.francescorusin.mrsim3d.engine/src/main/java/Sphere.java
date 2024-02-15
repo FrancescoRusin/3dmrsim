@@ -1,7 +1,10 @@
 import geometry.BoundingBox;
 import geometry.Vector3D;
+import org.ode4j.ode.DSphere;
+import org.ode4j.ode.OdeHelper;
 
 public final class Sphere extends RigidBody {
+    DSphere sphere;
     Vector3D center;
     double radius;
     double mass;
@@ -9,6 +12,7 @@ public final class Sphere extends RigidBody {
         this.center = center;
         this.radius = radius;
         this.mass = mass;
+        this.sphere = OdeHelper.createSphere(radius);
     }
     @Override
     public BoundingBox boundingBox() {
@@ -25,6 +29,6 @@ public final class Sphere extends RigidBody {
 
     @Override
     public void assemble(Engine engine, Vector3D position) {
-
+        //TODO
     }
 }
