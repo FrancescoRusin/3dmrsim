@@ -17,31 +17,35 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-import java.util.List;
+import java.util.*;
 
-import org.ode4j.ode.DSpace;
-import org.ode4j.ode.DWorld;
-import org.ode4j.ode.OdeHelper;
+import geometry.Vector3D;
+import org.ode4j.ode.*;
 
 public class Ode4jEngine implements Engine {
   private static int initialize = OdeHelper.initODE2(0);
-  private DWorld world;
-  private DSpace space;
+  private final DWorld world;
+  private final DSpace space;
+  protected Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
   protected double time;
-  protected List<EmbodiedAgent> agents;
-  protected List<Body> passiveBodies;
+  protected LinkedHashMap<EmbodiedAgent, List<DBody>> agents = new LinkedHashMap<>();
+  protected LinkedHashMap<Body, DBody> passiveBodies = new LinkedHashMap<>();
+  protected DGeom terrain;
 
   public Ode4jEngine() {
     world = OdeHelper.createWorld();
     space = OdeHelper.createHashSpace(null);
+    world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
+    //TODO ADD TERRAINS
+    terrain = OdeHelper.createPlane(space, 0, 0, 1, 0);
   }
 
-  public List<EmbodiedAgent> getAgents() {
-    return agents;
+  public Set<EmbodiedAgent> getAgents() {
+    return agents.keySet();
   }
 
-  private List<Body> getPassiveBodies() {
-    return passiveBodies;
+  private Set<Body> getPassiveBodies() {
+    return passiveBodies.keySet();
   }
 
   @Override

@@ -19,17 +19,14 @@
  */
 
 import geometry.BoundingBox;
+import geometry.Vector3D;
 
 public interface Body {
-  enum type {
-    SOFT,
-    RIGID,
-    UNMOVABLE
-  }
-
-  double mass();
 
   BoundingBox boundingBox();
 
-  type type();
+  double mass();
+  Vector3D position();
+
+  Vector3D velocity();
 }
