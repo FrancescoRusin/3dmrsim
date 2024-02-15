@@ -21,10 +21,12 @@
 import geometry.BoundingBox;
 import java.util.List;
 
-public interface EmbodiedAgent extends Agent {
+public interface EmbodiedAgent {
   List<Body> bodyParts();
 
   default BoundingBox boundingBox() {
     return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
   }
+
+  void assemble(Engine engine);
 }

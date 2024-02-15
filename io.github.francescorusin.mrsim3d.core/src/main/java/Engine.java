@@ -22,4 +22,10 @@ public interface Engine {
   double t();
 
   Snapshot tick();
+
+  void addBody(Body body);
+
+  default void addAgent(EmbodiedAgent agent) {
+    agent.assemble(this);
+  }
 }

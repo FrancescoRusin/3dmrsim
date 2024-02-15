@@ -1,6 +1,6 @@
 /*-
  * ========================LICENSE_START=================================
- * core
+ * mrsim3d.engine
  * %%
  * Copyright (C) 2024 Francesco Rusin
  * %%
@@ -17,5 +17,39 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
+import java.util.List;
+import org.ode4j.ode.DWorld;
+import org.ode4j.ode.OdeHelper;
 
-public interface Agent {}
+public class Ode4jEngine implements Engine {
+  private static int initialize = OdeHelper.initODE2(0);
+  private DWorld world;
+  protected double time;
+  protected List<EmbodiedAgent> agents;
+  protected List<Body> passiveBodies;
+
+  public Ode4jEngine() {
+    world = OdeHelper.createWorld();
+  }
+
+  public List<EmbodiedAgent> getAgents() {
+    return agents;
+  }
+
+  private List<Body> getPassiveBodies() {
+    return passiveBodies;
+  }
+
+  @Override
+  public double t() {
+    return time;
+  }
+
+  @Override
+  public Snapshot tick() {
+    return null;
+  }
+
+  @Override
+  public void addBody(Body body) {}
+}

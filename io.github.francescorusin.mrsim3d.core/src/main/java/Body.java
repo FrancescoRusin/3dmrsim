@@ -28,6 +28,8 @@ public interface Body {
   }
 
   double mass();
+
   BoundingBox boundingBox();
+
   type type();
 }
