@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 
+import geometry.Vector3D;
+
 public interface Engine {
   double t();
 
@@ -25,7 +27,7 @@ public interface Engine {
 
   void addBody(Body body);
 
-  default void addAgent(EmbodiedAgent agent) {
-    agent.assemble(this);
+  default void addAgent(EmbodiedAgent agent, Vector3D position) {
+    agent.assemble(this, position);
   }
 }

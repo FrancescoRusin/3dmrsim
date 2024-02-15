@@ -19,6 +19,8 @@
  */
 
 import geometry.BoundingBox;
+import geometry.Vector3D;
+
 import java.util.List;
 
 public interface EmbodiedAgent {
@@ -28,5 +30,5 @@ public interface EmbodiedAgent {
     return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
   }
 
-  void assemble(Engine engine);
+  void assemble(Engine engine, Vector3D position);
 }

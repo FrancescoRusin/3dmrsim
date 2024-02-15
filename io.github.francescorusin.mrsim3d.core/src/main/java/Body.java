@@ -29,4 +29,6 @@ public interface Body {
   Vector3D position();
 
   Vector3D velocity();
+
+  void assemble(Engine engine, Vector3D position);
 }
