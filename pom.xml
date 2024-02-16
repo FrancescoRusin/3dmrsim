@@ -6,7 +6,7 @@
 
     <name>mrsim3d</name>
     <groupId>io.github.francescorusin</groupId>
-    <artifactId>mrsim3d</artifactId>
+    <artifactId>3dmrsim</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
     <modules>
