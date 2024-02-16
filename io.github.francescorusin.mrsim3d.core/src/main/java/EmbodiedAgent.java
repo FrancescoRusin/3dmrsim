@@ -20,7 +20,6 @@
 
 import geometry.BoundingBox;
 import geometry.Vector3D;
-
 import java.util.List;
 
 public interface EmbodiedAgent {

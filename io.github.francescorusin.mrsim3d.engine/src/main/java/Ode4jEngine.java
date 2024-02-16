@@ -17,9 +17,8 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-import java.util.*;
-
 import geometry.Vector3D;
+import java.util.*;
 import org.ode4j.ode.*;
 
 public class Ode4jEngine implements Engine {
@@ -36,7 +35,7 @@ public class Ode4jEngine implements Engine {
     world = OdeHelper.createWorld();
     space = OdeHelper.createHashSpace(null);
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
-    //TODO ADD TERRAINS
+    // TODO ADD TERRAINS
     terrain = OdeHelper.createPlane(space, 0, 0, 1, 0);
   }
 

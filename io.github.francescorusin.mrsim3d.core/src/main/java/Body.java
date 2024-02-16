@@ -26,6 +26,7 @@ public interface Body {
   BoundingBox boundingBox();
 
   double mass();
+
   Vector3D position();
 
   Vector3D velocity();

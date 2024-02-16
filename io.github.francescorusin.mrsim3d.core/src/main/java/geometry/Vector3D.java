@@ -22,9 +22,11 @@ public record Vector3D(double x, double y, double z) {
   public double norm() {
     return Math.sqrt(x * x + y * y + z * z);
   }
+
   public Vector3D times(double d) {
     return new Vector3D(this.x * d, this.y * d, this.z * d);
   }
+
   public Vector3D sum(Vector3D otherVector) {
     return new Vector3D(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z);
   }
