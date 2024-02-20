@@ -21,12 +21,10 @@ import geometry.Vector3D;
 import java.util.*;
 import org.ode4j.ode.*;
 
-public class Ode4jEngine implements Engine {
+public class Ode4jEngine extends AbstractEngine {
   private static int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
   private final DSpace space;
-  protected Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
-  protected double time;
   protected LinkedHashMap<EmbodiedAgent, List<DBody>> agents = new LinkedHashMap<>();
   protected LinkedHashMap<Body, DBody> passiveBodies = new LinkedHashMap<>();
   protected DGeom terrain;
@@ -57,6 +55,11 @@ public class Ode4jEngine implements Engine {
     return null;
   }
 
+  public DWorld getWorld() {
+    return world;
+  }
+
   @Override
-  public void addBody(Body body) {}
+  public void addBody(Body body) {
+  }
 }

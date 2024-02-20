@@ -23,29 +23,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.ode4j.ode.DBallJoint;
+import utils.Pair;
 
-public class Voxel extends MultiBody {
-  public enum Vertex {
-    V000,
-    V001,
-    V010,
-    V011,
-    V100,
-    V101,
-    V110,
-    V111
-  }
-
-  public enum JointOption {
-    INTERAL,
-    SIDES,
-    EDGES
-  }
+public class Ode4jVoxel implements Voxel {
 
   EnumSet<JointOption> jointOptions;
-  Map<Vertex, RigidBody> rigidBodies;
-  List<DBallJoint> joints;
-  List<RigidBody> ulteriorBodies;
+  Map<Vertex, Body> rigidBodies;
+  Map<Pair<Vertex, Vertex>, DBallJoint> joints;
+  List<Body> ulteriorBodies;
   double sideLength;
   double mass;
   double friction;
@@ -54,7 +39,7 @@ public class Voxel extends MultiBody {
   double rigidMassLengthRatio;
   double[] areaRatio;
 
-  public Voxel(
+  public Ode4jVoxel(
       double sideLength,
       double mass,
       double friction,
@@ -75,10 +60,15 @@ public class Voxel extends MultiBody {
   }
 
   @Override
-  public List<Body> getBodyParts() {
+  public List<Body> getComponents() {
     return Stream.concat(rigidBodies.values().stream(), ulteriorBodies.stream())
         .map(b -> (Body) b)
         .toList();
+  }
+
+  @Override
+  public double volume() {
+    return 0;
   }
 
   @Override

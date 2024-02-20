@@ -22,10 +22,11 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 
 public interface Body {
-
   BoundingBox boundingBox();
 
   double mass();
+
+  double volume();
 
   Vector3D position();
 

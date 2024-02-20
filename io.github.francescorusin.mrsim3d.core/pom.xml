@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.github.francescorusin</groupId>
-        <artifactId>3dmrsim</artifactId>
+        <artifactId>mrsim3d</artifactId>
         <version>${revision}</version>
     </parent>
 
