@@ -36,7 +36,7 @@
         </dependency>
         <dependency>
             <groupId>io.github.francescorusin</groupId>
-            <artifactId>mrsim3d.core</artifactId>
+            <artifactId>utils</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
         </dependency>

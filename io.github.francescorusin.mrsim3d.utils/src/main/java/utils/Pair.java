@@ -1,6 +1,6 @@
 /*-
  * ========================LICENSE_START=================================
- * mrsim3d.engine
+ * utils
  * %%
  * Copyright (C) 2024 Francesco Rusin
  * %%
@@ -17,29 +17,6 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-import geometry.Vector3D;
-import org.ode4j.ode.DBody;
+package utils;
 
-public abstract class RigidBody implements Body {
-  DBody body;
-
-  @Override
-  public Vector3D position() {
-    return new Vector3D(
-        body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
-  }
-
-  @Override
-  public Vector3D velocity() {
-    return new Vector3D(
-        body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
-  }
-
-  public DBody getBody() {
-    return body;
-  }
-
-  public void setBody(DBody body) {
-    this.body = body;
-  }
-}
+public record Pair<F, S>(F first, S second) {}

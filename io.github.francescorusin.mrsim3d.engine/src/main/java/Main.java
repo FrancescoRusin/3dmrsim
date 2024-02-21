@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 
+import engine.Ode4jEngine;
+
 public class Main {
   public static void main(String[] args) {
     Ode4jEngine engine = new Ode4jEngine();

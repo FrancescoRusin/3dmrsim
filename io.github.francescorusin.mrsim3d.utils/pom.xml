@@ -9,7 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>mrsim3d.core</artifactId>
+    <artifactId>utils</artifactId>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>

@@ -11,7 +11,7 @@
     <packaging>pom</packaging>
     <modules>
         <module>io.github.francescorusin.mrsim3d.engine</module>
-        <module>io.github.francescorusin.mrsim3d.core</module>
+        <module>io.github.francescorusin.mrsim3d.utils</module>
     </modules>
 
     <properties>
