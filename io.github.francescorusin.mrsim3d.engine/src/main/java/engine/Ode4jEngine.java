@@ -30,10 +30,11 @@ public class Ode4jEngine {
   private static int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
   private final DSpace space;
+  private DJointGroup collisionGroup;
   private double time;
   private final double timeStep;
-  protected List<EmbodiedAgent> agents;
-  protected List<Body> passiveBodies;
+  public List<EmbodiedAgent> agents;
+  public List<Body> passiveBodies;
 
   protected Map<Pair<Body, Body>, DDoubleBallJoint> joints;
   protected DGeom terrain;
@@ -47,9 +48,22 @@ public class Ode4jEngine {
     return 1d / (timeStep * springConstant + dampingConstant);
   }
 
+  private void collision(DGeom o1, DGeom o2) {
+    DContactBuffer contacts = new DContactBuffer(1);
+    DContact contact = contacts.get(0);
+    contact.surface.mode = OdeConstants.dContactBounce;
+    contact.surface.mu = 0.1;
+    contact.surface.mu2 = 0;
+    contact.surface.bounce = 0.9;
+    if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
+      OdeHelper.createContactJoint(world, collisionGroup, contact).attach(o1.getBody(), o2.getBody());
+    }
+  }
+
   public Ode4jEngine() {
     world = OdeHelper.createWorld();
     space = OdeHelper.createHashSpace(null);
+    collisionGroup = OdeHelper.createJointGroup();
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
     agents = new ArrayList<>();
     passiveBodies = new ArrayList<>();
@@ -73,6 +87,7 @@ public class Ode4jEngine {
   }
 
   public Snapshot tick() {
+    space.collide(space, (data, o1, o2) -> collision(o1, o2));
     world.quickStep(timeStep);
     time += timeStep;
     List<Action> actions = new ArrayList<>();
@@ -82,7 +97,9 @@ public class Ode4jEngine {
     for (Action action : actions) {
       action.execute(this);
     }
-    throw new IllegalArgumentException("TODO!");
+    collisionGroup.clear();
+    //TODO
+    return null;
   }
 
   public DWorld getWorld() {

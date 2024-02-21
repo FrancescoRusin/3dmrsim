@@ -22,17 +22,16 @@ package bodies;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
+import org.ode4j.math.DVector3C;
 import org.ode4j.ode.DMass;
 import org.ode4j.ode.OdeHelper;
 
 public class Sphere extends Body {
-  private Vector3D center;
   private double radius;
   private DMass mass;
   private static double DEFAULT_MASS = 1d;
 
-  public Sphere(Vector3D center, double radius, double mass) {
-    this.center = center;
+  public Sphere(double radius, double mass) {
     this.radius = radius;
     this.mass = OdeHelper.createMass();
     this.mass.setSphereTotal(mass, radius);
@@ -40,9 +39,10 @@ public class Sphere extends Body {
 
   @Override
   public BoundingBox boundingBox() {
+    DVector3C center = body.getPosition();
     return new BoundingBox(
-            new Vector3D(center.x() - radius, center.y() - radius, center.z() - radius),
-            new Vector3D(center.x() + radius, center.y() + radius, center.z() + radius));
+            new Vector3D(center.get0() - radius, center.get1() - radius, center.get2() - radius),
+            new Vector3D(center.get0() + radius, center.get1() + radius, center.get2() + radius));
   }
 
   @Override
