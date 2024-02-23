@@ -18,12 +18,18 @@
  * =========================LICENSE_END==================================
  */
 
+import agents.EmbodiedAgent;
 import bodies.Body;
 import bodies.Sphere;
+import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import org.ode4j.ode.*;
+import org.ode4j.ode.internal.DxSphere;
+
+import java.util.EnumSet;
+import java.util.List;
 
 import static drawstuff.DrawStuff.*;
 
@@ -31,20 +37,16 @@ public class VisualTest extends DrawStuff.dsFunctions {
   private static float[] xyz = {2.1640f, -1.3079f, 1.7600f};
   private static float[] hpr = {125.5000f, -17.0000f, 0.0000f};
   private Ode4jEngine engine = new Ode4jEngine();
+  private Voxel voxel = new Voxel(1, 1, 1, 5, 0, .3, .6, 1.4,
+          EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERAL));
 
   public static void main(String[] args) {
     new VisualTest().demo(args);
   }
 
   public void demo(String[] args) {
-    Sphere A = new Sphere(.1, 1d);
-    Sphere B = new Sphere(.1, 1d);
-    engine.addPassiveBody(A, new Vector3D(.5, 0d, 1d));
-    engine.addPassiveBody(B, new Vector3D(1.5, 0d, 1d));
-    A.getBody().addForce(100d, 0d, 0d);
-    B.getBody().addForce(-100d, 0d, 0d);
-    engine.addSpringJoint(A, B, .1, .1);
-    dsSimulationLoop(args, 640, 480, this);
+    engine.addAgent(voxel, new Vector3D(0d, 0d, 1d));
+    dsSimulationLoop(args, 1080, 720, this);
     engine.getSpace().destroy();
     engine.getWorld().destroy();
     OdeHelper.closeODE();
@@ -63,8 +65,9 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     dsSetColor(1, 1, 0);
     dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
-    for (Body body : engine.passiveBodies) {
-      dsDrawSphere(body.getBody().getPosition(), body.getBody().getRotation(), .1);
+    for (EmbodiedAgent agent : engine.getAgents()) {
+      for (Body body : ((Voxel) agent).bodyParts())
+        dsDrawSphere(body.getBody().getPosition(), body.getBody().getRotation(), ((Sphere) body).getRadius());
     }
   }
 

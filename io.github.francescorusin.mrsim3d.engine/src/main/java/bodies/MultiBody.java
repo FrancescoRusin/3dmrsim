@@ -25,22 +25,22 @@ import java.util.List;
 public abstract class MultiBody extends Body {
   @Override
   public BoundingBox boundingBox() {
-    return getComponents().stream()
+    return bodyParts().stream()
         .map(Body::boundingBox)
         .reduce(BoundingBox::enclosing)
         .orElseThrow();
   }
 
-  abstract List<Body> getComponents();
+  abstract List<Body> bodyParts();
 
   @Override
   public double mass() {
-    return getComponents().stream().mapToDouble(Body::mass).sum();
+    return bodyParts().stream().mapToDouble(Body::mass).sum();
   }
 
   @Override
   public Vector3D position() {
-    return getComponents().stream()
+    return bodyParts().stream()
         .map(b -> b.position().times(b.mass()))
         .reduce(Vector3D::sum)
         .orElseThrow();
@@ -48,7 +48,7 @@ public abstract class MultiBody extends Body {
 
   @Override
   public Vector3D velocity() {
-    return getComponents().stream()
+    return bodyParts().stream()
         .map(b -> b.velocity().times(b.mass()))
         .reduce(Vector3D::sum)
         .orElseThrow();

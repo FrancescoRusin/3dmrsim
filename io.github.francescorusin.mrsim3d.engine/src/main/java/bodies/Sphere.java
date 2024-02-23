@@ -45,6 +45,10 @@ public class Sphere extends Body {
             new Vector3D(center.get0() + radius, center.get1() + radius, center.get2() + radius));
   }
 
+  public double getRadius() {
+    return radius;
+  }
+
   @Override
   public double mass() {
     return mass.getMass();

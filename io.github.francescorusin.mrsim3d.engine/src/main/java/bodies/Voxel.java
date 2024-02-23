@@ -18,16 +18,18 @@ package bodies; /*-
                  * =========================LICENSE_END==================================
                  */
 
+import actions.Action;
+import agents.EmbodiedAgent;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.stream.Stream;
 import org.ode4j.ode.DBallJoint;
+import org.ode4j.ode.DDoubleBallJoint;
 import utils.Pair;
 
-public class Voxel {
+public class Voxel extends MultiBody implements EmbodiedAgent {
   public enum Vertex {
     V000,
     V001,
@@ -59,6 +61,29 @@ public class Voxel {
     }
   }
 
+  enum Edge {
+    DOWN_BACK(Vertex.V000, Vertex.V100),
+    DOWN_RIGHT(Vertex.V100, Vertex.V110),
+    DOWN_LEFT(Vertex.V000, Vertex.V010),
+    DOWN_FRONT(Vertex.V010, Vertex.V110),
+    UP_BACK(Vertex.V001, Vertex.V101),
+    UP_RIGHT(Vertex.V101, Vertex.V111),
+    UP_LEFT(Vertex.V001, Vertex.V011),
+    UP_FRONT(Vertex.V011, Vertex.V111),
+    SIDE_BR(Vertex.V100, Vertex.V101),
+    SIDE_BL(Vertex.V000, Vertex.V001),
+    SIDE_FR(Vertex.V110, Vertex.V111),
+    SIDE_FL(Vertex.V010, Vertex.V011);
+
+    private final Vertex v1;
+    private final Vertex v2;
+
+    Edge(Vertex v1, Vertex v2) {
+      this.v1 = v1;
+      this.v2 = v2;
+    }
+  }
+
   public enum JointOption {
     INTERAL,
     SIDES,
@@ -67,7 +92,7 @@ public class Voxel {
 
   EnumSet<JointOption> jointOptions;
   Map<Vertex, Body> rigidBodies;
-  Map<Pair<Vertex, Vertex>, DBallJoint> joints;
+  Map<Pair<Vertex, Vertex>, DDoubleBallJoint> joints;
   List<Body> ulteriorBodies;
   double sideLength;
   double mass;
@@ -76,28 +101,34 @@ public class Voxel {
   double dampingConstant;
   double rigidMassLengthRatio;
   double[] areaRatio;
+  boolean centralBody;
 
   public Voxel(
-      double sideLength,
-      double mass,
-      double friction,
-      double springConstant,
-      double dampingConstant,
-      double rigidMassLengthRatio,
-      double minAreaRatio,
-      double maxAreaRatio,
-      EnumSet<JointOption> jointOptions) {
+          double sideLength,
+          double mass,
+          double friction,
+          double springConstant,
+          double dampingConstant,
+          double rigidMassLengthRatio,
+          double minAreaRatio,
+          double maxAreaRatio,
+          EnumSet<JointOption> jointOptions) {
     this.sideLength = sideLength;
     this.mass = mass;
     this.friction = friction;
     this.springConstant = springConstant;
     this.dampingConstant = dampingConstant;
+    if (rigidMassLengthRatio < 0 || rigidMassLengthRatio >= .5)
+      throw new IllegalArgumentException(String.format("Attempted to construct voxel with invalid rigid mass length ratio (%.2f)", rigidMassLengthRatio));
     this.rigidMassLengthRatio = rigidMassLengthRatio;
-    this.areaRatio = new double[] {minAreaRatio > 0 ? minAreaRatio : 0, maxAreaRatio};
+    this.areaRatio = new double[]{minAreaRatio > 0 ? minAreaRatio : 0, maxAreaRatio};
     this.jointOptions = jointOptions;
+    this.rigidBodies = new LinkedHashMap<>(8);
+    this.joints = new LinkedHashMap<>();
+    this.ulteriorBodies = new ArrayList<>();
   }
 
-  public List<Body> getComponents() {
+  public List<Body> bodyParts() {
     return Stream.concat(rigidBodies.values().stream(), ulteriorBodies.stream()).toList();
   }
 
@@ -107,6 +138,45 @@ public class Voxel {
   }
 
   public void assemble(Ode4jEngine engine, Vector3D position) {
-    // TODO
+    double centerShift = sideLength * (1 - rigidMassLengthRatio) / 2d;
+    double rigidSphereRadius = sideLength * rigidMassLengthRatio / 2d;
+    double rigidSphereMass = mass / 8d;
+    // building rigid bodies
+    for (Vertex v : Vertex.values()) {
+      rigidBodies.put(v, new Sphere(rigidSphereRadius, rigidSphereMass));
+    }
+    rigidBodies.get(Vertex.V000).assemble(engine, new Vector3D(position.x() - centerShift, position.y() - centerShift, position.z() - centerShift));
+    rigidBodies.get(Vertex.V001).assemble(engine, new Vector3D(position.x() + centerShift, position.y() - centerShift, position.z() - centerShift));
+    rigidBodies.get(Vertex.V010).assemble(engine, new Vector3D(position.x() - centerShift, position.y() + centerShift, position.z() - centerShift));
+    rigidBodies.get(Vertex.V011).assemble(engine, new Vector3D(position.x() + centerShift, position.y() + centerShift, position.z() - centerShift));
+    rigidBodies.get(Vertex.V100).assemble(engine, new Vector3D(position.x() - centerShift, position.y() - centerShift, position.z() + centerShift));
+    rigidBodies.get(Vertex.V101).assemble(engine, new Vector3D(position.x() + centerShift, position.y() - centerShift, position.z() + centerShift));
+    rigidBodies.get(Vertex.V110).assemble(engine, new Vector3D(position.x() - centerShift, position.y() + centerShift, position.z() + centerShift));
+    rigidBodies.get(Vertex.V111).assemble(engine, new Vector3D(position.x() + centerShift, position.y() + centerShift, position.z() + centerShift));
+
+    // building joints
+
+    if (jointOptions.contains(JointOption.EDGES)) {
+      for (Edge e : Edge.values()) {
+        joints.put(new Pair<>(e.v1, e.v2), engine.addSpringJoint(rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant));
+      }
+    }
+    if (jointOptions.contains(JointOption.SIDES)) {
+      for (Side s : Side.values()) {
+        joints.put(new Pair<>(s.v1, s.v3), engine.addSpringJoint(rigidBodies.get(s.v1), rigidBodies.get(s.v3), springConstant, dampingConstant));
+        joints.put(new Pair<>(s.v2, s.v4), engine.addSpringJoint(rigidBodies.get(s.v2), rigidBodies.get(s.v4), springConstant, dampingConstant));
+      }
+    }
+    if (jointOptions.contains(JointOption.INTERAL)) {
+      joints.put(new Pair<>(Vertex.V000, Vertex.V111), engine.addSpringJoint(rigidBodies.get(Vertex.V000), rigidBodies.get(Vertex.V111), springConstant, dampingConstant));
+      joints.put(new Pair<>(Vertex.V001, Vertex.V110), engine.addSpringJoint(rigidBodies.get(Vertex.V001), rigidBodies.get(Vertex.V110), springConstant, dampingConstant));
+      joints.put(new Pair<>(Vertex.V010, Vertex.V101), engine.addSpringJoint(rigidBodies.get(Vertex.V010), rigidBodies.get(Vertex.V101), springConstant, dampingConstant));
+      joints.put(new Pair<>(Vertex.V011, Vertex.V100), engine.addSpringJoint(rigidBodies.get(Vertex.V011), rigidBodies.get(Vertex.V100), springConstant, dampingConstant));
+    }
+  }
+
+  @Override
+  public List<Action> act() {
+    return List.of();
   }
 }

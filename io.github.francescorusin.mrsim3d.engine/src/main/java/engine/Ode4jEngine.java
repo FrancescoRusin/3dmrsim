@@ -35,20 +35,21 @@ public class Ode4jEngine {
   private final double timeStep;
   public List<EmbodiedAgent> agents;
   public List<Body> passiveBodies;
-
-  protected Map<Pair<Body, Body>, DDoubleBallJoint> joints;
+  protected Map<Pair<Body, Body>, DDoubleBallJoint> softJoints;
+  protected Map<Pair<Body, Body>, DDoubleBallJoint> rigidJoints;
   protected DGeom terrain;
   protected Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
 
-  private double ERP(double springConstant, double dampingConstant) {
+  public double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);
   }
 
-  private double CFM(double springConstant, double dampingConstant) {
+  public double CFM(double springConstant, double dampingConstant) {
     return 1d / (timeStep * springConstant + dampingConstant);
   }
 
   private void collision(DGeom o1, DGeom o2) {
+    //TODO IMPROVE COLLISION STUFF
     DContactBuffer contacts = new DContactBuffer(1);
     DContact contact = contacts.get(0);
     contact.surface.mode = OdeConstants.dContactBounce;
@@ -62,12 +63,14 @@ public class Ode4jEngine {
 
   public Ode4jEngine() {
     world = OdeHelper.createWorld();
+    world.setCFM(0d);
+    world.setERP(0d);
     space = OdeHelper.createHashSpace(null);
     collisionGroup = OdeHelper.createJointGroup();
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
     agents = new ArrayList<>();
     passiveBodies = new ArrayList<>();
-    joints = new HashMap<>();
+    softJoints = new HashMap<>();
     // TODO ADD TERRAINS
     terrain = OdeHelper.createPlane(space, 0, 0, 1, 0);
     time = 0d;
@@ -105,9 +108,12 @@ public class Ode4jEngine {
   public DWorld getWorld() {
     return world;
   }
-  public DSpace getSpace() {return space;}
 
-  void addAgent(EmbodiedAgent agent, Vector3D position) {
+  public DSpace getSpace() {
+    return space;
+  }
+
+  public void addAgent(EmbodiedAgent agent, Vector3D position) {
     agent.assemble(this, position);
     agents.add(agent);
   }
@@ -117,22 +123,36 @@ public class Ode4jEngine {
     passiveBodies.add(body);
   }
 
-  public void addSpringJoint(Body body1, Body body2, double springConstant, double dampingConstant) {
+  public DDoubleBallJoint addSpringJoint(Body body1, Body body2, double springConstant, double dampingConstant) {
     Pair<Body, Body> bodyPair = new Pair<>(body1, body2);
-    if (joints.containsKey(bodyPair))
-      return;
+    if (softJoints.containsKey(bodyPair))
+      return softJoints.get(bodyPair);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
     joint.setParam(DJoint.PARAM_N.dParamERP1, ERP(springConstant, dampingConstant));
     joint.setParam(DJoint.PARAM_N.dParamCFM1, CFM(springConstant, dampingConstant));
     joint.attach(body1.getBody(), body2.getBody());
-    joints.put(bodyPair, joint);
+    softJoints.put(bodyPair, joint);
+    return joint;
+  }
+
+  public DDoubleBallJoint addRigidJoint(Body body1, Body body2) {
+    Pair<Body, Body> bodyPair = new Pair<>(body1, body2);
+    if (rigidJoints.containsKey(bodyPair))
+      return rigidJoints.get(bodyPair);
+    DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
+    joint.attach(body1.getBody(), body2.getBody());
+    rigidJoints.put(bodyPair, joint);
+    return joint;
   }
 
   public void unleash(Body body1, Body body2) {
     Pair<Body, Body> bodyPair = new Pair<>(body1, body2);
-    if (!joints.containsKey(bodyPair))
-      return;
-    joints.get(bodyPair).destroy();
-    joints.remove(bodyPair);
+    if (softJoints.containsKey(bodyPair)) {
+      softJoints.get(bodyPair).destroy();
+      softJoints.remove(bodyPair);
+    } else if (rigidJoints.containsKey(bodyPair)) {
+      rigidJoints.get(bodyPair).destroy();
+      rigidJoints.remove(bodyPair);
+    }
   }
 }
