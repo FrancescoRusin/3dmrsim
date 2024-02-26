@@ -20,7 +20,6 @@ package engine; /*-
 
 import agents.EmbodiedAgent;
 import bodies.Body;
-
 import java.util.Collection;
 
 public interface Snapshot {

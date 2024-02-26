@@ -18,6 +18,8 @@
  * =========================LICENSE_END==================================
  */
 
+import static drawstuff.DrawStuff.*;
+
 import agents.EmbodiedAgent;
 import bodies.Body;
 import bodies.Sphere;
@@ -25,19 +27,25 @@ import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import org.ode4j.ode.*;
-import org.ode4j.ode.internal.DxSphere;
 
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.List;
-
-import static drawstuff.DrawStuff.*;
+import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
   private static float[] xyz = {2.1640f, -1.3079f, 1.7600f};
   private static float[] hpr = {125.5000f, -17.0000f, 0.0000f};
   private Ode4jEngine engine = new Ode4jEngine();
-  private Voxel voxel = new Voxel(1, 1, 1, 5, 0, .3, .6, 1.4,
+  private Voxel voxel =
+      new Voxel(
+          1,
+          1,
+          1,
+          5,
+          0,
+          .3,
+          .6,
+          1.4,
           EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERAL));
 
   public static void main(String[] args) {
@@ -67,15 +75,31 @@ public class VisualTest extends DrawStuff.dsFunctions {
     dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
     for (EmbodiedAgent agent : engine.getAgents()) {
       for (Body body : ((Voxel) agent).bodyParts())
-        dsDrawSphere(body.getBody().getPosition(), body.getBody().getRotation(), ((Sphere) body).getRadius());
+        dsDrawSphere(
+            body.getBody().getPosition(),
+            body.getBody().getRotation(),
+            ((Sphere) body).getRadius());
+    }
+    dsSetColor(0, 0, 0);
+    dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
+    for (DJoint joint : engine.softJoints.values()) {
+      if (joint instanceof DDoubleBallJoint doubleBallJoint) {
+        dsDrawLine(
+            doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
+      }
+    }
+    dsSetColor(1, 1, 1);
+    for (DJoint joint : engine.rigidJoints.values()) {
+      if (joint instanceof DDoubleBallJoint doubleBallJoint) {
+        dsDrawLine(
+            doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
+      }
     }
   }
 
   @Override
-  public void command(char cmd) {
-  }
+  public void command(char cmd) {}
 
   @Override
-  public void stop() {
-  }
+  public void stop() {}
 }

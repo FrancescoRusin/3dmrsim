@@ -21,17 +21,17 @@ package bodies; /*-
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.List;
+import org.ode4j.ode.DJoint;
 
 public abstract class MultiBody extends Body {
   @Override
   public BoundingBox boundingBox() {
-    return bodyParts().stream()
-        .map(Body::boundingBox)
-        .reduce(BoundingBox::enclosing)
-        .orElseThrow();
+    return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
   }
 
   abstract List<Body> bodyParts();
+
+  abstract List<? extends DJoint> internalJoints();
 
   @Override
   public double mass() {

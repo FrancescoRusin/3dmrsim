@@ -41,8 +41,8 @@ public class Sphere extends Body {
   public BoundingBox boundingBox() {
     DVector3C center = body.getPosition();
     return new BoundingBox(
-            new Vector3D(center.get0() - radius, center.get1() - radius, center.get2() - radius),
-            new Vector3D(center.get0() + radius, center.get1() + radius, center.get2() + radius));
+        new Vector3D(center.get0() - radius, center.get1() - radius, center.get2() - radius),
+        new Vector3D(center.get0() + radius, center.get1() + radius, center.get2() + radius));
   }
 
   public double getRadius() {
@@ -57,6 +57,11 @@ public class Sphere extends Body {
   @Override
   public double volume() {
     return (double) 4 / 3 * Math.PI * Math.pow(radius, 3);
+  }
+
+  @Override
+  public double[] angle() {
+    return new double[]{0d, 0d};
   }
 
   @Override
