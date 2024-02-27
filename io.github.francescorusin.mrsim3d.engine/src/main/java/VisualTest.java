@@ -35,6 +35,7 @@ import org.ode4j.ode.*;
 public class VisualTest extends DrawStuff.dsFunctions {
   private static float[] xyz = {2.1640f, -1.3079f, 1.7600f};
   private static float[] hpr = {125.5000f, -17.0000f, 0.0000f};
+  private double ticktime;
   private Ode4jEngine engine = new Ode4jEngine();
   private Voxel voxel =
       new Voxel(
@@ -63,12 +64,19 @@ public class VisualTest extends DrawStuff.dsFunctions {
   @Override
   public void start() {
     dsSetViewpoint(xyz, hpr);
+    ticktime = 0d;
   }
 
   @Override
   public void step(boolean pause) {
     if (!pause) {
       engine.tick();
+      ticktime += 1d / 60d;
+      if (ticktime >= 1) {
+        voxel.bodyParts().get((int) Math.floor(engine.t()) % 8).getBody().addForce(10d, 0d, 10d);
+        System.out.println(Arrays.stream(voxel.angle()).boxed().toList());
+        ticktime = 0d;
+      }
     }
 
     dsSetColor(1, 1, 0);

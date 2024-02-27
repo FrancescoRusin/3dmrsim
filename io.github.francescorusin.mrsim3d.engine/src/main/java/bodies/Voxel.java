@@ -167,11 +167,19 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
                             .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().times(-1d)
             );
     angleVector1 = angleVector1.times(1d / angleVector1.norm());
+    angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2)));
     angleVector2 = angleVector2.times(1d / angleVector2.norm());
+    angleVector3 = angleVector3.sum(
+            angleVector1.times(-angleVector1.scalarProduct(angleVector3))
+                    .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
     angleVector3 = angleVector3.times(1d / angleVector3.norm());
     System.out.println(String.format("1: %.3f %.3f %.3f", angleVector1.x(), angleVector1.y(), angleVector1.z()));
     System.out.println(String.format("2: %.3f %.3f %.3f", angleVector2.x(), angleVector2.y(), angleVector2.z()));
     System.out.println(String.format("3: %.3f %.3f %.3f", angleVector3.x(), angleVector3.y(), angleVector3.z()));
+    System.out.println(String.format("Scalar products: %.3f %.3f %.3f",
+            angleVector1.scalarProduct(angleVector2),
+            angleVector1.scalarProduct(angleVector3),
+            angleVector2.scalarProduct(angleVector3)));
     angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
     angle[1] = Math.atan2(-angleVector1.z(), Math.sqrt(angleVector2.z() * angleVector2.z() + angleVector3.z() * angleVector3.z()));
     angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
@@ -307,7 +315,7 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
   }
 
   @Override
-  public List<? extends Body> getComponents() {
+  public List<? extends MultiBody> getComponents() {
     return List.of(this);
   }
 

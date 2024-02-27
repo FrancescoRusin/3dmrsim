@@ -20,13 +20,13 @@
 package agents;
 
 import actions.Action;
-import bodies.Body;
+import bodies.MultiBody;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import java.util.List;
 
 public interface EmbodiedAgent {
-  List<? extends Body> getComponents();
+  List<? extends MultiBody> getComponents();
 
   List<Action> act(Ode4jEngine engine);
 
