@@ -178,10 +178,12 @@ public class Voxel extends MultiBody implements SoftBody {
 
   @Override
   public double currentVolume() {
+    //TODO DEBUG (CENTER PROBLEM)
     double volume = 0d;
     Map<Vertex, Vector3D> currentVectorsFromV000 = new HashMap<>(7);
     for (Vertex v : List.of(Vertex.V001, Vertex.V010, Vertex.V011, Vertex.V100, Vertex.V101, Vertex.V110, Vertex.V111)) {
       currentVectorsFromV000.put(v, rigidBodies.get(v).position().vectorDistance(rigidBodies.get(Vertex.V000).position()));
+      System.out.println(currentVectorsFromV000.get(v));
     }
     for (Tetrahedron t : Tetrahedron.values()) {
       volume += Math.abs(currentVectorsFromV000.get(t.v2).vectorProduct(currentVectorsFromV000.get(t.v3)).scalarProduct(currentVectorsFromV000.get(t.v4)));
