@@ -34,6 +34,7 @@ public record Vector3D(double x, double y, double z) {
   public Vector3D sum(Vector3D otherVector) {
     return new Vector3D(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z);
   }
+
   public Vector3D vectorDistance(Vector3D otherVector) {
     return new Vector3D(otherVector.x - this.x, otherVector.y - this.y, otherVector.z - this.z);
   }
@@ -44,10 +45,9 @@ public record Vector3D(double x, double y, double z) {
 
   public Vector3D vectorProduct(Vector3D otherVector) {
     return new Vector3D(
-            this.y * otherVector.z - this.z * otherVector.y,
-            this.z * otherVector.x - this.x * otherVector.z,
-            this.x * otherVector.y - this.y * otherVector.x
-    );
+        this.y * otherVector.z - this.z * otherVector.y,
+        this.z * otherVector.x - this.x * otherVector.z,
+        this.x * otherVector.y - this.y * otherVector.x);
   }
 
   public String toString() {

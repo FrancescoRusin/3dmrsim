@@ -40,7 +40,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
       new SingleVoxelAgent(
           1,
           1,
-          1000,
+          100,
           0,
           .3,
           .6,

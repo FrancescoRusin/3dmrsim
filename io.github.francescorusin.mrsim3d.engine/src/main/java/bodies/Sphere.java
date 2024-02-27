@@ -23,7 +23,6 @@ import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
-import org.ode4j.ode.DMass;
 import org.ode4j.ode.OdeHelper;
 
 public class Sphere extends Body {
