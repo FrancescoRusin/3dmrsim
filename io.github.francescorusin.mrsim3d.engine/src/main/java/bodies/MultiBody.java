@@ -23,7 +23,8 @@ import geometry.Vector3D;
 import java.util.List;
 import org.ode4j.ode.DJoint;
 
-public abstract class MultiBody {
+public abstract class MultiBody implements AbstractBody {
+  @Override
   public BoundingBox boundingBox() {
     return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
   }
@@ -32,14 +33,12 @@ public abstract class MultiBody {
 
   abstract List<? extends DJoint> internalJoints();
 
+  @Override
   public double mass() {
     return bodyParts().stream().mapToDouble(Body::mass).sum();
   }
 
-  public abstract double volume();
-
-  public abstract double[] angle();
-
+  @Override
   public Vector3D position() {
     return bodyParts().stream()
         .map(b -> b.position().times(b.mass()))
@@ -47,6 +46,7 @@ public abstract class MultiBody {
         .orElseThrow();
   }
 
+  @Override
   public Vector3D velocity() {
     return bodyParts().stream()
         .map(b -> b.velocity().times(b.mass()))

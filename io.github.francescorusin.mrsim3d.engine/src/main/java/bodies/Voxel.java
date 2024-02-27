@@ -19,17 +19,18 @@ package bodies; /*-
                  */
 
 import actions.Action;
-import agents.EmbodiedAgent;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Stream;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
+import sensors.AngleSensor;
 import sensors.Sensor;
+import sensors.VolumeRatioSensor;
 import utils.Pair;
 
-public class Voxel extends MultiBody implements EmbodiedAgent {
+public class Voxel extends MultiBody implements SoftBody {
   public enum Vertex {
     V000,
     V001,
@@ -84,38 +85,55 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
     }
   }
 
+  enum Tetrahedron {
+    T1(Vertex.V000, Vertex.V001, Vertex.V011, Vertex.V111),
+    T2(Vertex.V000, Vertex.V010, Vertex.V011, Vertex.V111),
+    T3(Vertex.V000, Vertex.V001, Vertex.V101, Vertex.V111),
+    T4(Vertex.V000, Vertex.V100, Vertex.V101, Vertex.V111),
+    T5(Vertex.V000, Vertex.V010, Vertex.V110, Vertex.V111),
+    T6(Vertex.V000, Vertex.V100, Vertex.V110, Vertex.V111);
+    private final Vertex v1;
+    private final Vertex v2;
+    private final Vertex v3;
+    private final Vertex v4;
+    Tetrahedron(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
+      this.v1 = v1;
+      this.v2 = v2;
+      this.v3 = v3;
+      this.v4 = v4;
+    }
+  }
+
   public enum JointOption {
-    INTERAL,
+    INTERNAL,
     SIDES,
     EDGES
   }
 
   EnumSet<JointOption> jointOptions;
   Map<Vertex, Body> rigidBodies;
-  Map<Pair<Vertex, Vertex>, DDoubleBallJoint> joints;
+  Map<Pair<Vertex, Vertex>, DDoubleBallJoint> vertexToVertexJoints;
   List<Body> ulteriorBodies;
-  List<Sensor> sensors;
-  double sideLength;
-  double mass;
-  double friction;
-  double springConstant;
-  double dampingConstant;
-  double rigidMassLengthRatio;
-  double[] areaRatio;
+  protected List<Sensor> sensors;
+  private final double sideLength;
+  private final double mass;
+  private final double springConstant;
+  private final double dampingConstant;
+  private final double rigidMassLengthRatio;
+  private final double restVolume;
 
   public Voxel(
       double sideLength,
       double mass,
-      double friction,
       double springConstant,
       double dampingConstant,
       double rigidMassLengthRatio,
-      double minAreaRatio,
-      double maxAreaRatio,
-      EnumSet<JointOption> jointOptions) {
+      double minVolumeRatio,
+      double maxVolumeRatio,
+      EnumSet<JointOption> jointOptions,
+      String sensorConfig) {
     this.sideLength = sideLength;
     this.mass = mass;
-    this.friction = friction;
     this.springConstant = springConstant;
     this.dampingConstant = dampingConstant;
     if (rigidMassLengthRatio < 0 || rigidMassLengthRatio >= .5)
@@ -124,13 +142,23 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
               "Attempted to construct voxel with invalid rigid mass length ratio (%.2f)",
               rigidMassLengthRatio));
     this.rigidMassLengthRatio = rigidMassLengthRatio;
-    this.areaRatio = new double[] {minAreaRatio > 0 ? minAreaRatio : 0, maxAreaRatio};
+    double[] volumeRatio = new double[]{minVolumeRatio > 0 ? minVolumeRatio : 0, maxVolumeRatio};
+    this.restVolume = sideLength * sideLength * sideLength;
     this.jointOptions = jointOptions;
     this.rigidBodies = new LinkedHashMap<>(8);
-    this.joints = new LinkedHashMap<>();
+    this.vertexToVertexJoints = new LinkedHashMap<>();
     this.ulteriorBodies = new ArrayList<>();
-    //TODO ADD SENSORS
     this.sensors = new ArrayList<>();
+    for (String s : sensorConfig.split("-")) {
+      switch (s) {
+        case "a":
+          sensors.add(new AngleSensor(this));
+          break;
+        case "v":
+          sensors.add(new VolumeRatioSensor(this));
+          // TODO ADD SENSORS
+      }
+    }
   }
 
   @Override
@@ -140,48 +168,77 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
 
   @Override
   public List<? extends DJoint> internalJoints() {
-    return joints.values().stream().toList();
+    return vertexToVertexJoints.values().stream().toList();
   }
 
-  public double volume() {
-    // TODO
-    return 0;
+  @Override
+  public double restVolume() {
+    return restVolume;
+  }
+
+  @Override
+  public double currentVolume() {
+    double volume = 0d;
+    Map<Vertex, Vector3D> currentVectorsFromV000 = new HashMap<>(7);
+    for (Vertex v : List.of(Vertex.V001, Vertex.V010, Vertex.V011, Vertex.V100, Vertex.V101, Vertex.V110, Vertex.V111)) {
+      currentVectorsFromV000.put(v, rigidBodies.get(v).position().vectorDistance(rigidBodies.get(Vertex.V000).position()));
+    }
+    for (Tetrahedron t : Tetrahedron.values()) {
+      volume += Math.abs(currentVectorsFromV000.get(t.v2).vectorProduct(currentVectorsFromV000.get(t.v3)).scalarProduct(currentVectorsFromV000.get(t.v4)));
+    }
+    return volume / 6;
   }
 
   @Override
   public double[] angle() {
     double[] angle = new double[3];
-    Vector3D angleVector1 = Stream.of(Side.RIGHT.v1, Side.RIGHT.v2, Side.RIGHT.v3, Side.RIGHT.v4)
-            .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().sum(
-                    Stream.of(Side.LEFT.v1, Side.LEFT.v2, Side.LEFT.v3, Side.LEFT.v4)
-                            .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().times(-1d)
-            );
-    Vector3D angleVector2 = Stream.of(Side.FRONT.v1, Side.FRONT.v2, Side.FRONT.v3, Side.FRONT.v4)
-            .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().sum(
-                    Stream.of(Side.BACK.v1, Side.BACK.v2, Side.BACK.v3, Side.BACK.v4)
-                            .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().times(-1d)
-            );
-    Vector3D angleVector3 = Stream.of(Side.UP.v1, Side.UP.v2, Side.UP.v3, Side.UP.v4)
-            .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().sum(
-                    Stream.of(Side.DOWN.v1, Side.DOWN.v2, Side.DOWN.v3, Side.DOWN.v4)
-                            .map(v -> rigidBodies.get(v).position()).reduce(Vector3D::sum).get().times(-1d)
-            );
+    Vector3D angleVector1 =
+        Stream.of(Side.RIGHT.v1, Side.RIGHT.v2, Side.RIGHT.v3, Side.RIGHT.v4)
+            .map(v -> rigidBodies.get(v).position())
+            .reduce(Vector3D::sum)
+            .get()
+            .sum(
+                Stream.of(Side.LEFT.v1, Side.LEFT.v2, Side.LEFT.v3, Side.LEFT.v4)
+                    .map(v -> rigidBodies.get(v).position())
+                    .reduce(Vector3D::sum)
+                    .get()
+                    .times(-1d));
+    Vector3D angleVector2 =
+        Stream.of(Side.FRONT.v1, Side.FRONT.v2, Side.FRONT.v3, Side.FRONT.v4)
+            .map(v -> rigidBodies.get(v).position())
+            .reduce(Vector3D::sum)
+            .get()
+            .sum(
+                Stream.of(Side.BACK.v1, Side.BACK.v2, Side.BACK.v3, Side.BACK.v4)
+                    .map(v -> rigidBodies.get(v).position())
+                    .reduce(Vector3D::sum)
+                    .get()
+                    .times(-1d));
+    Vector3D angleVector3 =
+        Stream.of(Side.UP.v1, Side.UP.v2, Side.UP.v3, Side.UP.v4)
+            .map(v -> rigidBodies.get(v).position())
+            .reduce(Vector3D::sum)
+            .get()
+            .sum(
+                Stream.of(Side.DOWN.v1, Side.DOWN.v2, Side.DOWN.v3, Side.DOWN.v4)
+                    .map(v -> rigidBodies.get(v).position())
+                    .reduce(Vector3D::sum)
+                    .get()
+                    .times(-1d));
     angleVector1 = angleVector1.times(1d / angleVector1.norm());
     angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2)));
     angleVector2 = angleVector2.times(1d / angleVector2.norm());
-    angleVector3 = angleVector3.sum(
-            angleVector1.times(-angleVector1.scalarProduct(angleVector3))
-                    .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
+    angleVector3 =
+        angleVector3.sum(
+            angleVector1
+                .times(-angleVector1.scalarProduct(angleVector3))
+                .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
     angleVector3 = angleVector3.times(1d / angleVector3.norm());
-    System.out.println(String.format("1: %.3f %.3f %.3f", angleVector1.x(), angleVector1.y(), angleVector1.z()));
-    System.out.println(String.format("2: %.3f %.3f %.3f", angleVector2.x(), angleVector2.y(), angleVector2.z()));
-    System.out.println(String.format("3: %.3f %.3f %.3f", angleVector3.x(), angleVector3.y(), angleVector3.z()));
-    System.out.println(String.format("Scalar products: %.3f %.3f %.3f",
-            angleVector1.scalarProduct(angleVector2),
-            angleVector1.scalarProduct(angleVector3),
-            angleVector2.scalarProduct(angleVector3)));
     angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
-    angle[1] = Math.atan2(-angleVector1.z(), Math.sqrt(angleVector2.z() * angleVector2.z() + angleVector3.z() * angleVector3.z()));
+    angle[1] =
+        Math.atan2(
+            -angleVector1.z(),
+            Math.sqrt(angleVector2.z() * angleVector2.z() + angleVector3.z() * angleVector3.z()));
     angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
     return angle;
   }
@@ -190,7 +247,7 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
   public void assemble(Ode4jEngine engine, Vector3D position) {
     double centerShift = sideLength * (1 - rigidMassLengthRatio) / 2d;
     double rigidSphereRadius = sideLength * rigidMassLengthRatio / 2d;
-    double rigidSphereMass = mass / 8d;
+    double rigidSphereMass = mass / 9d;
     // building rigid bodies
     for (Vertex v : Vertex.values()) {
       rigidBodies.put(v, new Sphere(rigidSphereRadius, rigidSphereMass));
@@ -261,10 +318,9 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
                 position.z() + centerShift));
 
     // building joints
-
     if (jointOptions.contains(JointOption.EDGES)) {
       for (Edge e : Edge.values()) {
-        joints.put(
+        vertexToVertexJoints.put(
             new Pair<>(e.v1, e.v2),
             engine.addSpringJoint(
                 rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant));
@@ -272,39 +328,39 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
     }
     if (jointOptions.contains(JointOption.SIDES)) {
       for (Side s : Side.values()) {
-        joints.put(
+        vertexToVertexJoints.put(
             new Pair<>(s.v1, s.v3),
             engine.addSpringJoint(
                 rigidBodies.get(s.v1), rigidBodies.get(s.v3), springConstant, dampingConstant));
-        joints.put(
+        vertexToVertexJoints.put(
             new Pair<>(s.v2, s.v4),
             engine.addSpringJoint(
                 rigidBodies.get(s.v2), rigidBodies.get(s.v4), springConstant, dampingConstant));
       }
     }
-    if (jointOptions.contains(JointOption.INTERAL)) {
-      joints.put(
+    if (jointOptions.contains(JointOption.INTERNAL)) {
+      vertexToVertexJoints.put(
           new Pair<>(Vertex.V000, Vertex.V111),
           engine.addSpringJoint(
               rigidBodies.get(Vertex.V000),
               rigidBodies.get(Vertex.V111),
               springConstant,
               dampingConstant));
-      joints.put(
+      vertexToVertexJoints.put(
           new Pair<>(Vertex.V001, Vertex.V110),
           engine.addSpringJoint(
               rigidBodies.get(Vertex.V001),
               rigidBodies.get(Vertex.V110),
               springConstant,
               dampingConstant));
-      joints.put(
+      vertexToVertexJoints.put(
           new Pair<>(Vertex.V010, Vertex.V101),
           engine.addSpringJoint(
               rigidBodies.get(Vertex.V010),
               rigidBodies.get(Vertex.V101),
               springConstant,
               dampingConstant));
-      joints.put(
+      vertexToVertexJoints.put(
           new Pair<>(Vertex.V011, Vertex.V100),
           engine.addSpringJoint(
               rigidBodies.get(Vertex.V011),
@@ -314,13 +370,7 @@ public class Voxel extends MultiBody implements EmbodiedAgent {
     }
   }
 
-  @Override
-  public List<? extends MultiBody> getComponents() {
-    return List.of(this);
-  }
-
-  @Override
-  public List<Action> act(Ode4jEngine engine) {
+  public List<Action> actOnInput() {
     return List.of();
   }
 }

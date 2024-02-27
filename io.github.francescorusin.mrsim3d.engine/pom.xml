@@ -25,7 +25,7 @@
         <maven.compiler.target>19</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lwjgl.version>3.3.3</lwjgl.version>
-        <lwjgl.natives>natives-linux</lwjgl.natives>
+        <lwjgl.natives>natives-windows</lwjgl.natives>
     </properties>
 
     <dependencies>
@@ -39,6 +39,11 @@
             <artifactId>utils</artifactId>
             <version>0.0.1</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ericmedvet</groupId>
+            <artifactId>jsdynsym.core</artifactId>
+            <version>${jsdynsym.version}</version>
         </dependency>
 
         <dependency>

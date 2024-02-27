@@ -18,34 +18,27 @@ package bodies; /*-
                  * =========================LICENSE_END==================================
                  */
 
-import engine.Ode4jEngine;
-import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
-import utils.Pair;
+import org.ode4j.ode.DMass;
 
-public abstract class Body {
+public abstract class Body implements AbstractBody {
   protected DBody body;
+  protected DMass mass;
   protected DGeom collisionGeometry;
 
-  public abstract BoundingBox boundingBox();
-
-  public abstract double mass();
-
-  public abstract double volume();
-
+  @Override
   public Vector3D position() {
     return new Vector3D(
-            body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
+        body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
   }
 
+  @Override
   public Vector3D velocity() {
     return new Vector3D(
-            body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
+        body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
   }
-
-  public abstract double[] angle();
 
   public DBody getBody() {
     return body;
@@ -62,6 +55,4 @@ public abstract class Body {
   public void setCollisionGeometry(DGeom collisionGeometry) {
     this.collisionGeometry = collisionGeometry;
   }
-
-  public abstract void assemble(Ode4jEngine engine, Vector3D position);
 }

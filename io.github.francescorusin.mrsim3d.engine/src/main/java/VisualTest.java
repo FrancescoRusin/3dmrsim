@@ -21,33 +21,32 @@
 import static drawstuff.DrawStuff.*;
 
 import agents.EmbodiedAgent;
+import agents.SingleVoxelAgent;
 import bodies.Body;
 import bodies.Sphere;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-
-import java.util.Arrays;
 import java.util.EnumSet;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
-  private static float[] xyz = {2.1640f, -1.3079f, 1.7600f};
-  private static float[] hpr = {125.5000f, -17.0000f, 0.0000f};
+  private static final float[] xyz = {2.1640f, -1.3079f, 1.7600f};
+  private static final float[] hpr = {125.5000f, -17.0000f, 0.0000f};
   private double ticktime;
-  private Ode4jEngine engine = new Ode4jEngine();
-  private Voxel voxel =
-      new Voxel(
+  private final Ode4jEngine engine = new Ode4jEngine();
+  private final SingleVoxelAgent voxel =
+      new SingleVoxelAgent(
           1,
           1,
-          1,
-          5,
+          1000,
           0,
           .3,
           .6,
           1.4,
-          EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERAL));
+          EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
+          "a-v");
 
   public static void main(String[] args) {
     new VisualTest().demo(args);
@@ -72,11 +71,6 @@ public class VisualTest extends DrawStuff.dsFunctions {
     if (!pause) {
       engine.tick();
       ticktime += 1d / 60d;
-      if (ticktime >= 1) {
-        voxel.bodyParts().get((int) Math.floor(engine.t()) % 8).getBody().addForce(10d, 0d, 10d);
-        System.out.println(Arrays.stream(voxel.angle()).boxed().toList());
-        ticktime = 0d;
-      }
     }
 
     dsSetColor(1, 1, 0);

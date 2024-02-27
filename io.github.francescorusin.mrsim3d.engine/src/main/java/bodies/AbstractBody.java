@@ -17,18 +17,24 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package agents;
+package bodies;
 
-import actions.Action;
-import bodies.AbstractBody;
 import engine.Ode4jEngine;
+import geometry.BoundingBox;
 import geometry.Vector3D;
-import java.util.List;
 
-public interface EmbodiedAgent {
-  List<AbstractBody> getComponents();
+public interface AbstractBody {
+  double mass();
 
-  List<Action> act(Ode4jEngine engine);
+  double currentVolume();
+
+  BoundingBox boundingBox();
+
+  Vector3D position();
+
+  Vector3D velocity();
+
+  double[] angle();
 
   void assemble(Ode4jEngine engine, Vector3D position);
 }
