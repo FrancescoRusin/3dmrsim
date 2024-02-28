@@ -24,7 +24,7 @@ import bodies.Body;
 import geometry.Vector3D;
 import java.util.*;
 import org.ode4j.ode.*;
-import utils.Pair;
+import utils.UnorderedPair;
 
 public class Ode4jEngine {
   private static int initialize = OdeHelper.initODE2(0);
@@ -35,8 +35,8 @@ public class Ode4jEngine {
   private final double timeStep;
   public List<EmbodiedAgent> agents;
   public List<Body> passiveBodies;
-  public Map<Pair<Body, Body>, DDoubleBallJoint> softJoints;
-  public Map<Pair<Body, Body>, DDoubleBallJoint> rigidJoints;
+  public Map<UnorderedPair<Body>, DDoubleBallJoint> softJoints;
+  public Map<UnorderedPair<Body>, DDoubleBallJoint> rigidJoints;
   protected DGeom terrain;
   protected Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
 
@@ -127,7 +127,7 @@ public class Ode4jEngine {
 
   public DDoubleBallJoint addSpringJoint(
       Body body1, Body body2, double springConstant, double dampingConstant) {
-    Pair<Body, Body> bodyPair = new Pair<>(body1, body2);
+    UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     if (softJoints.containsKey(bodyPair)) return softJoints.get(bodyPair);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
     joint.setParam(DJoint.PARAM_N.dParamERP1, ERP(springConstant, dampingConstant));
@@ -138,7 +138,7 @@ public class Ode4jEngine {
   }
 
   public DDoubleBallJoint addRigidJoint(Body body1, Body body2) {
-    Pair<Body, Body> bodyPair = new Pair<>(body1, body2);
+    UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     if (rigidJoints.containsKey(bodyPair)) return rigidJoints.get(bodyPair);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
     joint.attach(body1.getBody(), body2.getBody());
@@ -147,7 +147,7 @@ public class Ode4jEngine {
   }
 
   public void unleash(Body body1, Body body2) {
-    Pair<Body, Body> bodyPair = new Pair<>(body1, body2);
+    UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     if (softJoints.containsKey(bodyPair)) {
       softJoints.get(bodyPair).destroy();
       softJoints.remove(bodyPair);

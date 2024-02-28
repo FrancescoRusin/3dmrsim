@@ -19,4 +19,20 @@
  */
 package utils;
 
-public record Pair<F, S>(F first, S second) {}
+import java.util.Objects;
+
+public record UnorderedPair<T>(T first, T second) {
+  @Override
+  public boolean equals(Object obj) {
+    if (obj instanceof UnorderedPair pair) {
+      return (this.first.equals(pair.first) && this.second.equals(pair.second))
+          || (this.first.equals(pair.second) && this.second.equals(pair.first));
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(first, second);
+  }
+}

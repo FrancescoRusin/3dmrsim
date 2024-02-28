@@ -28,7 +28,6 @@ import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-
 import java.util.EnumMap;
 import java.util.EnumSet;
 import org.ode4j.ode.*;
@@ -39,75 +38,80 @@ public class VisualTest extends DrawStuff.dsFunctions {
   private double ticktime;
   private final Ode4jEngine engine = new Ode4jEngine();
   private final SingleVoxelAgent voxel1 =
-          new SingleVoxelAgent(
-                  1,
-                  1,
-                  100,
-                  0,
-                  .3,
-                  .6,
-                  1.4,
-                  EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-                  "a-v",
-                  d -> {
-                    EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
-                    Voxel.Edge[] edgeValues = Voxel.Edge.values();
-                    for (int i = 0; i < 4; ++i) {
-                      testControllerInput.put(edgeValues[i], Math.sin(d));
-                    }
-                    for (int i = 4; i < 12; ++i) {
-                      testControllerInput.put(edgeValues[i], 0d);
-                    }
-                    return testControllerInput;
-                  });
+      new SingleVoxelAgent(
+          1,
+          1,
+          100,
+          0,
+          .3,
+          .6,
+          1.4,
+          EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
+          "a-v",
+          d -> {
+            EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
+            Voxel.Edge[] edgeValues = Voxel.Edge.values();
+            for (int i = 0; i < 4; ++i) {
+              testControllerInput.put(edgeValues[i], Math.sin(d));
+            }
+            for (int i = 4; i < 12; ++i) {
+              testControllerInput.put(edgeValues[i], 0d);
+            }
+            return testControllerInput;
+          }, false);
   private final SingleVoxelAgent voxel2 =
-          new SingleVoxelAgent(
-                  1,
-                  1,
-                  100,
-                  0,
-                  .3,
-                  .6,
-                  1.4,
-                  EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-                  "a-v",
-                  d -> {
-                    EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
-                    Voxel.Edge[] edgeValues = Voxel.Edge.values();
-                    for (int i = 0; i < 4; ++i) {
-                      testControllerInput.put(edgeValues[i], 0d);
-                      testControllerInput.put(edgeValues[i + 8], 0d);
-                    }
-                    for (int i = 4; i < 8; ++i) {
-                      testControllerInput.put(edgeValues[i], Math.sin(d));
-                    }
-                    return testControllerInput;
-                  });
+      new SingleVoxelAgent(
+          1,
+          1,
+          100,
+          0,
+          .3,
+          .6,
+          1.4,
+          EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
+          "a-v",
+          d -> {
+            EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
+            Voxel.Edge[] edgeValues = Voxel.Edge.values();
+            for (int i = 0; i < 4; ++i) {
+              testControllerInput.put(edgeValues[i], 0d);
+              testControllerInput.put(edgeValues[i + 8], 0d);
+            }
+            for (int i = 4; i < 8; ++i) {
+              testControllerInput.put(edgeValues[i], Math.sin(d));
+            }
+            return testControllerInput;
+          }, true);
   private final SingleVoxelAgent voxel3 =
-          new SingleVoxelAgent(
-                  1,
-                  1,
-                  100,
-                  0,
-                  .3,
-                  .6,
-                  1.4,
-                  EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-                  "a-v",
-                  d -> {
-                    EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
-                    Voxel.Edge[] edgeValues = Voxel.Edge.values();
-                    for (int i = 0; i < 8; ++i) {
-                      testControllerInput.put(edgeValues[i], 0d);
-                    }
-                    for (int i = 8; i < 12; ++i) {
-                      testControllerInput.put(edgeValues[i], Math.sin(d));
-                    }
-                    return testControllerInput;
-                  });
+      new SingleVoxelAgent(
+          1,
+          1,
+          100,
+          0,
+          .3,
+          .6,
+          1.4,
+          EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
+          "a-v",
+          d -> {
+            EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
+            Voxel.Edge[] edgeValues = Voxel.Edge.values();
+            for (int i = 0; i < 8; ++i) {
+              testControllerInput.put(edgeValues[i], 0d);
+            }
+            for (int i = 8; i < 12; ++i) {
+              testControllerInput.put(edgeValues[i], Math.sin(d));
+            }
+            return testControllerInput;
+          }, false);
 
   public static void main(String[] args) {
-    new VisualTest().demo(args);
+    //new VisualTest().demo(args);
+      for (Voxel.Side side : Voxel.Side.values()) {
+          for (Voxel.Edge edge : side.edges) {
+              System.out.println(String.format("Side: %s; edge: %s %s", side, edge.v1, edge.v2));
+          }
+      }
   }
 
   public void demo(String[] args) {
