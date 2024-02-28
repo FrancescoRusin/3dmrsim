@@ -23,37 +23,41 @@ import actions.Action;
 import bodies.AbstractBody;
 import bodies.Voxel;
 import engine.Ode4jEngine;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
+
+import java.util.*;
+import java.util.function.Function;
+
 import sensors.Sensor;
 
 public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
+  Function<Double, EnumMap<Edge, Double>> testController;
 
   public SingleVoxelAgent(
-      double sideLength,
-      double mass,
-      double springConstant,
-      double dampingConstant,
-      double rigidMassLengthRatio,
-      double minVolumeRatio,
-      double maxVolumeRatio,
-      EnumSet<JointOption> jointOptions,
-      String sensorConfig) {
+          double sideLength,
+          double mass,
+          double springConstant,
+          double dampingConstant,
+          double rigidMassLengthRatio,
+          double minVolumeRatio,
+          double maxVolumeRatio,
+          EnumSet<JointOption> jointOptions,
+          String sensorConfig,
+          Function<Double, EnumMap<Edge, Double>> testController) {
     super(
-        sideLength,
-        mass,
-        springConstant,
-        dampingConstant,
-        rigidMassLengthRatio,
-        minVolumeRatio,
-        maxVolumeRatio,
-        jointOptions,
-        sensorConfig);
+            sideLength,
+            mass,
+            springConstant,
+            dampingConstant,
+            rigidMassLengthRatio,
+            minVolumeRatio,
+            maxVolumeRatio,
+            jointOptions,
+            sensorConfig);
     this.previousStepSensorOutputs =
-        new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
+            new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
     Arrays.fill(previousStepSensorOutputs, 0d);
+    this.testController = testController;
   }
 
   @Override
@@ -64,6 +68,8 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   @Override
   public List<Action> act(Ode4jEngine engine) {
     // TODO IMPLEMENT CONTROLLER
+    actOnInput(testController.apply(engine.t()));
+    // END TODO
     int pos = 0;
     for (Sensor s : sensors) {
       System.arraycopy(s.sense(engine), 0, previousStepSensorOutputs, pos, s.outputSize());
