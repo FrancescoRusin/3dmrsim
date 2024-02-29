@@ -22,8 +22,8 @@ package sensors;
 import bodies.AbstractBody;
 import engine.Ode4jEngine;
 
-public class AngleSensor implements Sensor {
-  AbstractBody body;
+public final class AngleSensor implements Sensor {
+  private final AbstractBody body;
 
   public AngleSensor(AbstractBody body) {
     this.body = body;
@@ -31,7 +31,11 @@ public class AngleSensor implements Sensor {
 
   @Override
   public double[] sense(Ode4jEngine engine) {
-    return body.angle();
+    double[] angle = body.angle();
+    for (int i = 0; i < 3; ++i) {
+      angle[i] = (angle[i] + Math.PI) / (2 * Math.PI);
+    }
+    return angle;
   }
 
   @Override

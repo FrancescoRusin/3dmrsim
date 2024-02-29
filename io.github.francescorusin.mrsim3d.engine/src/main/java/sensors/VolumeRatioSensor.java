@@ -22,8 +22,8 @@ package sensors;
 import bodies.SoftBody;
 import engine.Ode4jEngine;
 
-public class VolumeRatioSensor implements Sensor {
-  SoftBody body;
+public final class VolumeRatioSensor implements Sensor {
+  private final SoftBody body;
 
   public VolumeRatioSensor(SoftBody body) {
     this.body = body;
@@ -31,7 +31,7 @@ public class VolumeRatioSensor implements Sensor {
 
   @Override
   public double[] sense(Ode4jEngine engine) {
-    return new double[] {body.currentVolume() / body.restVolume()};
+    return new double[] {(body.currentVolume() - body.minVolume()) / (body.maxVolume() - body.minVolume())};
   }
 
   @Override

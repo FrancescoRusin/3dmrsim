@@ -25,7 +25,7 @@ import java.util.Collection;
 public interface Snapshot {
   Collection<EmbodiedAgent> agents();
 
-  Collection<Body> bodies();
+  Collection<Body> passiveBodies();
 
   double t();
 }

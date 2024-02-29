@@ -27,33 +27,31 @@ import java.util.*;
 import java.util.function.Function;
 import sensors.Sensor;
 
-public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
+public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
   private Function<Double, EnumMap<Edge, Double>> testController;
 
   public SingleVoxelAgent(
-      double sideLength,
-      double mass,
-      double springConstant,
-      double dampingConstant,
-      double rigidMassLengthRatio,
-      double minVolumeRatio,
-      double maxVolumeRatio,
-      EnumSet<JointOption> jointOptions,
-      String sensorConfig,
-      Function<Double, EnumMap<Edge, Double>> testController) {
+          double sphereCToSphereCSideLength,
+          double rigidSphereRadius,
+          double mass,
+          double springConstant,
+          double dampingConstant,
+          double sideLengthStretchRatio,
+          EnumSet<JointOption> jointOptions,
+          String sensorConfig,
+          Function<Double, EnumMap<Edge, Double>> testController) {
     super(
-        sideLength,
-        mass,
-        springConstant,
-        dampingConstant,
-        rigidMassLengthRatio,
-        minVolumeRatio,
-        maxVolumeRatio,
-        jointOptions,
-        sensorConfig);
+            sphereCToSphereCSideLength,
+            rigidSphereRadius,
+            mass,
+            springConstant,
+            dampingConstant,
+            sideLengthStretchRatio,
+            jointOptions,
+            sensorConfig);
     this.previousStepSensorOutputs =
-        new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
+            new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
     Arrays.fill(previousStepSensorOutputs, 0d);
     this.testController = testController;
   }
@@ -67,11 +65,6 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   public List<Action> act(Ode4jEngine engine) {
     // TODO IMPLEMENT CONTROLLER
     actOnInput(testController.apply(engine.t()));
-    if (engine.t() - Math.floor(engine.t()) < 1d / 60d) {
-      System.out.printf("current time: %.3f%n", engine.t());
-      Arrays.stream(Vertex.values()).map(v -> rigidBodies.get(v).getBody().getPosition())
-              .forEach(v -> System.out.printf("Position: %.3f %.3f %.3f%n", v.get0(), v.get1(), v.get2()));
-    }
     // END TODO
     int pos = 0;
     for (Sensor s : sensors) {

@@ -27,7 +27,6 @@ import org.ode4j.ode.OdeHelper;
 
 public class Sphere extends Body {
   private final double radius;
-  private static double DEFAULT_MASS = 1d;
 
   public Sphere(double radius, double mass) {
     this.radius = radius;

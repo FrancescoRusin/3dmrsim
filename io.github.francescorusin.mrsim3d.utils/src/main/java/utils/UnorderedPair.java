@@ -35,4 +35,9 @@ public record UnorderedPair<T>(T first, T second) {
   public int hashCode() {
     return Objects.hash(first, second);
   }
+
+  @Override
+  public String toString() {
+    return String.format("[%s %s]", first.toString(), second.toString());
+  }
 }

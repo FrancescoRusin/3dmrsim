@@ -27,10 +27,10 @@ import org.ode4j.ode.*;
 import utils.UnorderedPair;
 
 public class Ode4jEngine {
-  private static int initialize = OdeHelper.initODE2(0);
+  private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
   private final DSpace space;
-  private DJointGroup collisionGroup;
+  private final DJointGroup collisionGroup;
   private double time;
   private final double timeStep;
   public List<EmbodiedAgent> agents;
@@ -55,7 +55,7 @@ public class Ode4jEngine {
     contact.surface.mode = OdeConstants.dContactBounce;
     contact.surface.mu = 0.1;
     contact.surface.mu2 = 0;
-    contact.surface.bounce = 0.9;
+    contact.surface.bounce = 0d;
     if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
       OdeHelper.createContactJoint(world, collisionGroup, contact)
           .attach(o1.getBody(), o2.getBody());
