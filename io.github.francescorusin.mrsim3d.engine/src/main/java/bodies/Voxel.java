@@ -22,8 +22,6 @@ import engine.Ode4jEngine;
 import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Stream;
-
-import org.ode4j.ode.DBallJoint;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
 import sensors.AngleSensor;
@@ -62,8 +60,12 @@ public class Voxel extends MultiBody implements SoftBody {
       this.v3 = v3;
       this.v4 = v4;
       this.edges = new HashSet<>();
-      List<UnorderedPair<Vertex>> vertexPairs = List.of(new UnorderedPair<>(this.v1, this.v2), new UnorderedPair<>(this.v2, this.v3),
-              new UnorderedPair<>(this.v3, this.v4), new UnorderedPair<>(this.v1, this.v4));
+      List<UnorderedPair<Vertex>> vertexPairs =
+          List.of(
+              new UnorderedPair<>(this.v1, this.v2),
+              new UnorderedPair<>(this.v2, this.v3),
+              new UnorderedPair<>(this.v3, this.v4),
+              new UnorderedPair<>(this.v1, this.v4));
       for (Edge e : Edge.values()) {
         UnorderedPair<Vertex> vertexPair = new UnorderedPair<>(e.v1, e.v2);
         if (vertexPairs.contains(vertexPair)) {
@@ -170,6 +172,7 @@ public class Voxel extends MultiBody implements SoftBody {
     double rigidBodiesCenterDistance = sideLength * (1 - rigidMassLengthRatio);
     this.restVolume =
         rigidBodiesCenterDistance * rigidBodiesCenterDistance * rigidBodiesCenterDistance;
+    System.out.printf("rest volume: %.3f%n", restVolume);
     this.jointOptions = jointOptions;
     this.rigidBodies = new EnumMap<>(Vertex.class);
     this.vertexToVertexJoints = new LinkedHashMap<>();

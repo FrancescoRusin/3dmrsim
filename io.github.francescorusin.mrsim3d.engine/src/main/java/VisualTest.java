@@ -58,7 +58,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
               testControllerInput.put(edgeValues[i], 0d);
             }
             return testControllerInput;
-          }, false);
+          });
   private final SingleVoxelAgent voxel2 =
       new SingleVoxelAgent(
           1,
@@ -81,7 +81,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
               testControllerInput.put(edgeValues[i], Math.sin(d));
             }
             return testControllerInput;
-          }, true);
+          });
   private final SingleVoxelAgent voxel3 =
       new SingleVoxelAgent(
           1,
@@ -96,27 +96,22 @@ public class VisualTest extends DrawStuff.dsFunctions {
           d -> {
             EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
             Voxel.Edge[] edgeValues = Voxel.Edge.values();
-            for (int i = 0; i < 8; ++i) {
+            for (int i = 0; i < 12; ++i) {
               testControllerInput.put(edgeValues[i], 0d);
             }
             for (int i = 8; i < 12; ++i) {
-              testControllerInput.put(edgeValues[i], Math.sin(d));
+              //testControllerInput.put(edgeValues[i], Math.sin(d));
             }
             return testControllerInput;
-          }, false);
+          });
 
   public static void main(String[] args) {
-    //new VisualTest().demo(args);
-      for (Voxel.Side side : Voxel.Side.values()) {
-          for (Voxel.Edge edge : side.edges) {
-              System.out.println(String.format("Side: %s; edge: %s %s", side, edge.v1, edge.v2));
-          }
-      }
+    new VisualTest().demo(args);
   }
 
   public void demo(String[] args) {
-    engine.addAgent(voxel1, new Vector3D(-1d, -1d, 1d));
-    engine.addAgent(voxel2, new Vector3D(1d, -1d, 1d));
+    //engine.addAgent(voxel1, new Vector3D(-1d, -1d, 1d));
+    //engine.addAgent(voxel2, new Vector3D(1d, -1d, 1d));
     engine.addAgent(voxel3, new Vector3D(0d, 1d, 1d));
     dsSimulationLoop(args, 1080, 720, this);
     engine.getSpace().destroy();

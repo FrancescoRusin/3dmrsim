@@ -26,12 +26,10 @@ import engine.Ode4jEngine;
 import java.util.*;
 import java.util.function.Function;
 import sensors.Sensor;
-import utils.UnorderedPair;
 
 public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
   private Function<Double, EnumMap<Edge, Double>> testController;
-  private boolean test;
 
   public SingleVoxelAgent(
       double sideLength,
@@ -43,7 +41,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       double maxVolumeRatio,
       EnumSet<JointOption> jointOptions,
       String sensorConfig,
-      Function<Double, EnumMap<Edge, Double>> testController, boolean test) {
+      Function<Double, EnumMap<Edge, Double>> testController) {
     super(
         sideLength,
         mass,
@@ -58,7 +56,6 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
         new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
     Arrays.fill(previousStepSensorOutputs, 0d);
     this.testController = testController;
-    this.test = test;
   }
 
   @Override
@@ -70,19 +67,16 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   public List<Action> act(Ode4jEngine engine) {
     // TODO IMPLEMENT CONTROLLER
     actOnInput(testController.apply(engine.t()));
-    if (test && engine.t() - Math.floor(engine.t()) < 1d / 60d) {
-      /*for (UnorderedPair<Vertex> extremes : vertexToVertexJoints.keySet()) {
-        System.out.println(String.format("Vertices: %s %s; distance: %.3f", extremes.first(), extremes.second(), vertexToVertexJoints.get(extremes).getDistance()));
-      }*/
+    if (engine.t() - Math.floor(engine.t()) < 1d / 60d) {
+      System.out.printf("current time: %.3f%n", engine.t());
+      Arrays.stream(Vertex.values()).map(v -> rigidBodies.get(v).getBody().getPosition())
+              .forEach(v -> System.out.printf("Position: %.3f %.3f %.3f%n", v.get0(), v.get1(), v.get2()));
     }
     // END TODO
     int pos = 0;
     for (Sensor s : sensors) {
       System.arraycopy(s.sense(engine), 0, previousStepSensorOutputs, pos, s.outputSize());
       pos += s.outputSize();
-    }
-    if (engine.t() - Math.floor(engine.t()) < 1d / 60d) {
-      System.out.println(Arrays.stream(previousStepSensorOutputs).boxed().toList());
     }
     return List.of();
   }
