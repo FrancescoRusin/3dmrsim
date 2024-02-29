@@ -33,7 +33,7 @@ public final class AngleSensor implements Sensor {
   public double[] sense(Ode4jEngine engine) {
     double[] angle = body.angle();
     for (int i = 0; i < 3; ++i) {
-      angle[i] = 2 * (angle[i] + Math.PI) / (2 * Math.PI) - 1d;
+      angle[i] = angle[i] / Math.PI;
     }
     return angle;
   }
