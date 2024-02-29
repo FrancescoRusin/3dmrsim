@@ -61,11 +61,11 @@ public class Voxel extends MultiBody implements SoftBody {
       this.v4 = v4;
       this.edges = new HashSet<>();
       List<UnorderedPair<Vertex>> vertexPairs =
-              List.of(
-                      new UnorderedPair<>(this.v1, this.v2),
-                      new UnorderedPair<>(this.v2, this.v3),
-                      new UnorderedPair<>(this.v3, this.v4),
-                      new UnorderedPair<>(this.v1, this.v4));
+          List.of(
+              new UnorderedPair<>(this.v1, this.v2),
+              new UnorderedPair<>(this.v2, this.v3),
+              new UnorderedPair<>(this.v3, this.v4),
+              new UnorderedPair<>(this.v1, this.v4));
       for (Edge e : Edge.values()) {
         UnorderedPair<Vertex> vertexPair = new UnorderedPair<>(e.v1, e.v2);
         if (vertexPairs.contains(vertexPair)) {
@@ -140,36 +140,41 @@ public class Voxel extends MultiBody implements SoftBody {
   private final double[] internalLengthControlRatio;
 
   public Voxel(
-          double sphereCToSphereCSideLength,
-          double rigidSphereRadius,
-          double mass,
-          double springConstant,
-          double dampingConstant,
-          double sideLengthStretchRatio,
-          EnumSet<JointOption> jointOptions,
-          String sensorConfig) {
+      double sphereCToSphereCSideLength,
+      double rigidSphereRadius,
+      double mass,
+      double springConstant,
+      double dampingConstant,
+      double sideLengthStretchRatio,
+      EnumSet<JointOption> jointOptions,
+      String sensorConfig) {
     this.springConstant = springConstant;
     this.dampingConstant = dampingConstant;
     if (sphereCToSphereCSideLength < rigidSphereRadius * 2) {
       throw new IllegalArgumentException(
-              String.format(
-                      "Attempted to construct voxel with invalid rigid sphere length ratio (length %.2f on total %.2f)",
-                      rigidSphereRadius, sphereCToSphereCSideLength));
+          String.format(
+              "Attempted to construct voxel with invalid rigid sphere length ratio (length %.2f on total %.2f)",
+              rigidSphereRadius, sphereCToSphereCSideLength));
     }
     this.rigidSphereRadius = rigidSphereRadius;
     this.sphereCToSphereCSideLength = sphereCToSphereCSideLength;
     this.mass = mass;
     this.edgeLengthControlRatio =
-            new double[]{Math.max(1 - sideLengthStretchRatio, 0d), Math.min(1 + sideLengthStretchRatio, 2d)};
+        new double[] {
+          Math.max(1 - sideLengthStretchRatio, 0d), Math.min(1 + sideLengthStretchRatio, 2d)
+        };
     this.sideLengthControlRatio =
-            new double[]{
-                    edgeLengthControlRatio[0] * Math.sqrt(2), edgeLengthControlRatio[1] * Math.sqrt(2)
-            };
+        new double[] {
+          edgeLengthControlRatio[0] * Math.sqrt(2), edgeLengthControlRatio[1] * Math.sqrt(2)
+        };
     this.internalLengthControlRatio =
-            new double[]{
-                    edgeLengthControlRatio[0] * Math.sqrt(3), edgeLengthControlRatio[1] * Math.sqrt(3)
-            };
-    this.restVolume = this.sphereCToSphereCSideLength * this.sphereCToSphereCSideLength * this.sphereCToSphereCSideLength;
+        new double[] {
+          edgeLengthControlRatio[0] * Math.sqrt(3), edgeLengthControlRatio[1] * Math.sqrt(3)
+        };
+    this.restVolume =
+        this.sphereCToSphereCSideLength
+            * this.sphereCToSphereCSideLength
+            * this.sphereCToSphereCSideLength;
     this.jointOptions = jointOptions;
     this.rigidBodies = new EnumMap<>(Vertex.class);
     this.vertexToVertexJoints = new LinkedHashMap<>();
@@ -204,12 +209,18 @@ public class Voxel extends MultiBody implements SoftBody {
 
   @Override
   public double minVolume() {
-    return restVolume * edgeLengthControlRatio[0] * edgeLengthControlRatio[0] * edgeLengthControlRatio[0];
+    return restVolume
+        * edgeLengthControlRatio[0]
+        * edgeLengthControlRatio[0]
+        * edgeLengthControlRatio[0];
   }
 
   @Override
   public double maxVolume() {
-    return restVolume * edgeLengthControlRatio[1] * edgeLengthControlRatio[1] * edgeLengthControlRatio[1];
+    return restVolume
+        * edgeLengthControlRatio[1]
+        * edgeLengthControlRatio[1]
+        * edgeLengthControlRatio[1];
   }
 
   @Override
@@ -217,24 +228,24 @@ public class Voxel extends MultiBody implements SoftBody {
     double volume = 0d;
     Map<Vertex, Vector3D> currentVectorsFromV000 = new EnumMap<>(Vertex.class);
     for (Vertex v :
-            List.of(
-                    Vertex.V001,
-                    Vertex.V010,
-                    Vertex.V011,
-                    Vertex.V100,
-                    Vertex.V101,
-                    Vertex.V110,
-                    Vertex.V111)) {
+        List.of(
+            Vertex.V001,
+            Vertex.V010,
+            Vertex.V011,
+            Vertex.V100,
+            Vertex.V101,
+            Vertex.V110,
+            Vertex.V111)) {
       currentVectorsFromV000.put(
-              v, rigidBodies.get(v).position().vectorDistance(rigidBodies.get(Vertex.V000).position()));
+          v, rigidBodies.get(v).position().vectorDistance(rigidBodies.get(Vertex.V000).position()));
     }
     for (Tetrahedron t : Tetrahedron.values()) {
       volume +=
-              Math.abs(
-                      currentVectorsFromV000
-                              .get(t.v2)
-                              .vectorProduct(currentVectorsFromV000.get(t.v3))
-                              .scalarProduct(currentVectorsFromV000.get(t.v4)));
+          Math.abs(
+              currentVectorsFromV000
+                  .get(t.v2)
+                  .vectorProduct(currentVectorsFromV000.get(t.v3))
+                  .scalarProduct(currentVectorsFromV000.get(t.v4)));
     }
     return volume / 6d;
   }
@@ -243,52 +254,52 @@ public class Voxel extends MultiBody implements SoftBody {
   public double[] angle() {
     double[] angle = new double[3];
     Vector3D angleVector1 =
-            Stream.of(Side.RIGHT.v1, Side.RIGHT.v2, Side.RIGHT.v3, Side.RIGHT.v4)
+        Stream.of(Side.RIGHT.v1, Side.RIGHT.v2, Side.RIGHT.v3, Side.RIGHT.v4)
+            .map(v -> rigidBodies.get(v).position())
+            .reduce(Vector3D::sum)
+            .get()
+            .sum(
+                Stream.of(Side.LEFT.v1, Side.LEFT.v2, Side.LEFT.v3, Side.LEFT.v4)
                     .map(v -> rigidBodies.get(v).position())
                     .reduce(Vector3D::sum)
                     .get()
-                    .sum(
-                            Stream.of(Side.LEFT.v1, Side.LEFT.v2, Side.LEFT.v3, Side.LEFT.v4)
-                                    .map(v -> rigidBodies.get(v).position())
-                                    .reduce(Vector3D::sum)
-                                    .get()
-                                    .times(-1d));
+                    .times(-1d));
     Vector3D angleVector2 =
-            Stream.of(Side.FRONT.v1, Side.FRONT.v2, Side.FRONT.v3, Side.FRONT.v4)
+        Stream.of(Side.FRONT.v1, Side.FRONT.v2, Side.FRONT.v3, Side.FRONT.v4)
+            .map(v -> rigidBodies.get(v).position())
+            .reduce(Vector3D::sum)
+            .get()
+            .sum(
+                Stream.of(Side.BACK.v1, Side.BACK.v2, Side.BACK.v3, Side.BACK.v4)
                     .map(v -> rigidBodies.get(v).position())
                     .reduce(Vector3D::sum)
                     .get()
-                    .sum(
-                            Stream.of(Side.BACK.v1, Side.BACK.v2, Side.BACK.v3, Side.BACK.v4)
-                                    .map(v -> rigidBodies.get(v).position())
-                                    .reduce(Vector3D::sum)
-                                    .get()
-                                    .times(-1d));
+                    .times(-1d));
     Vector3D angleVector3 =
-            Stream.of(Side.UP.v1, Side.UP.v2, Side.UP.v3, Side.UP.v4)
+        Stream.of(Side.UP.v1, Side.UP.v2, Side.UP.v3, Side.UP.v4)
+            .map(v -> rigidBodies.get(v).position())
+            .reduce(Vector3D::sum)
+            .get()
+            .sum(
+                Stream.of(Side.DOWN.v1, Side.DOWN.v2, Side.DOWN.v3, Side.DOWN.v4)
                     .map(v -> rigidBodies.get(v).position())
                     .reduce(Vector3D::sum)
                     .get()
-                    .sum(
-                            Stream.of(Side.DOWN.v1, Side.DOWN.v2, Side.DOWN.v3, Side.DOWN.v4)
-                                    .map(v -> rigidBodies.get(v).position())
-                                    .reduce(Vector3D::sum)
-                                    .get()
-                                    .times(-1d));
+                    .times(-1d));
     angleVector1 = angleVector1.times(1d / angleVector1.norm());
     angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2)));
     angleVector2 = angleVector2.times(1d / angleVector2.norm());
     angleVector3 =
-            angleVector3.sum(
-                    angleVector1
-                            .times(-angleVector1.scalarProduct(angleVector3))
-                            .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
+        angleVector3.sum(
+            angleVector1
+                .times(-angleVector1.scalarProduct(angleVector3))
+                .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
     angleVector3 = angleVector3.times(1d / angleVector3.norm());
     angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
     angle[1] =
-            Math.atan2(
-                    -angleVector1.z(),
-                    Math.sqrt(angleVector2.z() * angleVector2.z() + angleVector3.z() * angleVector3.z()));
+        Math.atan2(
+            -angleVector1.z(),
+            Math.sqrt(angleVector2.z() * angleVector2.z() + angleVector3.z() * angleVector3.z()));
     angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
     return angle;
   }
@@ -304,174 +315,192 @@ public class Voxel extends MultiBody implements SoftBody {
       rigidBodies.put(v, new Sphere(rigidSphereRadius, rigidSphereMass));
     }
     rigidBodies
-            .get(Vertex.V000)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() - centerShift,
-                            position.y() - centerShift,
-                            position.z() - centerShift));
+        .get(Vertex.V000)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() - centerShift,
+                position.y() - centerShift,
+                position.z() - centerShift));
     rigidBodies
-            .get(Vertex.V001)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() - centerShift,
-                            position.y() - centerShift,
-                            position.z() + centerShift));
+        .get(Vertex.V001)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() - centerShift,
+                position.y() - centerShift,
+                position.z() + centerShift));
     rigidBodies
-            .get(Vertex.V010)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() - centerShift,
-                            position.y() + centerShift,
-                            position.z() - centerShift));
+        .get(Vertex.V010)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() - centerShift,
+                position.y() + centerShift,
+                position.z() - centerShift));
     rigidBodies
-            .get(Vertex.V011)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() - centerShift,
-                            position.y() + centerShift,
-                            position.z() + centerShift));
+        .get(Vertex.V011)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() - centerShift,
+                position.y() + centerShift,
+                position.z() + centerShift));
     rigidBodies
-            .get(Vertex.V100)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() + centerShift,
-                            position.y() - centerShift,
-                            position.z() - centerShift));
+        .get(Vertex.V100)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() + centerShift,
+                position.y() - centerShift,
+                position.z() - centerShift));
     rigidBodies
-            .get(Vertex.V101)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() + centerShift,
-                            position.y() - centerShift,
-                            position.z() + centerShift));
+        .get(Vertex.V101)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() + centerShift,
+                position.y() - centerShift,
+                position.z() + centerShift));
     rigidBodies
-            .get(Vertex.V110)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() + centerShift,
-                            position.y() + centerShift,
-                            position.z() - centerShift));
+        .get(Vertex.V110)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() + centerShift,
+                position.y() + centerShift,
+                position.z() - centerShift));
     rigidBodies
-            .get(Vertex.V111)
-            .assemble(
-                    engine,
-                    new Vector3D(
-                            position.x() + centerShift,
-                            position.y() + centerShift,
-                            position.z() + centerShift));
+        .get(Vertex.V111)
+        .assemble(
+            engine,
+            new Vector3D(
+                position.x() + centerShift,
+                position.y() + centerShift,
+                position.z() + centerShift));
 
     // building joints
     if (jointOptions.contains(JointOption.EDGES)) {
       for (Edge e : Edge.values()) {
         vertexToVertexJoints.put(
-                new UnorderedPair<>(e.v1, e.v2),
-                engine.addSpringJoint(
-                        rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant));
+            new UnorderedPair<>(e.v1, e.v2),
+            engine.addSpringJoint(
+                rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant));
       }
     }
     if (jointOptions.contains(JointOption.SIDES)) {
       for (Side s : Side.values()) {
         vertexToVertexJoints.put(
-                new UnorderedPair<>(s.v1, s.v3),
-                engine.addSpringJoint(
-                        rigidBodies.get(s.v1), rigidBodies.get(s.v3), springConstant, dampingConstant));
+            new UnorderedPair<>(s.v1, s.v3),
+            engine.addSpringJoint(
+                rigidBodies.get(s.v1), rigidBodies.get(s.v3), springConstant, dampingConstant));
         vertexToVertexJoints.put(
-                new UnorderedPair<>(s.v2, s.v4),
-                engine.addSpringJoint(
-                        rigidBodies.get(s.v2), rigidBodies.get(s.v4), springConstant, dampingConstant));
+            new UnorderedPair<>(s.v2, s.v4),
+            engine.addSpringJoint(
+                rigidBodies.get(s.v2), rigidBodies.get(s.v4), springConstant, dampingConstant));
       }
     }
     if (jointOptions.contains(JointOption.INTERNAL)) {
       vertexToVertexJoints.put(
-              new UnorderedPair<>(Vertex.V000, Vertex.V111),
-              engine.addSpringJoint(
-                      rigidBodies.get(Vertex.V000),
-                      rigidBodies.get(Vertex.V111),
-                      springConstant,
-                      dampingConstant));
+          new UnorderedPair<>(Vertex.V000, Vertex.V111),
+          engine.addSpringJoint(
+              rigidBodies.get(Vertex.V000),
+              rigidBodies.get(Vertex.V111),
+              springConstant,
+              dampingConstant));
       vertexToVertexJoints.put(
-              new UnorderedPair<>(Vertex.V001, Vertex.V110),
-              engine.addSpringJoint(
-                      rigidBodies.get(Vertex.V001),
-                      rigidBodies.get(Vertex.V110),
-                      springConstant,
-                      dampingConstant));
+          new UnorderedPair<>(Vertex.V001, Vertex.V110),
+          engine.addSpringJoint(
+              rigidBodies.get(Vertex.V001),
+              rigidBodies.get(Vertex.V110),
+              springConstant,
+              dampingConstant));
       vertexToVertexJoints.put(
-              new UnorderedPair<>(Vertex.V010, Vertex.V101),
-              engine.addSpringJoint(
-                      rigidBodies.get(Vertex.V010),
-                      rigidBodies.get(Vertex.V101),
-                      springConstant,
-                      dampingConstant));
+          new UnorderedPair<>(Vertex.V010, Vertex.V101),
+          engine.addSpringJoint(
+              rigidBodies.get(Vertex.V010),
+              rigidBodies.get(Vertex.V101),
+              springConstant,
+              dampingConstant));
       vertexToVertexJoints.put(
-              new UnorderedPair<>(Vertex.V011, Vertex.V100),
-              engine.addSpringJoint(
-                      rigidBodies.get(Vertex.V011),
-                      rigidBodies.get(Vertex.V100),
-                      springConstant,
-                      dampingConstant));
+          new UnorderedPair<>(Vertex.V011, Vertex.V100),
+          engine.addSpringJoint(
+              rigidBodies.get(Vertex.V011),
+              rigidBodies.get(Vertex.V100),
+              springConstant,
+              dampingConstant));
     }
   }
 
   public void actOnInput(EnumMap<Edge, Double> input) {
-    // input is assumed to already be in [0;1]; we have no time to waste on checks
+    // input is assumed to already be in [-1;1]; we have no time to waste on checks
     // apply on edges
+    EnumMap<Edge, Double> actualInput = new EnumMap<>(Edge.class);
+    for (Edge edge : Edge.values()) {
+      actualInput.put(edge, (input.get(edge) + 1d) / 2d);
+    }
     if (jointOptions.contains(JointOption.EDGES)) {
       for (Edge edge : Edge.values()) {
         vertexToVertexJoints
-                .get(new UnorderedPair<>(edge.v1, edge.v2))
-                .setDistance(
-                        sphereCToSphereCSideLength * (edgeLengthControlRatio[0] + input.get(edge) * (edgeLengthControlRatio[1] - edgeLengthControlRatio[0])));
+            .get(new UnorderedPair<>(edge.v1, edge.v2))
+            .setDistance(
+                sphereCToSphereCSideLength
+                    * (edgeLengthControlRatio[0]
+                        + actualInput.get(edge)
+                            * (edgeLengthControlRatio[1] - edgeLengthControlRatio[0])));
       }
     }
 
     // apply on sides
     if (jointOptions.contains(JointOption.SIDES)) {
       for (Side side : Side.values()) {
-        double sideValue = side.edges.stream().mapToDouble(input::get).average().orElse(0d);
+        double sideValue = side.edges.stream().mapToDouble(actualInput::get).average().orElse(0d);
         vertexToVertexJoints
-                .get(new UnorderedPair<>(side.v1, side.v3))
-                .setDistance(
-                        sphereCToSphereCSideLength * (sideLengthControlRatio[0] + sideValue * (sideLengthControlRatio[1] - sideLengthControlRatio[0])));
+            .get(new UnorderedPair<>(side.v1, side.v3))
+            .setDistance(
+                sphereCToSphereCSideLength
+                    * (sideLengthControlRatio[0]
+                        + sideValue * (sideLengthControlRatio[1] - sideLengthControlRatio[0])));
         vertexToVertexJoints
-                .get(new UnorderedPair<>(side.v2, side.v4))
-                .setDistance(
-                        sphereCToSphereCSideLength * (sideLengthControlRatio[0] + sideValue * (sideLengthControlRatio[1] - sideLengthControlRatio[0])));
+            .get(new UnorderedPair<>(side.v2, side.v4))
+            .setDistance(
+                sphereCToSphereCSideLength
+                    * (sideLengthControlRatio[0]
+                        + sideValue * (sideLengthControlRatio[1] - sideLengthControlRatio[0])));
       }
     }
 
     // apply on internal
     if (jointOptions.contains(JointOption.INTERNAL)) {
-      double internalValue =
-              input.values().stream().mapToDouble(d -> d).average().orElse(0d);
+      double internalValue = actualInput.values().stream().mapToDouble(d -> d).average().orElse(0d);
       vertexToVertexJoints
-              .get(new UnorderedPair<>(Vertex.V000, Vertex.V111))
-              .setDistance(
-                      sphereCToSphereCSideLength *
-                              (internalLengthControlRatio[0] + internalValue * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
+          .get(new UnorderedPair<>(Vertex.V000, Vertex.V111))
+          .setDistance(
+              sphereCToSphereCSideLength
+                  * (internalLengthControlRatio[0]
+                      + internalValue
+                          * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
       vertexToVertexJoints
-              .get(new UnorderedPair<>(Vertex.V001, Vertex.V110))
-              .setDistance(
-                      sphereCToSphereCSideLength *
-                              (internalLengthControlRatio[0] + internalValue * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
+          .get(new UnorderedPair<>(Vertex.V001, Vertex.V110))
+          .setDistance(
+              sphereCToSphereCSideLength
+                  * (internalLengthControlRatio[0]
+                      + internalValue
+                          * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
       vertexToVertexJoints
-              .get(new UnorderedPair<>(Vertex.V010, Vertex.V101))
-              .setDistance(
-                      sphereCToSphereCSideLength *
-                              (internalLengthControlRatio[0] + internalValue * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
+          .get(new UnorderedPair<>(Vertex.V010, Vertex.V101))
+          .setDistance(
+              sphereCToSphereCSideLength
+                  * (internalLengthControlRatio[0]
+                      + internalValue
+                          * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
       vertexToVertexJoints
-              .get(new UnorderedPair<>(Vertex.V011, Vertex.V100))
-              .setDistance(
-                      sphereCToSphereCSideLength *
-                              (internalLengthControlRatio[0] + internalValue * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
+          .get(new UnorderedPair<>(Vertex.V011, Vertex.V100))
+          .setDistance(
+              sphereCToSphereCSideLength
+                  * (internalLengthControlRatio[0]
+                      + internalValue
+                          * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
     }
   }
 }

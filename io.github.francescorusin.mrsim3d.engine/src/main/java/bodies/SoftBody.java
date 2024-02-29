@@ -21,6 +21,8 @@ package bodies;
 
 public interface SoftBody extends AbstractBody {
   double baseVolume();
+
   double minVolume();
+
   double maxVolume();
 }

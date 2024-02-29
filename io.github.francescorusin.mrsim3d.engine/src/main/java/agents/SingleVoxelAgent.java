@@ -29,29 +29,29 @@ import sensors.Sensor;
 
 public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
-  private Function<Double, EnumMap<Edge, Double>> testController;
+  private final Function<Double, EnumMap<Edge, Double>> testController;
 
   public SingleVoxelAgent(
-          double sphereCToSphereCSideLength,
-          double rigidSphereRadius,
-          double mass,
-          double springConstant,
-          double dampingConstant,
-          double sideLengthStretchRatio,
-          EnumSet<JointOption> jointOptions,
-          String sensorConfig,
-          Function<Double, EnumMap<Edge, Double>> testController) {
+      double sphereCToSphereCSideLength,
+      double rigidSphereRadius,
+      double mass,
+      double springConstant,
+      double dampingConstant,
+      double sideLengthStretchRatio,
+      EnumSet<JointOption> jointOptions,
+      String sensorConfig,
+      Function<Double, EnumMap<Edge, Double>> testController) {
     super(
-            sphereCToSphereCSideLength,
-            rigidSphereRadius,
-            mass,
-            springConstant,
-            dampingConstant,
-            sideLengthStretchRatio,
-            jointOptions,
-            sensorConfig);
+        sphereCToSphereCSideLength,
+        rigidSphereRadius,
+        mass,
+        springConstant,
+        dampingConstant,
+        sideLengthStretchRatio,
+        jointOptions,
+        sensorConfig);
     this.previousStepSensorOutputs =
-            new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
+        new double[sensors.stream().mapToInt(Sensor::outputSize).sum()];
     Arrays.fill(previousStepSensorOutputs, 0d);
     this.testController = testController;
   }
