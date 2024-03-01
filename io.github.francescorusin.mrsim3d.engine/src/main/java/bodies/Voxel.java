@@ -26,6 +26,7 @@ import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
 import sensors.AngleSensor;
 import sensors.Sensor;
+import sensors.VelocitySensor;
 import sensors.VolumeRatioSensor;
 import utils.UnorderedPair;
 
@@ -138,8 +139,12 @@ public class Voxel extends MultiBody implements SoftBody {
   private final double[] edgeLengthControlRatio;
   private final double[] sideLengthControlRatio;
   private final double[] internalLengthControlRatio;
-  private double cacheTime;
+  private enum Cache {
+    ANGLE, POSITION, VELOCITY, VOLUME
+  }
+  private final EnumMap<Cache, Double> cacheTime;
   private Vector3D angleCacher;
+  private Vector3D positionCacher;
   private Vector3D velocityCacher;
   private double volumeCacher;
 
@@ -184,13 +189,17 @@ public class Voxel extends MultiBody implements SoftBody {
     this.vertexToVertexJoints = new LinkedHashMap<>();
     this.ulteriorBodies = new ArrayList<>();
     this.sensors = new ArrayList<>();
+    this.cacheTime = new EnumMap<>(Cache.class);
     for (String s : sensorConfig.split("-")) {
       switch (s) {
-        case "a":
+        case "ang":
           sensors.add(new AngleSensor(this));
           break;
-        case "v":
+        case "vlm":
           sensors.add(new VolumeRatioSensor(this));
+          break;
+        case "vlc":
+          sensors.add(new VelocitySensor(this));
           // TODO ADD SENSORS
       }
     }
@@ -228,94 +237,114 @@ public class Voxel extends MultiBody implements SoftBody {
   }
 
   @Override
+  public Vector3D position(double t) {
+    if (cacheTime.get(Cache.POSITION) != t) {
+      cacheTime.put(Cache.POSITION, t);
+      positionCacher = super.position(t);
+    }
+    return positionCacher;
+  }
+
+  @Override
+  public Vector3D velocity(double t) {
+    if (cacheTime.get(Cache.VELOCITY) != t) {
+      cacheTime.put(Cache.VELOCITY, t);
+      velocityCacher = super.velocity(t);
+    }
+    return velocityCacher;
+  }
+
+  @Override
   public double currentVolume(double t) {
-    if (cacheTime == t) {
-      return volumeCacher;
+    if (cacheTime.get(Cache.VOLUME) != t) {
+      cacheTime.put(Cache.VOLUME, t);
+      double volume = 0d;
+      Map<Vertex, Vector3D> currentVectorsFromV000 = new EnumMap<>(Vertex.class);
+      for (Vertex v :
+              List.of(
+                      Vertex.V001,
+                      Vertex.V010,
+                      Vertex.V011,
+                      Vertex.V100,
+                      Vertex.V101,
+                      Vertex.V110,
+                      Vertex.V111)) {
+        currentVectorsFromV000.put(
+                v, rigidBodies.get(v).position(t).vectorDistance(rigidBodies.get(Vertex.V000).position(t)));
+      }
+      for (Tetrahedron ttr : Tetrahedron.values()) {
+        volume +=
+                Math.abs(
+                        currentVectorsFromV000
+                                .get(ttr.v2)
+                                .vectorProduct(currentVectorsFromV000.get(ttr.v3))
+                                .scalarProduct(currentVectorsFromV000.get(ttr.v4)));
+      }
+      volumeCacher = volume / 6d;
     }
-    double volume = 0d;
-    Map<Vertex, Vector3D> currentVectorsFromV000 = new EnumMap<>(Vertex.class);
-    for (Vertex v :
-        List.of(
-            Vertex.V001,
-            Vertex.V010,
-            Vertex.V011,
-            Vertex.V100,
-            Vertex.V101,
-            Vertex.V110,
-            Vertex.V111)) {
-      currentVectorsFromV000.put(
-          v, rigidBodies.get(v).position(t).vectorDistance(rigidBodies.get(Vertex.V000).position(t)));
-    }
-    for (Tetrahedron ttr : Tetrahedron.values()) {
-      volume +=
-          Math.abs(
-              currentVectorsFromV000
-                  .get(ttr.v2)
-                  .vectorProduct(currentVectorsFromV000.get(ttr.v3))
-                  .scalarProduct(currentVectorsFromV000.get(ttr.v4)));
-    }
-    volumeCacher = volume / 6d;
     return volumeCacher;
   }
 
   @Override
   public Vector3D angle(double t) {
-    if (cacheTime == t) {
-      return angleCacher;
+    if (cacheTime.get(Cache.ANGLE) != t) {
+      cacheTime.put(Cache.ANGLE, t);
+      double[] angle = new double[3];
+      Vector3D angleVector1 =
+              Stream.of(Side.RIGHT.v1, Side.RIGHT.v2, Side.RIGHT.v3, Side.RIGHT.v4)
+                      .map(v -> rigidBodies.get(v).position(t))
+                      .reduce(Vector3D::sum)
+                      .get()
+                      .sum(
+                              Stream.of(Side.LEFT.v1, Side.LEFT.v2, Side.LEFT.v3, Side.LEFT.v4)
+                                      .map(v -> rigidBodies.get(v).position(t))
+                                      .reduce(Vector3D::sum)
+                                      .get()
+                                      .times(-1d));
+      Vector3D angleVector2 =
+              Stream.of(Side.FRONT.v1, Side.FRONT.v2, Side.FRONT.v3, Side.FRONT.v4)
+                      .map(v -> rigidBodies.get(v).position(t))
+                      .reduce(Vector3D::sum)
+                      .get()
+                      .sum(
+                              Stream.of(Side.BACK.v1, Side.BACK.v2, Side.BACK.v3, Side.BACK.v4)
+                                      .map(v -> rigidBodies.get(v).position(t))
+                                      .reduce(Vector3D::sum)
+                                      .get()
+                                      .times(-1d));
+      Vector3D angleVector3 =
+              Stream.of(Side.UP.v1, Side.UP.v2, Side.UP.v3, Side.UP.v4)
+                      .map(v -> rigidBodies.get(v).position(t))
+                      .reduce(Vector3D::sum)
+                      .get()
+                      .sum(
+                              Stream.of(Side.DOWN.v1, Side.DOWN.v2, Side.DOWN.v3, Side.DOWN.v4)
+                                      .map(v -> rigidBodies.get(v).position(t))
+                                      .reduce(Vector3D::sum)
+                                      .get()
+                                      .times(-1d));
+      angleVector1 = angleVector1.times(1d / angleVector1.norm());
+      angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2)));
+      angleVector2 = angleVector2.times(1d / angleVector2.norm());
+      angleVector3 =
+              angleVector3.sum(
+                      angleVector1
+                              .times(-angleVector1.scalarProduct(angleVector3))
+                              .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
+      angleVector3 = angleVector3.times(1d / angleVector3.norm());
+      angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
+      angle[1] = Math.asin(-angleVector1.z());
+      angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
+      angleCacher = new Vector3D(angle[0], angle[1], angle[2]);
     }
-    double[] angle = new double[3];
-    Vector3D angleVector1 =
-            Stream.of(Side.RIGHT.v1, Side.RIGHT.v2, Side.RIGHT.v3, Side.RIGHT.v4)
-                    .map(v -> rigidBodies.get(v).position(t))
-                    .reduce(Vector3D::sum)
-                    .get()
-                    .sum(
-                            Stream.of(Side.LEFT.v1, Side.LEFT.v2, Side.LEFT.v3, Side.LEFT.v4)
-                                    .map(v -> rigidBodies.get(v).position(t))
-                                    .reduce(Vector3D::sum)
-                                    .get()
-                                    .times(-1d));
-    Vector3D angleVector2 =
-            Stream.of(Side.FRONT.v1, Side.FRONT.v2, Side.FRONT.v3, Side.FRONT.v4)
-                    .map(v -> rigidBodies.get(v).position(t))
-                    .reduce(Vector3D::sum)
-                    .get()
-                    .sum(
-                            Stream.of(Side.BACK.v1, Side.BACK.v2, Side.BACK.v3, Side.BACK.v4)
-                                    .map(v -> rigidBodies.get(v).position(t))
-                                    .reduce(Vector3D::sum)
-                                    .get()
-                                    .times(-1d));
-    Vector3D angleVector3 =
-            Stream.of(Side.UP.v1, Side.UP.v2, Side.UP.v3, Side.UP.v4)
-                    .map(v -> rigidBodies.get(v).position(t))
-                    .reduce(Vector3D::sum)
-                    .get()
-                    .sum(
-                            Stream.of(Side.DOWN.v1, Side.DOWN.v2, Side.DOWN.v3, Side.DOWN.v4)
-                                    .map(v -> rigidBodies.get(v).position(t))
-                                    .reduce(Vector3D::sum)
-                                    .get()
-                                    .times(-1d));
-    angleVector1 = angleVector1.times(1d / angleVector1.norm());
-    angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2)));
-    angleVector2 = angleVector2.times(1d / angleVector2.norm());
-    angleVector3 =
-            angleVector3.sum(
-                    angleVector1
-                            .times(-angleVector1.scalarProduct(angleVector3))
-                            .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
-    angleVector3 = angleVector3.times(1d / angleVector3.norm());
-    angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
-    angle[1] = Math.asin(-angleVector1.z());
-    angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
-    angleCacher = new Vector3D(angle[0], angle[1], angle[2]);
     return angleCacher;
   }
 
   @Override
   public void assemble(Ode4jEngine engine, Vector3D position) {
-    cacheTime = -1d;
+    for (Cache c : Cache.values()) {
+      cacheTime.put(c, -1d);
+    }
     double centerShift = sphereCToSphereCSideLength / 2d;
     double rigidSphereMass = mass / 8d;
     // building rigid bodies

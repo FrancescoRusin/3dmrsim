@@ -71,6 +71,9 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       System.arraycopy(s.sense(engine), 0, previousStepSensorOutputs, pos, s.outputSize());
       pos += s.outputSize();
     }
+    if (engine.t() - Math.floor(engine.t()) < 1d / 60d) {
+      System.out.println(Arrays.stream(previousStepSensorOutputs).boxed().toList());
+    }
     return List.of();
   }
 }

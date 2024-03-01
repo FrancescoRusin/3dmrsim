@@ -52,7 +52,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
           0,
           TEST_SIDE_LENGTH_STRETCH_RATIO,
           EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-          "a-v",
+          "ang-vlm-vlc",
           d -> {
             EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
             Voxel.Edge[] edgeValues = Voxel.Edge.values();
@@ -73,7 +73,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
           0,
           TEST_SIDE_LENGTH_STRETCH_RATIO,
           EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-          "a-v",
+          "ang-vlm-vlc",
           d -> {
             EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
             Voxel.Edge[] edgeValues = Voxel.Edge.values();
@@ -95,7 +95,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
           0,
           TEST_SIDE_LENGTH_STRETCH_RATIO,
           EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-          "a-v",
+          "ang-vlm-vlc",
           d -> {
             EnumMap<Voxel.Edge, Double> testControllerInput = new EnumMap<>(Voxel.Edge.class);
             Voxel.Edge[] edgeValues = Voxel.Edge.values();
