@@ -29,13 +29,13 @@ public abstract class Body implements AbstractBody {
   protected DGeom collisionGeometry;
 
   @Override
-  public Vector3D position() {
+  public Vector3D position(double t) {
     return new Vector3D(
         body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
   }
 
   @Override
-  public Vector3D velocity() {
+  public Vector3D velocity(double t) {
     return new Vector3D(
         body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
   }

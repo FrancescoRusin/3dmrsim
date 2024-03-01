@@ -45,9 +45,30 @@ public record Vector3D(double x, double y, double z) {
 
   public Vector3D vectorProduct(Vector3D otherVector) {
     return new Vector3D(
-        this.y * otherVector.z - this.z * otherVector.y,
-        this.z * otherVector.x - this.x * otherVector.z,
-        this.x * otherVector.y - this.y * otherVector.x);
+            this.y * otherVector.z - this.z * otherVector.y,
+            this.z * otherVector.x - this.x * otherVector.z,
+            this.x * otherVector.y - this.y * otherVector.x);
+  }
+
+  public Vector3D rotate(Vector3D eulerAngles) {
+    Vector3D sines = new Vector3D(Math.sin(eulerAngles.x()), Math.sin(eulerAngles.y()), Math.sin(eulerAngles.z()));
+    Vector3D cosines = new Vector3D(Math.cos(eulerAngles.x()), Math.cos(eulerAngles.y()), Math.cos(eulerAngles.z()));
+    return new Vector3D(this.x * cosines.z * cosines.y +
+            this.y * (cosines.z * sines.y * sines.x - sines.z * cosines.x) + this.z * (cosines.z * sines.y * cosines.x + sines.z * sines.x),
+            this.x * sines.z * cosines.y +
+                    this.y * (cosines.z * cosines.x + sines.z * sines.y * sines.x) + this.z * (-cosines.z * sines.x + sines.z * sines.y * cosines.x),
+            -this.x * sines.y + this.y * cosines.y * sines.x + this.z * cosines.y * cosines.x);
+  }
+
+  public Vector3D reverseRotate(Vector3D eulerAngles) {
+    Vector3D sines = new Vector3D(Math.sin(-eulerAngles.x()), Math.sin(-eulerAngles.y()), Math.sin(-eulerAngles.z()));
+    Vector3D cosines = new Vector3D(Math.cos(eulerAngles.x()), Math.cos(eulerAngles.y()), Math.cos(eulerAngles.z()));
+    return new Vector3D(
+            this.x * cosines.z * cosines.y - this.y * sines.z * cosines.y + this.z * sines.y,
+            this.x * (cosines.z * sines.y * sines.x + sines.z * cosines.x) +
+                    this.y * (cosines.z * cosines.x - sines.z * sines.y * sines.x) - this.z * cosines.y * sines.x,
+            this.x * (-cosines.z * sines.y * cosines.x + sines.z * sines.x) +
+                    this.y * (cosines.z * sines.x + sines.z * sines.y * cosines.x) + this.z * cosines.y * cosines.x);
   }
 
   public String toString() {

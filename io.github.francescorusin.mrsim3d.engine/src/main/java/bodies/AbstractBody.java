@@ -26,15 +26,15 @@ import geometry.Vector3D;
 public interface AbstractBody {
   double mass();
 
-  double currentVolume();
+  double currentVolume(double t);
 
   BoundingBox boundingBox();
 
-  Vector3D position();
+  Vector3D position(double t);
 
-  Vector3D velocity();
+  Vector3D velocity(double t);
 
-  double[] angle();
+  Vector3D angle(double t);
 
   void assemble(Ode4jEngine engine, Vector3D position);
 }

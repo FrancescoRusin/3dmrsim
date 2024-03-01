@@ -52,13 +52,13 @@ public class Sphere extends Body {
   }
 
   @Override
-  public double currentVolume() {
+  public double currentVolume(double t) {
     return (double) 4 / 3 * Math.PI * Math.pow(radius, 3);
   }
 
   @Override
-  public double[] angle() {
-    return new double[] {0d, 0d};
+  public Vector3D angle(double t) {
+    return new Vector3D();
   }
 
   @Override

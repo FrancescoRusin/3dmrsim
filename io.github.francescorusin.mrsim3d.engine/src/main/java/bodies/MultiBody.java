@@ -39,17 +39,17 @@ public abstract class MultiBody implements AbstractBody {
   }
 
   @Override
-  public Vector3D position() {
+  public Vector3D position(double t) {
     return bodyParts().stream()
-        .map(b -> b.position().times(b.mass()))
+        .map(b -> b.position(t).times(b.mass()))
         .reduce(Vector3D::sum)
         .orElseThrow();
   }
 
   @Override
-  public Vector3D velocity() {
+  public Vector3D velocity(double t) {
     return bodyParts().stream()
-        .map(b -> b.velocity().times(b.mass()))
+        .map(b -> b.velocity(t).times(b.mass()))
         .reduce(Vector3D::sum)
         .orElseThrow();
   }

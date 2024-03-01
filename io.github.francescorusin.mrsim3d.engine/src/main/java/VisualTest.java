@@ -30,6 +30,9 @@ import engine.Ode4jEngine;
 import geometry.Vector3D;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Random;
+import java.util.stream.IntStream;
+
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
@@ -106,7 +109,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
           });
 
   public static void main(String[] args) {
-    new VisualTest().demo(args);
+      new VisualTest().demo(args);
   }
 
   public void demo(String[] args) {
