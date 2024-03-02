@@ -237,24 +237,6 @@ public class Voxel extends MultiBody implements SoftBody {
   }
 
   @Override
-  public Vector3D position(double t) {
-    if (cacheTime.get(Cache.POSITION) != t) {
-      cacheTime.put(Cache.POSITION, t);
-      positionCacher = super.position(t);
-    }
-    return positionCacher;
-  }
-
-  @Override
-  public Vector3D velocity(double t) {
-    if (cacheTime.get(Cache.VELOCITY) != t) {
-      cacheTime.put(Cache.VELOCITY, t);
-      velocityCacher = super.velocity(t);
-    }
-    return velocityCacher;
-  }
-
-  @Override
   public double currentVolume(double t) {
     if (cacheTime.get(Cache.VOLUME) != t) {
       cacheTime.put(Cache.VOLUME, t);
@@ -283,6 +265,24 @@ public class Voxel extends MultiBody implements SoftBody {
       volumeCacher = volume / 6d;
     }
     return volumeCacher;
+  }
+
+  @Override
+  public Vector3D position(double t) {
+    if (cacheTime.get(Cache.POSITION) != t) {
+      cacheTime.put(Cache.POSITION, t);
+      positionCacher = super.position(t);
+    }
+    return positionCacher;
+  }
+
+  @Override
+  public Vector3D velocity(double t) {
+    if (cacheTime.get(Cache.VELOCITY) != t) {
+      cacheTime.put(Cache.VELOCITY, t);
+      velocityCacher = super.velocity(t);
+    }
+    return velocityCacher;
   }
 
   @Override
