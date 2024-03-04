@@ -25,8 +25,8 @@ import org.ode4j.ode.DJoint;
 
 public abstract class MultiBody implements AbstractBody {
   @Override
-  public BoundingBox boundingBox() {
-    return bodyParts().stream().map(Body::boundingBox).reduce(BoundingBox::enclosing).orElseThrow();
+  public BoundingBox boundingBox(double t) {
+    return bodyParts().stream().map(b -> b.boundingBox(t)).reduce(BoundingBox::enclosing).orElseThrow();
   }
 
   abstract List<Body> bodyParts();

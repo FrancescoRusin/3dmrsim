@@ -130,6 +130,12 @@ public class Voxel extends MultiBody implements SoftBody {
   protected Map<UnorderedPair<Vertex>, DDoubleBallJoint> vertexToVertexJoints;
   protected List<Body> ulteriorBodies;
   protected List<Sensor> sensors;
+  private static final double DEFAULT_SPHERE_C_TO_SPHERE_C_SIDE_LENGTH = 0.7;
+  private static final double DEFAULT_RIGID_SPHERE_RADIUS = 0.15;
+  private static final double DEFAULT_MASS = 1d;
+  private static final double DEFAULT_SPRING_CONSTANT = 500d;
+  private static final double DEFAULT_DAMPING_CONSTANT = 100d;
+  private static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .3;
   private final double sphereCToSphereCSideLength;
   private final double rigidSphereRadius;
   private final double mass;
@@ -204,10 +210,21 @@ public class Voxel extends MultiBody implements SoftBody {
       }
     }
   }
+  public Voxel(EnumSet<JointOption> jointOptions, String sensorConfig) {
+    this(DEFAULT_SPHERE_C_TO_SPHERE_C_SIDE_LENGTH, DEFAULT_RIGID_SPHERE_RADIUS, DEFAULT_MASS,
+            DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
+            jointOptions, sensorConfig);
+  }
 
   @Override
   public List<Body> bodyParts() {
     return Stream.concat(rigidBodies.values().stream(), ulteriorBodies.stream()).toList();
+  }
+  public List<Sensor> sensors() {
+    return sensors;
+  }
+  public Body getVertexBody(Vertex v) {
+    return rigidBodies.get(v);
   }
 
   @Override
@@ -467,6 +484,12 @@ public class Voxel extends MultiBody implements SoftBody {
               springConstant,
               dampingConstant));
     }
+  }
+
+  @Override
+  public void rotate(Vector3D eulerAngles) {
+    //TODO
+    return;
   }
 
   public void actOnInput(EnumMap<Edge, Double> input) {

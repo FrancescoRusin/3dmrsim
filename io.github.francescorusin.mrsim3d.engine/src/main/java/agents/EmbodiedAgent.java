@@ -23,6 +23,8 @@ import actions.Action;
 import bodies.AbstractBody;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import test.VisualTest;
+
 import java.util.List;
 
 public interface EmbodiedAgent {
@@ -31,4 +33,5 @@ public interface EmbodiedAgent {
   List<Action> act(Ode4jEngine engine);
 
   void assemble(Ode4jEngine engine, Vector3D position);
+  void draw(VisualTest test);
 }

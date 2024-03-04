@@ -35,7 +35,7 @@ public class Sphere extends Body {
   }
 
   @Override
-  public BoundingBox boundingBox() {
+  public BoundingBox boundingBox(double t) {
     DVector3C center = body.getPosition();
     return new BoundingBox(
         new Vector3D(center.get0() - radius, center.get1() - radius, center.get2() - radius),
@@ -44,11 +44,6 @@ public class Sphere extends Body {
 
   public double getRadius() {
     return radius;
-  }
-
-  @Override
-  public double mass() {
-    return mass.getMass();
   }
 
   @Override
@@ -64,9 +59,12 @@ public class Sphere extends Body {
   @Override
   public void assemble(Ode4jEngine engine, Vector3D position) {
     body = OdeHelper.createBody(engine.getWorld());
-    body.setPosition(position.x(), position.y(), position.z());
-    body.setMass(mass);
     collisionGeometry = OdeHelper.createSphere(engine.getSpace(), radius);
     collisionGeometry.setBody(body);
+    body.setPosition(position.x(), position.y(), position.z());
+    body.setMass(mass);
   }
+
+  @Override
+  public void rotate(Vector3D eulerAngles) {}
 }

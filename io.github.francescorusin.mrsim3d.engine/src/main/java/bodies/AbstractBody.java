@@ -28,7 +28,7 @@ public interface AbstractBody {
 
   double currentVolume(double t);
 
-  BoundingBox boundingBox();
+  BoundingBox boundingBox(double t);
 
   Vector3D position(double t);
 
@@ -37,4 +37,5 @@ public interface AbstractBody {
   Vector3D angle(double t);
 
   void assemble(Ode4jEngine engine, Vector3D position);
+  void rotate(Vector3D eulerAngles);
 }

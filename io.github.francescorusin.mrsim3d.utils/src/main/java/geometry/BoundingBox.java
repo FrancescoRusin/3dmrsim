@@ -21,6 +21,9 @@ package geometry; /*-
 import java.util.Arrays;
 
 public record BoundingBox(Vector3D min, Vector3D max) {
+  public BoundingBox(Vector3D vector) {
+    this(vector, vector);
+  }
   public static BoundingBox enclosing(BoundingBox... boxes) {
     return Arrays.stream(boxes)
         .sequential()
