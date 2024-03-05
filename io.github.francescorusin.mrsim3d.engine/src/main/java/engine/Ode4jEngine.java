@@ -55,7 +55,10 @@ public class Ode4jEngine {
     contact.surface.mode = OdeConstants.dContactBounce;
     contact.surface.mu = 0.1;
     contact.surface.mu2 = 0;
-    contact.surface.bounce = 0d;
+    contact.surface.bounce = 0.1;
+    if (o1 instanceof DBox || o2 instanceof DBox) {
+      System.out.printf("Contact: %s vs %s\n", o1, o2);
+    }
     if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
       OdeHelper.createContactJoint(world, collisionGroup, contact)
           .attach(o1.getBody(), o2.getBody());
@@ -69,6 +72,8 @@ public class Ode4jEngine {
     space = OdeHelper.createHashSpace(null);
     collisionGroup = OdeHelper.createJointGroup();
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
+    world.setERP(0.8);
+    world.setCFM(0.05);
     agents = new ArrayList<>();
     passiveBodies = new ArrayList<>();
     softJoints = new HashMap<>();
@@ -142,6 +147,8 @@ public class Ode4jEngine {
     if (rigidJoints.containsKey(bodyPair)) return rigidJoints.get(bodyPair);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
     joint.attach(body1.getBody(), body2.getBody());
+    joint.setParam(DJoint.PARAM_N.dParamERP1, 1d);
+    joint.setParam(DJoint.PARAM_N.dParamCFM1, 0d);
     rigidJoints.put(bodyPair, joint);
     return joint;
   }

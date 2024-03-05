@@ -31,6 +31,7 @@ import sensors.VolumeRatioSensor;
 import utils.UnorderedPair;
 
 public class Voxel extends MultiBody implements SoftBody {
+  //TODO SWITCH SPHERES WITH CUBES
   public enum Vertex {
     V000,
     V001,

@@ -7,6 +7,7 @@ import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.ode.OdeHelper;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.stream.Stream;
@@ -39,21 +40,41 @@ public class Cube extends Body {
         if (cacheTime.get(Cache.BBOX) != t) {
             Vector3D angle = angle(t);
             List<Vector3D> rotatedVertices =
-                    Stream.of(new Vector3D(1d, 0d, 0d), new Vector3D(-1d, 0d, 0d),
-                    new Vector3D(0d, 1d, 0d), new Vector3D(0d, 1d, 0d),
-                    new Vector3D(0d, 0d, 1d), new Vector3D(0d, 0d, 1d))
-                    .map(v -> v.rotate(angle)).toList();
-            Vector3D mins = rotatedVertices.stream().reduce((v1, v2) ->
-                    new Vector3D(
-                            Math.min(v1.x(), v2.x()),
-                            Math.min(v1.y(), v2.y()),
-                            Math.min(v1.z(), v2.z()))).get();
-            Vector3D maxs = rotatedVertices.stream().reduce((v1, v2) ->
-                    new Vector3D(
-                            Math.max(v1.x(), v2.x()),
-                            Math.max(v1.y(), v2.y()),
-                            Math.max(v1.z(), v2.z()))).get();
-            boundingBoxCacher = new BoundingBox(mins, maxs);
+                    Stream.of(new Vector3D(1d, 1d, 1d), new Vector3D(-1d, 1d, 1d),
+                    new Vector3D(1d, -1d, 1d), new Vector3D(1d, 1d, -1d))
+                    .map(v -> v.times(.5 * sideLength).rotate(angle)).toList();
+            double[] mins = new double[3];
+            double[] maxs = new double[3];
+            Arrays.fill(mins, Double.POSITIVE_INFINITY);
+            Arrays.fill(maxs, Double.NEGATIVE_INFINITY);
+            for (Vector3D v : rotatedVertices) {
+                if (Math.abs(v.x()) > maxs[0]) {
+                    maxs[0] = Math.abs(v.x());
+                }
+                if (Math.abs(v.y()) > maxs[1]) {
+                    maxs[1] = Math.abs(v.y());
+                }
+                if (Math.abs(v.z()) > maxs[2]) {
+                    maxs[2] = Math.abs(v.z());
+                }
+                if (-Math.abs(v.x()) < mins[0]) {
+                    mins[0] = -Math.abs(v.x());
+                }
+                if (-Math.abs(v.y()) < mins[1]) {
+                    mins[1] = -Math.abs(v.y());
+                }
+                if (-Math.abs(v.z()) < mins[2]) {
+                    mins[2] = -Math.abs(v.z());
+                }
+            }
+            Vector3D center = position(t);
+            mins[0] += center.x();
+            maxs[0] += center.x();
+            mins[1] += center.y();
+            maxs[1] += center.y();
+            mins[2] += center.z();
+            maxs[2] += center.z();
+            boundingBoxCacher = new BoundingBox(new Vector3D(mins), new Vector3D(maxs));
         }
         return boundingBoxCacher;
     }

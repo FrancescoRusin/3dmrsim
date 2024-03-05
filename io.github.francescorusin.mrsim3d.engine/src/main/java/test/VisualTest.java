@@ -37,7 +37,7 @@ import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
-    private static final float[] xyz = {0f, -4f, 0.7600f};
+    private static final float[] xyz = {0f, -4f, 1.7600f};
     private static final float[] hpr = {90f, -10f, 0f};
     private final Ode4jEngine engine = new Ode4jEngine();
     private CentralizedGridRobot robot;
@@ -53,15 +53,15 @@ public class VisualTest extends DrawStuff.dsFunctions {
     }
 
     public void demo(String[] args) {
-        Voxel[][][] voxelGrid = new Voxel[3][4][3];
-        for (int x = 0; x < 3; ++x) {
-            for (int y = 0; y < 4; ++y) {
+        Voxel[][][] voxelGrid = new Voxel[4][3][3];
+        for (int y = 0; y < 3; ++y) {
+            for (int x = 0; x < 4; ++x) {
                 for (int z = 1; z < 3; ++z) {
                     voxelGrid[x][y][z] = defaultVoxel();
                 }
             }
-            voxelGrid[x][0][0] = defaultVoxel();
-            voxelGrid[x][3][0] = defaultVoxel();
+            voxelGrid[0][y][0] = defaultVoxel();
+            voxelGrid[3][y][0] = defaultVoxel();
         }
         robot = new CentralizedGridRobot(voxelGrid, 1d, 1d,
                 NumericalStatelessSystem.from(210, 360,
@@ -86,8 +86,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
-        //engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
-        engine.addPassiveBody(new Sphere(.2d, 1d), new Vector3D(0d, 0d, 1d));
+        engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
         dsSetViewpoint(xyz, hpr);
     }
 
@@ -105,7 +104,6 @@ public class VisualTest extends DrawStuff.dsFunctions {
             } else if (body instanceof Sphere sphere) {
                 dsDrawSphere(sphere.getBody().getPosition(), sphere.getBody().getRotation(), sphere.getRadius());
             }
-            System.out.println(body.boundingBox(engine.t()));
         }
         for (DJoint joint : engine.softJoints.values()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {

@@ -59,12 +59,30 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                             engine.addRigidJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V011), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
                             engine.addRigidJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V100));
                             engine.addRigidJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V101));
+                            if (x >= 1 && !Objects.isNull(grid[x - 1][y - 1][z])) {
+                                engine.addRigidJoint(grid[x - 1][y - 1][z].getVertexBody(Voxel.Vertex.V100), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
+                                engine.addRigidJoint(grid[x - 1][y - 1][z].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
+                                engine.addRigidJoint(grid[x - 1][y - 1][z].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
+                                engine.addRigidJoint(grid[x - 1][y - 1][z].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                            }
                         }
                         if (z >= 1 && !Objects.isNull(grid[x][y][z - 1])) {
                             engine.addRigidJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V001), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
                             engine.addRigidJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V011), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
                             engine.addRigidJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V100));
                             engine.addRigidJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V110));
+                            if (y >= 1 && !Objects.isNull(grid[x][y - 1][z - 1])) {
+                                engine.addRigidJoint(grid[x][y - 1][z - 1].getVertexBody(Voxel.Vertex.V010), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
+                                engine.addRigidJoint(grid[x][y - 1][z - 1].getVertexBody(Voxel.Vertex.V011), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
+                                engine.addRigidJoint(grid[x][y - 1][z - 1].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V100));
+                                engine.addRigidJoint(grid[x][y - 1][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V101));
+                                if (x >= 1 && !Objects.isNull(grid[x - 1][y - 1][z - 1])) {
+                                    engine.addRigidJoint(grid[x - 1][y - 1][z - 1].getVertexBody(Voxel.Vertex.V100), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
+                                    engine.addRigidJoint(grid[x - 1][y - 1][z - 1].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
+                                    engine.addRigidJoint(grid[x - 1][y - 1][z - 1].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
+                                    engine.addRigidJoint(grid[x - 1][y - 1][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                                }
+                            }
                         }
                     }
                 }

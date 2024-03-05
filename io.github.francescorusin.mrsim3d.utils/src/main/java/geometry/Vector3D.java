@@ -23,6 +23,13 @@ public record Vector3D(double x, double y, double z) {
     this(0d, 0d, 0d);
   }
 
+  public Vector3D(double[] array) {
+    this(array[0], array[1], array[2]);
+    if (array.length != 3) {
+      throw new IllegalArgumentException(String.format("Attempted to construct a Vector3D with the wrong number of parameters (%d)", array.length));
+    }
+  }
+
   public double norm() {
     return Math.sqrt(x * x + y * y + z * z);
   }
@@ -69,9 +76,5 @@ public record Vector3D(double x, double y, double z) {
                     this.y * (cosines.z * cosines.x - sines.z * sines.y * sines.x) - this.z * cosines.y * sines.x,
             this.x * (-cosines.z * sines.y * cosines.x + sines.z * sines.x) +
                     this.y * (cosines.z * sines.x + sines.z * sines.y * cosines.x) + this.z * cosines.y * cosines.x);
-  }
-
-  public String toString() {
-    return String.format("[%f, %f, %f]", x, y, z);
   }
 }
