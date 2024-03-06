@@ -89,16 +89,4 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     }
     return List.of();
   }
-
-  @Override
-  public void draw(VisualTest test) {
-    dsSetColor(1, 1, 0);
-    dsSetTexture(DrawStuff.DS_TEXTURE_NUMBER.DS_WOOD);
-    for (Body body : bodyParts()) {
-      dsDrawSphere(
-              body.getBody().getPosition(),
-              body.getBody().getRotation(),
-              ((Sphere) body).getRadius());
-    }
-  }
 }

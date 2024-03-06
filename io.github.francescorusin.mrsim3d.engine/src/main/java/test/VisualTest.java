@@ -22,6 +22,7 @@ import static drawstuff.DrawStuff.*;
 
 import agents.CentralizedGridRobot;
 import agents.EmbodiedAgent;
+import agents.SingleVoxelAgent;
 import bodies.Body;
 import bodies.Cube;
 import bodies.Sphere;
@@ -31,13 +32,15 @@ import engine.Ode4jEngine;
 import geometry.Vector3D;
 
 import java.util.EnumSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
-    private static final float[] xyz = {0f, -4f, 1.7600f};
+    private static final float[] xyz = {0f, -4f, 2.7600f};
     private static final float[] hpr = {90f, -10f, 0f};
     private final Ode4jEngine engine = new Ode4jEngine();
     private CentralizedGridRobot robot;
@@ -69,11 +72,14 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[360];
                             int index = -1;
                             for (int v = 0; v < 30; ++v) {
-                                for (int i = 0; i < 12; ++i) {
+                                for (int i = 0; i < 4; ++i) {
                                     outputArray[++index] = 0d;
                                 }
                                 for (int i = 0; i < 4; ++i) {
-                                    //outputArray[++index] = Math.sin(t);
+                                    outputArray[++index] = 0d;
+                                }
+                                for (int i = 0; i < 4; ++i) {
+                                    outputArray[++index] = Math.sin(t);
                                 }
                             }
                             return outputArray;
@@ -87,6 +93,24 @@ public class VisualTest extends DrawStuff.dsFunctions {
     @Override
     public void start() {
         engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
+        /*engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 16d,
+                1000d, 20d, 0.2,
+                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL), "",
+                NumericalStatelessSystem.from(0, 12,
+                        (t, inputs) -> {
+                            double[] outputArray = new double[12];
+                            int index = -1;
+                            for (int i = 0; i < 4; ++i) {
+                                outputArray[++index] = Math.sin(t);
+                            }
+                            for (int i = 0; i < 4; ++i) {
+                                outputArray[++index] = 0d;
+                            }
+                            for (int i = 0; i < 4; ++i) {
+                                outputArray[++index] = 0d;
+                            }
+                            return outputArray;
+                        })), new Vector3D(0d, 0d, 1d));*/
         dsSetViewpoint(xyz, hpr);
     }
 
@@ -96,23 +120,11 @@ public class VisualTest extends DrawStuff.dsFunctions {
             engine.tick();
         }
         engine.getAgents().forEach(agent -> agent.draw(this));
-        dsSetColor(1, 1, 1);
-        dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
-        for (Body body : engine.passiveBodies) {
-            if (body instanceof Cube cube) {
-                dsDrawBox(cube.getBody().getPosition(), cube.getBody().getRotation(), new DVector3(1d, 1d, 1d));
-            } else if (body instanceof Sphere sphere) {
-                dsDrawSphere(sphere.getBody().getPosition(), sphere.getBody().getRotation(), sphere.getRadius());
-            }
-        }
-        for (DJoint joint : engine.softJoints.values()) {
-            if (joint instanceof DDoubleBallJoint doubleBallJoint) {
-                dsDrawLine(
-                        doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
-            }
+        for (Body body : engine.getPassiveBodies()) {
+            body.draw(this);
         }
         dsSetColor(1, 1, 1);
-        for (DJoint joint : engine.rigidJoints.values()) {
+        for (DJoint joint : engine.rigidJoints.values().stream().flatMap(List::stream).toList()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {
                 dsDrawLine(
                         doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
@@ -122,6 +134,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void command(char cmd) {
+        engine.tick();
     }
 
     @Override

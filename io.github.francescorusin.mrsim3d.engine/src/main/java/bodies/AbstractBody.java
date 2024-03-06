@@ -22,6 +22,7 @@ package bodies;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
+import test.VisualTest;
 
 public interface AbstractBody {
   double mass();
@@ -38,4 +39,6 @@ public interface AbstractBody {
 
   void assemble(Ode4jEngine engine, Vector3D position);
   void rotate(Vector3D eulerAngles);
+  //TODO REPLACE DRAWER
+  void draw(VisualTest test);
 }

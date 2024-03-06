@@ -5,12 +5,16 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
+import org.ode4j.math.DVector3;
 import org.ode4j.ode.OdeHelper;
+import test.VisualTest;
 
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static drawstuff.DrawStuff.*;
 
 public class Cube extends Body {
     private final double sideLength;
@@ -30,6 +34,10 @@ public class Cube extends Body {
         cacheTime = new EnumMap<>(Cache.class);
     }
 
+    public double getSideLength() {
+        return sideLength;
+    }
+
     @Override
     public double currentVolume(double t) {
         return sideLength * sideLength * sideLength;
@@ -41,8 +49,8 @@ public class Cube extends Body {
             Vector3D angle = angle(t);
             List<Vector3D> rotatedVertices =
                     Stream.of(new Vector3D(1d, 1d, 1d), new Vector3D(-1d, 1d, 1d),
-                    new Vector3D(1d, -1d, 1d), new Vector3D(1d, 1d, -1d))
-                    .map(v -> v.times(.5 * sideLength).rotate(angle)).toList();
+                                    new Vector3D(1d, -1d, 1d), new Vector3D(1d, 1d, -1d))
+                            .map(v -> v.times(.5 * sideLength).rotate(angle)).toList();
             double[] mins = new double[3];
             double[] maxs = new double[3];
             Arrays.fill(mins, Double.POSITIVE_INFINITY);
@@ -115,5 +123,13 @@ public class Cube extends Body {
                 rotationBase[0].y(), rotationBase[1].y(), rotationBase[2].y(),
                 rotationBase[0].z(), rotationBase[1].z(), rotationBase[2].z());
         body.setRotation(new DMatrix3().eqMul(rotationMatrix, body.getRotation()));
+    }
+
+    @Override
+    public void draw(VisualTest test) {
+        dsSetColor(0, 0, 1);
+        dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
+        dsDrawBox(body.getPosition(), body.getRotation(),
+                new DVector3(sideLength, sideLength, sideLength));
     }
 }

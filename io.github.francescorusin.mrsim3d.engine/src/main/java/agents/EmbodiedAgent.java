@@ -33,5 +33,6 @@ public interface EmbodiedAgent {
   List<Action> act(Ode4jEngine engine);
 
   void assemble(Ode4jEngine engine, Vector3D position);
+  //TODO REPLACE DRAWER
   void draw(VisualTest test);
 }

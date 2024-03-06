@@ -28,10 +28,19 @@ import sensors.AngleSensor;
 import sensors.Sensor;
 import sensors.VelocitySensor;
 import sensors.VolumeRatioSensor;
+import test.VisualTest;
 import utils.UnorderedPair;
 
+import static drawstuff.DrawStuff.*;
+
 public class Voxel extends MultiBody implements SoftBody {
-  //TODO SWITCH SPHERES WITH CUBES
+  //TODO ADD CENTRAL BODY
+  private static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.7;
+  private static final double DEFAULT_RIGID_SPHERE_RADIUS = 0.15;
+  private static final double DEFAULT_MASS = 4d;
+  private static final double DEFAULT_SPRING_CONSTANT = 1000d;
+  private static final double DEFAULT_DAMPING_CONSTANT = 20d;
+  private static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
   public enum Vertex {
     V000,
     V001,
@@ -131,13 +140,7 @@ public class Voxel extends MultiBody implements SoftBody {
   protected Map<UnorderedPair<Vertex>, DDoubleBallJoint> vertexToVertexJoints;
   protected List<Body> ulteriorBodies;
   protected List<Sensor> sensors;
-  private static final double DEFAULT_SPHERE_C_TO_SPHERE_C_SIDE_LENGTH = 0.7;
-  private static final double DEFAULT_RIGID_SPHERE_RADIUS = 0.15;
-  private static final double DEFAULT_MASS = 1d;
-  private static final double DEFAULT_SPRING_CONSTANT = 500d;
-  private static final double DEFAULT_DAMPING_CONSTANT = 100d;
-  private static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .3;
-  private final double sphereCToSphereCSideLength;
+  private final double bodyCenterToBodyCenterLength;
   private final double rigidSphereRadius;
   private final double mass;
   private final double springConstant;
@@ -156,7 +159,7 @@ public class Voxel extends MultiBody implements SoftBody {
   private double volumeCacher;
 
   public Voxel(
-      double sphereCToSphereCSideLength,
+      double bodyCenterToBodyCenterLength,
       double rigidSphereRadius,
       double mass,
       double springConstant,
@@ -166,14 +169,14 @@ public class Voxel extends MultiBody implements SoftBody {
       String sensorConfig) {
     this.springConstant = springConstant;
     this.dampingConstant = dampingConstant;
-    if (sphereCToSphereCSideLength < rigidSphereRadius * 2) {
+    if (bodyCenterToBodyCenterLength < rigidSphereRadius * 2) {
       throw new IllegalArgumentException(
           String.format(
               "Attempted to construct voxel with invalid rigid sphere length ratio (length %.2f on total %.2f)",
-              rigidSphereRadius, sphereCToSphereCSideLength));
+              rigidSphereRadius, bodyCenterToBodyCenterLength));
     }
     this.rigidSphereRadius = rigidSphereRadius;
-    this.sphereCToSphereCSideLength = sphereCToSphereCSideLength;
+    this.bodyCenterToBodyCenterLength = bodyCenterToBodyCenterLength;
     this.mass = mass;
     this.edgeLengthControlRatio =
         new double[] {
@@ -188,9 +191,9 @@ public class Voxel extends MultiBody implements SoftBody {
           edgeLengthControlRatio[0] * Math.sqrt(3), edgeLengthControlRatio[1] * Math.sqrt(3)
         };
     this.restVolume =
-        this.sphereCToSphereCSideLength
-            * this.sphereCToSphereCSideLength
-            * this.sphereCToSphereCSideLength;
+        this.bodyCenterToBodyCenterLength
+            * this.bodyCenterToBodyCenterLength
+            * this.bodyCenterToBodyCenterLength;
     this.jointOptions = jointOptions;
     this.rigidBodies = new EnumMap<>(Vertex.class);
     this.vertexToVertexJoints = new LinkedHashMap<>();
@@ -212,7 +215,7 @@ public class Voxel extends MultiBody implements SoftBody {
     }
   }
   public Voxel(EnumSet<JointOption> jointOptions, String sensorConfig) {
-    this(DEFAULT_SPHERE_C_TO_SPHERE_C_SIDE_LENGTH, DEFAULT_RIGID_SPHERE_RADIUS, DEFAULT_MASS,
+    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_SPHERE_RADIUS, DEFAULT_MASS,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             jointOptions, sensorConfig);
   }
@@ -363,7 +366,7 @@ public class Voxel extends MultiBody implements SoftBody {
     for (Cache c : Cache.values()) {
       cacheTime.put(c, -1d);
     }
-    double centerShift = sphereCToSphereCSideLength / 2d;
+    double centerShift = bodyCenterToBodyCenterLength / 2d;
     double rigidSphereMass = mass / 8d;
     // building rigid bodies
     for (Vertex v : Vertex.values()) {
@@ -443,7 +446,7 @@ public class Voxel extends MultiBody implements SoftBody {
                 rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant));
       }
     }
-    if (jointOptions.contains(JointOption.SIDES)) {
+    /*if (jointOptions.contains(JointOption.SIDES)) {
       for (Side s : Side.values()) {
         vertexToVertexJoints.put(
             new UnorderedPair<>(s.v1, s.v3),
@@ -484,13 +487,69 @@ public class Voxel extends MultiBody implements SoftBody {
               rigidBodies.get(Vertex.V100),
               springConstant,
               dampingConstant));
+    }*/
+    if (jointOptions.contains(JointOption.EDGES)) {
+      for (Edge e : Edge.values()) {
+        vertexToVertexJoints.put(
+                new UnorderedPair<>(e.v1, e.v2),
+                engine.addSpringJoint(
+                        rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant));
+      }
+    }
+    if (jointOptions.contains(JointOption.SIDES)) {
+      for (Side s : Side.values()) {
+        vertexToVertexJoints.put(
+                new UnorderedPair<>(s.v1, s.v3),
+                engine.addRigidJoint(
+                        rigidBodies.get(s.v1), rigidBodies.get(s.v3)));
+        vertexToVertexJoints.put(
+                new UnorderedPair<>(s.v2, s.v4),
+                engine.addRigidJoint(
+                        rigidBodies.get(s.v2), rigidBodies.get(s.v4)));
+      }
+    }
+    if (jointOptions.contains(JointOption.INTERNAL)) {
+      vertexToVertexJoints.put(
+              new UnorderedPair<>(Vertex.V000, Vertex.V111),
+              engine.addRigidJoint(
+                      rigidBodies.get(Vertex.V000),
+                      rigidBodies.get(Vertex.V111)));
+      vertexToVertexJoints.put(
+              new UnorderedPair<>(Vertex.V001, Vertex.V110),
+              engine.addRigidJoint(
+                      rigidBodies.get(Vertex.V001),
+                      rigidBodies.get(Vertex.V110)));
+      vertexToVertexJoints.put(
+              new UnorderedPair<>(Vertex.V010, Vertex.V101),
+              engine.addRigidJoint(
+                      rigidBodies.get(Vertex.V010),
+                      rigidBodies.get(Vertex.V101)));
+      vertexToVertexJoints.put(
+              new UnorderedPair<>(Vertex.V011, Vertex.V100),
+              engine.addRigidJoint(
+                      rigidBodies.get(Vertex.V011),
+                      rigidBodies.get(Vertex.V100)));
     }
   }
 
   @Override
   public void rotate(Vector3D eulerAngles) {
     //TODO
-    return;
+  }
+
+  @Override
+  public void draw(VisualTest test) {
+    for (Body body : bodyParts()) {
+      body.draw(test);
+    }
+    dsSetColor(0, 0, 0);
+    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
+    for (DJoint joint : internalJoints()) {
+      if (joint instanceof DDoubleBallJoint doubleBallJoint) {
+        dsDrawLine(
+                doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
+      }
+    }
   }
 
   public void actOnInput(EnumMap<Edge, Double> input) {
@@ -505,7 +564,7 @@ public class Voxel extends MultiBody implements SoftBody {
         vertexToVertexJoints
             .get(new UnorderedPair<>(edge.v1, edge.v2))
             .setDistance(
-                sphereCToSphereCSideLength
+                bodyCenterToBodyCenterLength
                     * (edgeLengthControlRatio[0]
                         + actualInput.get(edge)
                             * (edgeLengthControlRatio[1] - edgeLengthControlRatio[0])));
@@ -519,13 +578,13 @@ public class Voxel extends MultiBody implements SoftBody {
         vertexToVertexJoints
             .get(new UnorderedPair<>(side.v1, side.v3))
             .setDistance(
-                sphereCToSphereCSideLength
+                bodyCenterToBodyCenterLength
                     * (sideLengthControlRatio[0]
                         + sideValue * (sideLengthControlRatio[1] - sideLengthControlRatio[0])));
         vertexToVertexJoints
             .get(new UnorderedPair<>(side.v2, side.v4))
             .setDistance(
-                sphereCToSphereCSideLength
+                bodyCenterToBodyCenterLength
                     * (sideLengthControlRatio[0]
                         + sideValue * (sideLengthControlRatio[1] - sideLengthControlRatio[0])));
       }
@@ -537,28 +596,28 @@ public class Voxel extends MultiBody implements SoftBody {
       vertexToVertexJoints
           .get(new UnorderedPair<>(Vertex.V000, Vertex.V111))
           .setDistance(
-              sphereCToSphereCSideLength
+              bodyCenterToBodyCenterLength
                   * (internalLengthControlRatio[0]
                       + internalValue
                           * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
       vertexToVertexJoints
           .get(new UnorderedPair<>(Vertex.V001, Vertex.V110))
           .setDistance(
-              sphereCToSphereCSideLength
+              bodyCenterToBodyCenterLength
                   * (internalLengthControlRatio[0]
                       + internalValue
                           * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
       vertexToVertexJoints
           .get(new UnorderedPair<>(Vertex.V010, Vertex.V101))
           .setDistance(
-              sphereCToSphereCSideLength
+              bodyCenterToBodyCenterLength
                   * (internalLengthControlRatio[0]
                       + internalValue
                           * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));
       vertexToVertexJoints
           .get(new UnorderedPair<>(Vertex.V011, Vertex.V100))
           .setDistance(
-              sphereCToSphereCSideLength
+              bodyCenterToBodyCenterLength
                   * (internalLengthControlRatio[0]
                       + internalValue
                           * (internalLengthControlRatio[1] - internalLengthControlRatio[0])));

@@ -24,6 +24,9 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.OdeHelper;
+import test.VisualTest;
+
+import static drawstuff.DrawStuff.*;
 
 public class Sphere extends Body {
   private final double radius;
@@ -67,4 +70,11 @@ public class Sphere extends Body {
 
   @Override
   public void rotate(Vector3D eulerAngles) {}
+
+  @Override
+  public void draw(VisualTest test) {
+    dsSetColor(1, 0, 0);
+    dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
+    dsDrawSphere(body.getPosition(), body.getRotation(), radius);
+  }
 }
