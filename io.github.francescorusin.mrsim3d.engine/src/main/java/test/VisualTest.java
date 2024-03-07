@@ -21,11 +21,7 @@ package test;/*-
 import static drawstuff.DrawStuff.*;
 
 import agents.CentralizedGridRobot;
-import agents.EmbodiedAgent;
-import agents.SingleVoxelAgent;
 import bodies.Body;
-import bodies.Cube;
-import bodies.Sphere;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
@@ -33,10 +29,8 @@ import geometry.Vector3D;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
-import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
@@ -51,7 +45,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     private static Voxel defaultVoxel() {
         return new Voxel(
-                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
+                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES),
                 "ang-vlm-vlc");
     }
 
@@ -93,9 +87,9 @@ public class VisualTest extends DrawStuff.dsFunctions {
     @Override
     public void start() {
         engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
-        /*engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 16d,
+        /*engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 1d, .5,
                 1000d, 20d, 0.2,
-                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL), "",
+                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES), "",
                 NumericalStatelessSystem.from(0, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
@@ -124,17 +118,20 @@ public class VisualTest extends DrawStuff.dsFunctions {
             body.draw(this);
         }
         dsSetColor(1, 1, 1);
-        for (DJoint joint : engine.rigidJoints.values().stream().flatMap(List::stream).toList()) {
+        for (DJoint joint : engine.fixedJoints.values().stream().flatMap(List::stream).toList()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {
                 dsDrawLine(
                         doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
+            }
+            if (joint instanceof DFixedJoint fixedJoint) {
+                dsDrawLine(
+                        fixedJoint.getBody(0).getPosition(), fixedJoint.getBody(1).getPosition());
             }
         }
     }
 
     @Override
     public void command(char cmd) {
-        engine.tick();
     }
 
     @Override

@@ -25,7 +25,6 @@ import geometry.Vector3D;
 import java.util.*;
 
 import org.ode4j.math.DVector3;
-import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
 import utils.UnorderedPair;
 
@@ -38,8 +37,9 @@ public class Ode4jEngine {
   private final double timeStep;
   protected List<EmbodiedAgent> agents;
   protected List<Body> passiveBodies;
+  protected Map<DGeom, List<DGeom>> collisionExceptions;
   public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> softJoints;
-  public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> rigidJoints;
+  public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
   protected DGeom terrain;
   protected Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
 
@@ -69,6 +69,9 @@ public class Ode4jEngine {
 
   private void collision(DGeom o1, DGeom o2) {
     // TODO IMPROVE COLLISION STUFF
+    if (!Objects.isNull(collisionExceptions.get(o1)) && collisionExceptions.get(o1).contains(o2)) {
+      return;
+    }
     DContactBuffer contacts = new DContactBuffer(1);
     DContact contact = contacts.get(0);
     contact.surface.mode = 0;
@@ -91,7 +94,8 @@ public class Ode4jEngine {
     agents = new ArrayList<>();
     passiveBodies = new ArrayList<>();
     softJoints = new HashMap<>();
-    rigidJoints = new HashMap<>();
+    fixedJoints = new HashMap<>();
+    collisionExceptions = new HashMap<>();
     // TODO ADD TERRAINS
     terrain = OdeHelper.createPlane(space, 0, 0, 1, 0);
     time = 0d;
@@ -162,24 +166,32 @@ public class Ode4jEngine {
           Body body1, Body body2, double springConstant, double dampingConstant) {
     return addSpringJoint(body1, body2, springConstant, dampingConstant, new Vector3D(), new Vector3D());
   }
-  public DDoubleBallJoint addRigidJoint(Body body1, Body body2, Vector3D position1, Vector3D position2) {
+  public DFixedJoint addFixedJoint(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
-    DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
+    DFixedJoint joint = OdeHelper.createFixedJoint(world);
     joint.attach(body1.getBody(), body2.getBody());
+    joint.setFixed();
     joint.setParam(DJoint.PARAM_N.dParamERP1, 1d);
     joint.setParam(DJoint.PARAM_N.dParamCFM1, 0d);
-    moveAnchors(joint, position1, position2);
-    if (Objects.isNull(rigidJoints.get(bodyPair))) {
-      rigidJoints.put(bodyPair, new ArrayList<>());
+    if (Objects.isNull(fixedJoints.get(bodyPair))) {
+      fixedJoints.put(bodyPair, new ArrayList<>());
     }
-    rigidJoints.get(bodyPair).add(joint);
+    fixedJoints.get(bodyPair).add(joint);
     return joint;
-  }
-  public DDoubleBallJoint addRigidJoint(Body body1, Body body2) {
-    return addRigidJoint(body1, body2, new Vector3D(), new Vector3D());
   }
 
   public void unleash(Body body1, Body body2) {
     //TODO
+  }
+
+  public void addCollisionException(Body body1, Body body2) {
+    if (Objects.isNull(collisionExceptions.get(body1.getCollisionGeometry()))) {
+      collisionExceptions.put(body1.getCollisionGeometry(), new ArrayList<>());
+    }
+    collisionExceptions.get(body1.getCollisionGeometry()).add(body2.getCollisionGeometry());
+    if (Objects.isNull(collisionExceptions.get(body2.getCollisionGeometry()))) {
+      collisionExceptions.put(body2.getCollisionGeometry(), new ArrayList<>());
+    }
+    collisionExceptions.get(body2.getCollisionGeometry()).add(body1.getCollisionGeometry());
   }
 }

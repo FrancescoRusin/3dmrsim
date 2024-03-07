@@ -7,13 +7,13 @@ import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
+import org.ode4j.ode.DDoubleBallJoint;
+import org.ode4j.ode.DJoint;
 import sensors.Sensor;
 import test.VisualTest;
+import utils.UnorderedPair;
 
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static drawstuff.DrawStuff.*;
 
