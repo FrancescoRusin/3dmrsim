@@ -89,7 +89,7 @@ public class Ode4jEngine {
     space = OdeHelper.createHashSpace(null);
     collisionGroup = OdeHelper.createJointGroup();
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
-    world.setERP(0.8);
+    world.setERP(0.9);
     world.setCFM(0.05);
     agents = new ArrayList<>();
     passiveBodies = new ArrayList<>();

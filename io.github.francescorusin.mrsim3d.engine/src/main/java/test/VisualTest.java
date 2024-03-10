@@ -21,6 +21,7 @@ package test;/*-
 import static drawstuff.DrawStuff.*;
 
 import agents.CentralizedGridRobot;
+import agents.SingleVoxelAgent;
 import bodies.Body;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
@@ -31,6 +32,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
+import org.ode4j.math.DVector3;
+import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
@@ -45,7 +48,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     private static Voxel defaultVoxel() {
         return new Voxel(
-                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES),
+                EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS),
                 "ang-vlm-vlc");
     }
 
@@ -86,25 +89,25 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
-        engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
-        /*engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 1d, .5,
-                1000d, 20d, 0.2,
-                EnumSet.of(Voxel.JointOption.EDGES, Voxel.JointOption.SIDES), "",
+        //engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
+        engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 1d, .5,
+                10000d, 2d, 0.2,
+                EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS), "",
                 NumericalStatelessSystem.from(0, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
                             int index = -1;
                             for (int i = 0; i < 4; ++i) {
+                                outputArray[++index] = 0d;
+                            }
+                            for (int i = 0; i < 4; ++i) {
+                                outputArray[++index] = 0d;
+                            }
+                            for (int i = 0; i < 4; ++i) {
                                 outputArray[++index] = Math.sin(t);
                             }
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 0d;
-                            }
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 0d;
-                            }
                             return outputArray;
-                        })), new Vector3D(0d, 0d, 1d));*/
+                        })), new Vector3D(0d, 0d, 2d));
         dsSetViewpoint(xyz, hpr);
     }
 
@@ -118,20 +121,23 @@ public class VisualTest extends DrawStuff.dsFunctions {
             body.draw(this);
         }
         dsSetColor(1, 1, 1);
+        DVector3 anchor1 = new DVector3();
+        DVector3 anchor2 = new DVector3();
         for (DJoint joint : engine.fixedJoints.values().stream().flatMap(List::stream).toList()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {
-                dsDrawLine(
-                        doubleBallJoint.getBody(0).getPosition(), doubleBallJoint.getBody(1).getPosition());
+                doubleBallJoint.getAnchor1(anchor1);
+                doubleBallJoint.getAnchor2(anchor2);
+                dsDrawLine(anchor1, anchor2);
             }
             if (joint instanceof DFixedJoint fixedJoint) {
-                dsDrawLine(
-                        fixedJoint.getBody(0).getPosition(), fixedJoint.getBody(1).getPosition());
+                dsDrawLine(fixedJoint.getBody(0).getPosition(), fixedJoint.getBody(1).getPosition());
             }
         }
     }
 
     @Override
     public void command(char cmd) {
+        engine.tick();
     }
 
     @Override
