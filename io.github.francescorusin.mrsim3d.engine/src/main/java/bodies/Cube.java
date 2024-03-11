@@ -127,8 +127,8 @@ public class Cube extends Body {
 
     @Override
     public void draw(VisualTest test) {
-        dsSetColor(0, 0, 1);
-        dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
+        dsSetColor(1, 0, 0);
+        dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
         dsDrawBox(body.getPosition(), body.getRotation(),
                 new DVector3(sideLength, sideLength, sideLength));
     }

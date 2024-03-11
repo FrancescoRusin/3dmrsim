@@ -39,8 +39,8 @@ public class Voxel extends MultiBody implements SoftBody {
   private static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.7;
   private static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
   private static final double DEFAULT_MASS = 1d;
-  private static final double DEFAULT_SPRING_CONSTANT = 300d;
-  private static final double DEFAULT_DAMPING_CONSTANT = 300d;
+  private static final double DEFAULT_SPRING_CONSTANT = 100d;
+  private static final double DEFAULT_DAMPING_CONSTANT = 20d;
   private static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
   private static final double DEFAULT_CENTER_SPHERE_MASS_RATIO = .5;
 
@@ -151,7 +151,8 @@ public class Voxel extends MultiBody implements SoftBody {
   protected EnumMap<Vertex, Body> rigidBodies;
   protected Map<UnorderedPair<Vertex>, List<DDoubleBallJoint>> vertexToVertexJoints;
   protected Map<Vertex, DDoubleBallJoint> centralJoints;
-  protected Map<DDoubleBallJoint, Double> jointRestLength;
+  protected Map<DDoubleBallJoint, Double> jointMaxLength;
+  protected Map<DDoubleBallJoint, Double> jointMinLength;
   protected List<Body> ulteriorBodies;
   protected List<Sensor> sensors;
   private final double bodyCenterToBodyCenterLength;
@@ -371,7 +372,8 @@ public class Voxel extends MultiBody implements SoftBody {
     rigidBodies = new EnumMap<>(Vertex.class);
     vertexToVertexJoints = new LinkedHashMap<>();
     centralJoints = new LinkedHashMap<>();
-    jointRestLength = new LinkedHashMap<>();
+    jointMaxLength = new LinkedHashMap<>();
+    jointMinLength = new LinkedHashMap<>();
     for (Cache c : Cache.values()) {
       cacheTime.put(c, -1d);
     }
@@ -457,10 +459,11 @@ public class Voxel extends MultiBody implements SoftBody {
       }
     }
     double squareTick = rigidBodyLength / 2;
-    double restLength;
+    double maxLength, minLength;
     DDoubleBallJoint joint;
     if (jointOptions.contains(JointOption.EDGES_PARALLEL)) {
-      restLength = bodyCenterToBodyCenterLength - rigidBodyLength;
+      maxLength = (bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[1];
+      minLength = (bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[0];
       for (Edge e : Edge.values()) {
         int differentIndex = e.v1.name().charAt(1) != e.v2.name().charAt(1) ? 0 :
                 e.v1.name().charAt(2) != e.v2.name().charAt(2) ? 1 : 2;
@@ -482,14 +485,16 @@ public class Voxel extends MultiBody implements SoftBody {
               default -> null;
             };
             vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-            jointRestLength.put(joint, restLength);
+            jointMaxLength.put(joint, maxLength);
+            jointMinLength.put(joint, minLength);
           }
         }
       }
     }
     if (jointOptions.contains(JointOption.EDGES_CROSSES)) {
       Vector3D firstPosition;
-      restLength = Math.sqrt(Math.pow(bodyCenterToBodyCenterLength - rigidBodyLength, 2) + Math.pow(rigidBodyLength, 2));
+      maxLength = Math.sqrt(Math.pow((bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[1], 2) + Math.pow(rigidBodyLength, 2));
+      minLength = Math.sqrt(Math.pow((bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[0], 2) + Math.pow(rigidBodyLength, 2));
       for (Edge e : Edge.values()) {
         int differentIndex = e.v1.name().charAt(1) != e.v2.name().charAt(1) ? 0 :
                 e.v1.name().charAt(2) != e.v2.name().charAt(2) ? 1 : 2;
@@ -502,12 +507,14 @@ public class Voxel extends MultiBody implements SoftBody {
                         firstPosition,
                         new Vector3D(-squareTick, squareTick * a, -squareTick * b));
                 vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-                jointRestLength.put(joint, restLength);
+                jointMaxLength.put(joint, maxLength);
+                jointMinLength.put(joint, minLength);
                 joint = engine.addSpringJoint(rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant,
                         firstPosition,
                         new Vector3D(-squareTick, -squareTick * a, squareTick * b));
                 vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-                jointRestLength.put(joint, restLength);
+                jointMaxLength.put(joint, maxLength);
+                jointMinLength.put(joint, minLength);
               }
               case 1 -> {
                 firstPosition = new Vector3D(squareTick * a, squareTick, squareTick * b);
@@ -515,12 +522,14 @@ public class Voxel extends MultiBody implements SoftBody {
                         firstPosition,
                         new Vector3D(squareTick * a, -squareTick, -squareTick * b));
                 vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-                jointRestLength.put(joint, restLength);
+                jointMaxLength.put(joint, maxLength);
+                jointMinLength.put(joint, minLength);
                 joint = engine.addSpringJoint(rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant,
                         firstPosition,
                         new Vector3D(-squareTick * a, -squareTick, squareTick * b));
                 vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-                jointRestLength.put(joint, restLength);
+                jointMaxLength.put(joint, maxLength);
+                jointMinLength.put(joint, minLength);
               }
               case 2 -> {
                 firstPosition = new Vector3D(squareTick * a, squareTick * b, squareTick);
@@ -528,12 +537,14 @@ public class Voxel extends MultiBody implements SoftBody {
                         firstPosition,
                         new Vector3D(squareTick * a, -squareTick * b, -squareTick));
                 vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-                jointRestLength.put(joint, restLength);
+                jointMaxLength.put(joint, maxLength);
+                jointMinLength.put(joint, minLength);
                 joint = engine.addSpringJoint(rigidBodies.get(e.v1), rigidBodies.get(e.v2), springConstant, dampingConstant,
                         firstPosition,
                         new Vector3D(-squareTick * a, squareTick * b, -squareTick));
                 vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-                jointRestLength.put(joint, restLength);
+                jointMaxLength.put(joint, maxLength);
+                jointMinLength.put(joint, minLength);
               }
             }
           }
@@ -541,7 +552,8 @@ public class Voxel extends MultiBody implements SoftBody {
       }
     }
     if (jointOptions.contains(JointOption.EDGES_DIAGONALS)) {
-      restLength = Math.sqrt(Math.pow(bodyCenterToBodyCenterLength - rigidBodyLength, 2) + 2 * Math.pow(rigidBodyLength, 2));
+      maxLength = Math.sqrt(Math.pow((bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[1], 2) + 2 * Math.pow(rigidBodyLength, 2));
+      minLength = Math.sqrt(Math.pow((bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[0], 2) + 2 * Math.pow(rigidBodyLength, 2));
       for (Edge e : Edge.values()) {
         int differentIndex = e.v1.name().charAt(1) != e.v2.name().charAt(1) ? 0 :
                 e.v1.name().charAt(2) != e.v2.name().charAt(2) ? 1 : 2;
@@ -563,39 +575,48 @@ public class Voxel extends MultiBody implements SoftBody {
               default -> null;
             };
             vertexToVertexJoints.get(new UnorderedPair<>(e.v1, e.v2)).add(joint);
-            jointRestLength.put(joint, restLength);
+            jointMaxLength.put(joint, maxLength);
+            jointMinLength.put(joint, minLength);
           }
         }
       }
     }
     if (jointOptions.contains(JointOption.SIDES)) {
-      restLength = bodyCenterToBodyCenterLength * Math.sqrt(2);
+      maxLength = bodyCenterToBodyCenterLength * edgeLengthControlRatio[1] * Math.sqrt(2);
+      minLength = bodyCenterToBodyCenterLength * edgeLengthControlRatio[0] * Math.sqrt(2);
       for (Side s : Side.values()) {
         joint = engine.addSpringJoint(rigidBodies.get(s.v1), rigidBodies.get(s.v3), springConstant, dampingConstant);
         vertexToVertexJoints.get(new UnorderedPair<>(s.v1, s.v3)).add(joint);
-        jointRestLength.put(joint, restLength);
+        jointMaxLength.put(joint, maxLength);
+        jointMinLength.put(joint, minLength);
         joint = engine.addSpringJoint(rigidBodies.get(s.v2), rigidBodies.get(s.v4), springConstant, dampingConstant);
         vertexToVertexJoints.get(new UnorderedPair<>(s.v2, s.v4)).add(joint);
-        jointRestLength.put(joint, restLength);
+        jointMaxLength.put(joint, maxLength);
+        jointMinLength.put(joint, minLength);
       }
     }
     if (jointOptions.contains(JointOption.INTERNAL)) {
-      restLength = bodyCenterToBodyCenterLength * Math.sqrt(3);
+      maxLength = bodyCenterToBodyCenterLength * edgeLengthControlRatio[1] * Math.sqrt(3);
+      minLength = bodyCenterToBodyCenterLength * edgeLengthControlRatio[0] * Math.sqrt(3);
       joint = engine.addSpringJoint(rigidBodies.get(Vertex.V000), rigidBodies.get(Vertex.V111), springConstant, dampingConstant);
       vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V000, Vertex.V111)).add(joint);
-      jointRestLength.put(joint, restLength);
+      jointMaxLength.put(joint, maxLength);
+      jointMinLength.put(joint, minLength);
       joint = engine.addSpringJoint(rigidBodies.get(Vertex.V001), rigidBodies.get(Vertex.V110), springConstant, dampingConstant);
       vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V001, Vertex.V110)).add(joint);
-      jointRestLength.put(joint, restLength);
+      jointMaxLength.put(joint, maxLength);
+      jointMinLength.put(joint, minLength);
       joint = engine.addSpringJoint(rigidBodies.get(Vertex.V010), rigidBodies.get(Vertex.V101), springConstant, dampingConstant);
       vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V010, Vertex.V101)).add(joint);
-      jointRestLength.put(joint, restLength);
+      jointMaxLength.put(joint, maxLength);
+      jointMinLength.put(joint, minLength);
       joint = engine.addSpringJoint(rigidBodies.get(Vertex.V011), rigidBodies.get(Vertex.V100), springConstant, dampingConstant);
       vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V011, Vertex.V100)).add(joint);
-      jointRestLength.put(joint, restLength);
+      jointMaxLength.put(joint, maxLength);
+      jointMinLength.put(joint, minLength);
     }
-    for (DDoubleBallJoint dJoint : jointRestLength.keySet()) {
-      dJoint.setDistance(jointRestLength.get(dJoint));
+    for (DDoubleBallJoint dJoint : jointMaxLength.keySet()) {
+      dJoint.setDistance((jointMaxLength.get(dJoint) + jointMinLength.get(dJoint)) / 2);
     }
   }
 
@@ -626,27 +647,27 @@ public class Voxel extends MultiBody implements SoftBody {
     // input is assumed to already be in [-1;1]; we have no time to waste on checks
     //TODO REFACTOR ACTUATION
 
-    EnumMap<Edge, Double> newLengthRatio = new EnumMap<>(Edge.class);
+    EnumMap<Edge, Double> denormalizedInput = new EnumMap<>(Edge.class);
     for (Edge edge : Edge.values()) {
-      newLengthRatio.put(edge, (edgeLengthControlRatio[0] + (edgeLengthControlRatio[1] - edgeLengthControlRatio[0]) * (input.get(edge) * .5 + .5)));
+      denormalizedInput.put(edge, (input.get(edge) * .5 + .5));
     }
 
     // apply on edges
     for (Edge edge : Edge.values()) {
       for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(edge.v1, edge.v2))) {
-        joint.setDistance(newLengthRatio.get(edge) * jointRestLength.get(joint));
+        joint.setDistance(jointMinLength.get(joint) + denormalizedInput.get(edge) * (jointMaxLength.get(joint) - jointMinLength.get(joint)));
       }
     }
 
     // apply on sides
     if (jointOptions.contains(JointOption.SIDES)) {
       for (Side side : Side.values()) {
-        final double sideValue = Math.sqrt(side.edges.stream().mapToDouble(newLengthRatio::get).map(d -> d * d).sum() / 2d);
+        final double sideValue = side.edges.stream().mapToDouble(denormalizedInput::get).average().orElse(0d);
         for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(side.v1, side.v3))) {
-          joint.setDistance(sideValue * jointRestLength.get(joint));
+          joint.setDistance(jointMinLength.get(joint) + sideValue * (jointMaxLength.get(joint) - jointMinLength.get(joint)));
         }
         for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(side.v2, side.v4))) {
-          joint.setDistance(sideValue * jointRestLength.get(joint));
+          joint.setDistance(jointMinLength.get(joint) + sideValue * (jointMaxLength.get(joint) - jointMinLength.get(joint)));
         }
       }
     }
@@ -658,20 +679,27 @@ public class Voxel extends MultiBody implements SoftBody {
         vertexAverage.put(v, 0d);
       }
       for (Edge e : Edge.values()) {
-        vertexAverage.put(e.v1, vertexAverage.get(e.v1) + newLengthRatio.get(e) * newLengthRatio.get(e));
-        vertexAverage.put(e.v2, vertexAverage.get(e.v2) + newLengthRatio.get(e) * newLengthRatio.get(e));
+        vertexAverage.put(e.v1, vertexAverage.get(e.v1) + denormalizedInput.get(e));
+        vertexAverage.put(e.v2, vertexAverage.get(e.v2) + denormalizedInput.get(e));
+      }
+      for (Vertex v : Vertex.values()) {
+        vertexAverage.put(v, vertexAverage.get(v));
       }
       for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V000, Vertex.V111))) {
-        joint.setDistance(Math.sqrt((vertexAverage.get(Vertex.V000) + vertexAverage.get(Vertex.V111)) / 2) * jointRestLength.get(joint));
+        joint.setDistance(jointMinLength.get(joint) + (vertexAverage.get(Vertex.V000) + vertexAverage.get(Vertex.V111)) *
+                (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 6);
       }
       for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V001, Vertex.V110))) {
-        joint.setDistance(Math.sqrt((vertexAverage.get(Vertex.V001) + vertexAverage.get(Vertex.V110)) / 2) * jointRestLength.get(joint));
+        joint.setDistance(jointMinLength.get(joint) + (vertexAverage.get(Vertex.V001) + vertexAverage.get(Vertex.V110)) *
+                (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 6);
       }
       for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V010, Vertex.V101))) {
-        joint.setDistance(Math.sqrt((vertexAverage.get(Vertex.V010) + vertexAverage.get(Vertex.V101)) / 2) * jointRestLength.get(joint));
+        joint.setDistance(jointMinLength.get(joint) + (vertexAverage.get(Vertex.V010) + vertexAverage.get(Vertex.V101)) *
+                (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 6);
       }
       for (DDoubleBallJoint joint : vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V011, Vertex.V100))) {
-        joint.setDistance(Math.sqrt((vertexAverage.get(Vertex.V011) + vertexAverage.get(Vertex.V100)) / 2) * jointRestLength.get(joint));
+        joint.setDistance(jointMinLength.get(joint) + (vertexAverage.get(Vertex.V011) + vertexAverage.get(Vertex.V100)) *
+                (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 6);
       }
     }
   }

@@ -73,7 +73,7 @@ public class Sphere extends Body {
 
   @Override
   public void draw(VisualTest test) {
-    dsSetColor(1, 0, 0);
+    dsSetColor(0, 1, 0);
     dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
     dsDrawSphere(body.getPosition(), body.getRotation(), radius);
   }
