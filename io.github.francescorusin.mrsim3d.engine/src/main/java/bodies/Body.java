@@ -18,6 +18,7 @@ package bodies; /*-
                  * =========================LICENSE_END==================================
                  */
 
+import engine.Ode4jEngine;
 import geometry.Vector3D;
 import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
@@ -31,6 +32,10 @@ public abstract class Body implements AbstractBody {
   @Override
   public double mass() {
     return mass.getMass();
+  }
+
+  public DGeom getCollisionGeometry(Ode4jEngine engine, double t) {
+    return collisionGeometry;
   }
 
   @Override
@@ -47,9 +52,5 @@ public abstract class Body implements AbstractBody {
 
   public DBody getBody() {
     return body;
-  }
-
-  public DGeom getCollisionGeometry() {
-    return collisionGeometry;
   }
 }

@@ -21,6 +21,8 @@ package bodies; /*-
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.List;
+
+import org.ode4j.ode.DGeom;
 import org.ode4j.ode.DJoint;
 
 public abstract class MultiBody implements AbstractBody {
@@ -29,9 +31,9 @@ public abstract class MultiBody implements AbstractBody {
     return bodyParts().stream().map(b -> b.boundingBox(t)).reduce(BoundingBox::enclosing).orElseThrow();
   }
 
-  abstract List<Body> bodyParts();
+  public abstract List<Body> bodyParts();
 
-  abstract List<? extends DJoint> internalJoints();
+  public abstract List<? extends DJoint> internalJoints();
 
   @Override
   public double mass() {

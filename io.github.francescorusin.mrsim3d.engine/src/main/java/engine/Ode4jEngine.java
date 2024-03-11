@@ -20,7 +20,9 @@ package engine; /*-
 
 import actions.Action;
 import agents.EmbodiedAgent;
+import bodies.AbstractBody;
 import bodies.Body;
+import bodies.MultiBody;
 import geometry.Vector3D;
 import java.util.*;
 
@@ -115,6 +117,22 @@ public class Ode4jEngine {
   }
 
   public Snapshot tick() {
+    Map<DGeom, List<DGeom>> newGeometries = new LinkedHashMap<>();
+    for (EmbodiedAgent agent : agents) {
+      DGeom cg = agent.getCollisionGeometry(this, time);
+      newGeometries.put(cg, new ArrayList<>());
+      for (AbstractBody abstractBody : agent.getComponents()) {
+        if (abstractBody instanceof Body body) {
+          addCollisionException(cg, body.getCollisionGeometry(this, time));
+          newGeometries.get(cg).add(body.getCollisionGeometry(this, time));
+        } else if (abstractBody instanceof MultiBody multiBody) {
+          for (Body body : multiBody.bodyParts()) {
+            addCollisionException(cg, body.getCollisionGeometry(this, time));
+            newGeometries.get(cg).add(body.getCollisionGeometry(this, time));
+          }
+        }
+      }
+    }
     world.quickStep(timeStep);
     collisionGroup.clear();
     space.collide(space, (data, o1, o2) -> collision(o1, o2));
@@ -125,6 +143,11 @@ public class Ode4jEngine {
     }
     for (Action action : actions) {
       action.execute(this);
+    }
+    for (DGeom newGeometry1 : newGeometries.keySet()) {
+      for (DGeom newGeometry2 : newGeometries.get(newGeometry1)) {
+        removeCollisionException(newGeometry1, newGeometry2);
+      }
     }
     // TODO SNAPSHOT
     return null;
@@ -184,14 +207,22 @@ public class Ode4jEngine {
     //TODO
   }
 
-  public void addCollisionException(Body body1, Body body2) {
-    if (Objects.isNull(collisionExceptions.get(body1.getCollisionGeometry()))) {
-      collisionExceptions.put(body1.getCollisionGeometry(), new ArrayList<>());
+  public void addCollisionException(DGeom geom1, DGeom geom2) {
+    if (Objects.isNull(collisionExceptions.get(geom1))) {
+      collisionExceptions.put(geom1, new ArrayList<>());
     }
-    collisionExceptions.get(body1.getCollisionGeometry()).add(body2.getCollisionGeometry());
-    if (Objects.isNull(collisionExceptions.get(body2.getCollisionGeometry()))) {
-      collisionExceptions.put(body2.getCollisionGeometry(), new ArrayList<>());
+    collisionExceptions.get(geom1).add(geom2);
+    if (Objects.isNull(collisionExceptions.get(geom2))) {
+      collisionExceptions.put(geom2, new ArrayList<>());
     }
-    collisionExceptions.get(body2.getCollisionGeometry()).add(body1.getCollisionGeometry());
+    collisionExceptions.get(geom2).add(geom1);
+  }
+
+  public void removeCollisionException(DGeom geom1, DGeom geom2) {
+    if (Objects.isNull(collisionExceptions.get(geom1)) || !collisionExceptions.get(geom1).contains(geom2)) {
+      return;
+    }
+    collisionExceptions.get(geom1).remove(geom2);
+    collisionExceptions.get(geom2).remove(geom1);
   }
 }

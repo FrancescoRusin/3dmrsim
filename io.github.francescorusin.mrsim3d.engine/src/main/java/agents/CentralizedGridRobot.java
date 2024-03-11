@@ -8,6 +8,7 @@ import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import org.ode4j.ode.DDoubleBallJoint;
+import org.ode4j.ode.DGeom;
 import org.ode4j.ode.DJoint;
 import sensors.Sensor;
 import test.VisualTest;
@@ -38,9 +39,9 @@ public class CentralizedGridRobot extends AbstractGridRobot {
     @Override
     public List<Action> act(Ode4jEngine engine) {
         //TODO REMOVE DEBUG LIMITATION
-        if (engine.t() > 1d / 60d) {
+        /*if (engine.t() > 1d / 60d) {
             return List.of();
-        }
+        }*/
         double[] controllerOutput = controller.step(engine.t(), previousStepSensorOutputs);
         EnumMap<Voxel.Edge, Double> controlMap = new EnumMap<>(Voxel.Edge.class);
         int index = -1;

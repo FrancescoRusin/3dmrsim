@@ -21,6 +21,7 @@ package test;/*-
 import static drawstuff.DrawStuff.*;
 
 import agents.CentralizedGridRobot;
+import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
 import bodies.Body;
 import bodies.Voxel;
@@ -90,8 +91,8 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
-        engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
-        /*engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 1d, .5,
+        //engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
+        engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 1d, .5,
                 100d, 20d, 0.2,
                 EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS), "",
                 NumericalStatelessSystem.from(0, 12,
@@ -108,7 +109,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                                 outputArray[++index] = Math.sin(t);
                             }
                             return outputArray;
-                        })), new Vector3D(0d, 0d, 2d));*/
+                        })), new Vector3D(0d, 0d, 2d));
         dsSetViewpoint(xyz, hpr);
     }
 

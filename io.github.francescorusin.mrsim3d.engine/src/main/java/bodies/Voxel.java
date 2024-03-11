@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
+import org.ode4j.ode.OdeHelper;
 import sensors.AngleSensor;
 import sensors.Sensor;
 import sensors.VelocitySensor;
@@ -36,13 +37,13 @@ import utils.UnorderedPair;
 import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody {
-  private static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.7;
+  private static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
   private static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
   private static final double DEFAULT_MASS = 1d;
   private static final double DEFAULT_SPRING_CONSTANT = 100d;
   private static final double DEFAULT_DAMPING_CONSTANT = 20d;
   private static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
-  private static final double DEFAULT_CENTER_SPHERE_MASS_RATIO = .5;
+  private static final double DEFAULT_CENTER_SPHERE_MASS_RATIO = 0d;
 
   public enum Vertex {
     V000,
@@ -62,11 +63,11 @@ public class Voxel extends MultiBody implements SoftBody {
     BACK(Vertex.V000, Vertex.V100, Vertex.V101, Vertex.V001),
     RIGHT(Vertex.V100, Vertex.V110, Vertex.V111, Vertex.V101),
     LEFT(Vertex.V000, Vertex.V001, Vertex.V011, Vertex.V010);
-    private final Vertex v1;
-    private final Vertex v2;
-    private final Vertex v3;
-    private final Vertex v4;
-    private final List<Edge> edges;
+    public final Vertex v1;
+    public final Vertex v2;
+    public final Vertex v3;
+    public final Vertex v4;
+    public final List<Edge> edges;
 
     Side(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
       this.v1 = v1;
@@ -85,10 +86,6 @@ public class Voxel extends MultiBody implements SoftBody {
           edges.add(e);
         }
       }
-    }
-
-    public List<Edge> edges() {
-      return edges;
     }
 
     public List<Vertex> vertices() {
@@ -110,8 +107,8 @@ public class Voxel extends MultiBody implements SoftBody {
     SIDE_FR(Vertex.V110, Vertex.V111),
     SIDE_FL(Vertex.V010, Vertex.V011);
 
-    private final Vertex v1;
-    private final Vertex v2;
+    public final Vertex v1;
+    public final Vertex v2;
 
     Edge(Vertex v1, Vertex v2) {
       this.v1 = v1;
@@ -126,10 +123,10 @@ public class Voxel extends MultiBody implements SoftBody {
     T4(Vertex.V000, Vertex.V100, Vertex.V101, Vertex.V111),
     T5(Vertex.V000, Vertex.V010, Vertex.V110, Vertex.V111),
     T6(Vertex.V000, Vertex.V100, Vertex.V110, Vertex.V111);
-    private final Vertex v1;
-    private final Vertex v2;
-    private final Vertex v3;
-    private final Vertex v4;
+    public final Vertex v1;
+    public final Vertex v2;
+    public final Vertex v3;
+    public final Vertex v4;
 
     Tetrahedron(Vertex v1, Vertex v2, Vertex v3, Vertex v4) {
       this.v1 = v1;
@@ -377,8 +374,9 @@ public class Voxel extends MultiBody implements SoftBody {
     for (Cache c : Cache.values()) {
       cacheTime.put(c, -1d);
     }
-    double centerShift = bodyCenterToBodyCenterLength / 2d;
-    double rigidSphereMass = mass / 8d;
+    double vertexBodyCenterShift = bodyCenterToBodyCenterLength / 2d;
+    double centralSphereMass = centralMassRatio * mass;
+    double rigidSphereMass = (mass - centralSphereMass) / 8d;
 
     // building rigid bodies
     for (Vertex v : Vertex.values()) {
@@ -389,65 +387,65 @@ public class Voxel extends MultiBody implements SoftBody {
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() - centerShift,
-                            position.y() - centerShift,
-                            position.z() - centerShift));
+                            position.x() - vertexBodyCenterShift,
+                            position.y() - vertexBodyCenterShift,
+                            position.z() - vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V001)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() - centerShift,
-                            position.y() - centerShift,
-                            position.z() + centerShift));
+                            position.x() - vertexBodyCenterShift,
+                            position.y() - vertexBodyCenterShift,
+                            position.z() + vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V010)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() - centerShift,
-                            position.y() + centerShift,
-                            position.z() - centerShift));
+                            position.x() - vertexBodyCenterShift,
+                            position.y() + vertexBodyCenterShift,
+                            position.z() - vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V011)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() - centerShift,
-                            position.y() + centerShift,
-                            position.z() + centerShift));
+                            position.x() - vertexBodyCenterShift,
+                            position.y() + vertexBodyCenterShift,
+                            position.z() + vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V100)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() + centerShift,
-                            position.y() - centerShift,
-                            position.z() - centerShift));
+                            position.x() + vertexBodyCenterShift,
+                            position.y() - vertexBodyCenterShift,
+                            position.z() - vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V101)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() + centerShift,
-                            position.y() - centerShift,
-                            position.z() + centerShift));
+                            position.x() + vertexBodyCenterShift,
+                            position.y() - vertexBodyCenterShift,
+                            position.z() + vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V110)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() + centerShift,
-                            position.y() + centerShift,
-                            position.z() - centerShift));
+                            position.x() + vertexBodyCenterShift,
+                            position.y() + vertexBodyCenterShift,
+                            position.z() - vertexBodyCenterShift));
     rigidBodies
             .get(Vertex.V111)
             .assemble(
                     engine,
                     new Vector3D(
-                            position.x() + centerShift,
-                            position.y() + centerShift,
-                            position.z() + centerShift));
+                            position.x() + vertexBodyCenterShift,
+                            position.y() + vertexBodyCenterShift,
+                            position.z() + vertexBodyCenterShift));
     ulteriorBodies = new ArrayList<>();
 
     // building joints
@@ -614,9 +612,6 @@ public class Voxel extends MultiBody implements SoftBody {
       vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V011, Vertex.V100)).add(joint);
       jointMaxLength.put(joint, maxLength);
       jointMinLength.put(joint, minLength);
-    }
-    for (DDoubleBallJoint dJoint : jointMaxLength.keySet()) {
-      dJoint.setDistance((jointMaxLength.get(dJoint) + jointMinLength.get(dJoint)) / 2);
     }
   }
 

@@ -3,6 +3,9 @@ package agents;
 import bodies.*;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import org.ode4j.ode.DGeom;
+import org.ode4j.ode.DTriMesh;
+import org.ode4j.ode.OdeHelper;
 import test.VisualTest;
 import utils.UnorderedPair;
 
@@ -11,6 +14,7 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractGridRobot implements EmbodiedAgent {
     protected final Voxel[][][] grid;
+    protected final List<Body> borderBodies;
     protected final double voxelSideLength;
     protected final double voxelMass;
     protected final Set<UnorderedPair<Voxel>> intraVoxelLocks;
@@ -20,11 +24,17 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         this.voxelSideLength = voxelSideLength;
         this.voxelMass = voxelMass;
         this.intraVoxelLocks = new HashSet<>(grid.length * grid[0].length * grid[0][0].length * 6);
+        borderBodies = new ArrayList<>();
     }
 
     @Override
     public List<AbstractBody> getComponents() {
         return Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream)).collect(Collectors.toList());
+    }
+
+    @Override
+    public DGeom getCollisionGeometry(Ode4jEngine engine, double t) {
+        return null;
     }
 
     @Override
@@ -119,6 +129,20 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                         if (x < grid.length - 1 && y < grid[0].length - 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x + 1][y + 1][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x + 1][y + 1][z + 1], grid[x][y][z]));
                             engine.addFixedJoint(grid[x + 1][y + 1][z + 1].getVertexBody(Voxel.Vertex.V000), grid[x][y][z].getVertexBody(Voxel.Vertex.V111));
+                        }
+                    }
+                }
+            }
+        }
+        for (int x = 0; x < grid.length; ++x) {
+            for (int y = 0; y < grid[0].length; ++y) {
+                for (int z = 0; z < grid[0][0].length; ++z) {
+                    if (!Objects.isNull(grid[x][y][z])) {
+                        if (x == 0 || Objects.isNull(grid[x - 1][y][z])) {
+                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
+                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
+                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
+                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
                         }
                     }
                 }
