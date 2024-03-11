@@ -117,6 +117,7 @@ public class Ode4jEngine {
   }
 
   public Snapshot tick() {
+    //TODO FIX
     Map<DGeom, List<DGeom>> newGeometries = new LinkedHashMap<>();
     for (EmbodiedAgent agent : agents) {
       DGeom cg = agent.getCollisionGeometry(this, time);
