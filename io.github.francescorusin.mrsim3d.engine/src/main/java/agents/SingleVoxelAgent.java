@@ -28,8 +28,6 @@ import java.util.*;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import sensors.Sensor;
 
-import static drawstuff.DrawStuff.dsDrawLine;
-
 public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
   private final NumericalDynamicalSystem<?> controller;
