@@ -117,7 +117,6 @@ public class Ode4jEngine {
   }
 
   public Snapshot tick() {
-    //TODO FIX
     Map<DGeom, List<DGeom>> newGeometries = new LinkedHashMap<>();
     for (EmbodiedAgent agent : agents) {
       DGeom cg = agent.getCollisionGeometry(this, time);
@@ -149,8 +148,25 @@ public class Ode4jEngine {
       for (DGeom newGeometry2 : newGeometries.get(newGeometry1)) {
         removeCollisionException(newGeometry1, newGeometry2);
       }
+      newGeometry1.destroy();
     }
     // TODO SNAPSHOT
+    return null;
+  }
+
+  // performance testing method
+  public Snapshot noCollisionTick() {
+    world.quickStep(timeStep);
+    collisionGroup.clear();
+    space.collide(space, (data, o1, o2) -> collision(o1, o2));
+    time += timeStep;
+    List<Action> actions = new ArrayList<>();
+    for (EmbodiedAgent agent : agents) {
+      actions.addAll(agent.act(this));
+    }
+    for (Action action : actions) {
+      action.execute(this);
+    }
     return null;
   }
 
@@ -225,5 +241,10 @@ public class Ode4jEngine {
     }
     collisionExceptions.get(geom1).remove(geom2);
     collisionExceptions.get(geom2).remove(geom1);
+  }
+  public void destroy() {
+    space.destroy();
+    world.destroy();
+    collisionGroup.destroy();
   }
 }
