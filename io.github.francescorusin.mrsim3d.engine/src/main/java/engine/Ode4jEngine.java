@@ -20,9 +20,7 @@ package engine; /*-
 
 import actions.Action;
 import agents.EmbodiedAgent;
-import bodies.AbstractBody;
 import bodies.Body;
-import bodies.MultiBody;
 import geometry.Vector3D;
 import java.util.*;
 
@@ -104,11 +102,11 @@ public class Ode4jEngine {
     timeStep = 1d / 60d;
   }
 
-  public List<EmbodiedAgent> getAgents() {
+  public List<EmbodiedAgent> agents() {
     return agents;
   }
 
-  public List<Body> getPassiveBodies() {
+  public List<Body> passiveBodies() {
     return passiveBodies;
   }
 
@@ -117,22 +115,6 @@ public class Ode4jEngine {
   }
 
   public Snapshot tick() {
-    Map<DGeom, List<DGeom>> newGeometries = new LinkedHashMap<>();
-    for (EmbodiedAgent agent : agents) {
-      DGeom cg = agent.getCollisionGeometry(this, time);
-      newGeometries.put(cg, new ArrayList<>());
-      for (AbstractBody abstractBody : agent.getComponents()) {
-        if (abstractBody instanceof Body body) {
-          addCollisionException(cg, body.getCollisionGeometry(this, time));
-          newGeometries.get(cg).add(body.getCollisionGeometry(this, time));
-        } else if (abstractBody instanceof MultiBody multiBody) {
-          for (Body body : multiBody.bodyParts()) {
-            addCollisionException(cg, body.getCollisionGeometry(this, time));
-            newGeometries.get(cg).add(body.getCollisionGeometry(this, time));
-          }
-        }
-      }
-    }
     world.quickStep(timeStep);
     collisionGroup.clear();
     space.collide(space, (data, o1, o2) -> collision(o1, o2));
@@ -143,38 +125,16 @@ public class Ode4jEngine {
     }
     for (Action action : actions) {
       action.execute(this);
-    }
-    for (DGeom newGeometry1 : newGeometries.keySet()) {
-      for (DGeom newGeometry2 : newGeometries.get(newGeometry1)) {
-        removeCollisionException(newGeometry1, newGeometry2);
-      }
-      newGeometry1.destroy();
     }
     // TODO SNAPSHOT
     return null;
   }
 
-  // performance testing method
-  public Snapshot noCollisionTick() {
-    world.quickStep(timeStep);
-    collisionGroup.clear();
-    space.collide(space, (data, o1, o2) -> collision(o1, o2));
-    time += timeStep;
-    List<Action> actions = new ArrayList<>();
-    for (EmbodiedAgent agent : agents) {
-      actions.addAll(agent.act(this));
-    }
-    for (Action action : actions) {
-      action.execute(this);
-    }
-    return null;
-  }
-
-  public DWorld getWorld() {
+  public DWorld world() {
     return world;
   }
 
-  public DSpace getSpace() {
+  public DSpace space() {
     return space;
   }
 
@@ -192,7 +152,7 @@ public class Ode4jEngine {
       Body body1, Body body2, double springConstant, double dampingConstant, Vector3D position1, Vector3D position2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
-    joint.attach(body1.getBody(), body2.getBody());
+    joint.attach(body1.dBody(), body2.dBody());
     joint.setParam(DJoint.PARAM_N.dParamERP1, ERP(springConstant, dampingConstant));
     joint.setParam(DJoint.PARAM_N.dParamCFM1, CFM(springConstant, dampingConstant));
     moveAnchors(joint, position1, position2);
@@ -209,7 +169,7 @@ public class Ode4jEngine {
   public DFixedJoint addFixedJoint(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     DFixedJoint joint = OdeHelper.createFixedJoint(world);
-    joint.attach(body1.getBody(), body2.getBody());
+    joint.attach(body1.dBody(), body2.dBody());
     joint.setFixed();
     joint.setParam(DJoint.PARAM_N.dParamERP1, 1d);
     joint.setParam(DJoint.PARAM_N.dParamCFM1, 0d);

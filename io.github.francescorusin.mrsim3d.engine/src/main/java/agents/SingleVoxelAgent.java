@@ -42,8 +42,6 @@ import static drawstuff.DrawStuff.dsDrawLine;
 public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
   private final NumericalDynamicalSystem<?> controller;
-  private double cacheTime;
-  private DGeom collisionGeometry;
 
   public SingleVoxelAgent(
       double sphereCToSphereCSideLength,
@@ -74,7 +72,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   }
 
   @Override
-  public List<AbstractBody> getComponents() {
+  public List<AbstractBody> components() {
     return List.of(this);
   }
 
@@ -93,39 +91,5 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       pos += s.outputSize();
     }
     return List.of();
-  }
-
-  @Override
-  public void assemble(Ode4jEngine engine, Vector3D position) {
-    cacheTime = -1d;
-    super.assemble(engine, position);
-  }
-
-  @Override
-  public DGeom getCollisionGeometry(Ode4jEngine engine, double t) {
-    if (cacheTime != t) {
-      float[] vertices = new float[24];
-      int[] indices = new int[36];
-      int index = -1;
-      for (Side s : Side.values()) {
-        indices[++index] = s.v1.ordinal();
-        indices[++index] = s.v2.ordinal();
-        indices[++index] = s.v3.ordinal();
-        indices[++index] = s.v3.ordinal();
-        indices[++index] = s.v4.ordinal();
-        indices[++index] = s.v1.ordinal();
-      }
-      index = -1;
-      for (Vertex v : Vertex.values()) {
-        Vector3D currentPosition = rigidBodies.get(v).position(t);
-        vertices[++index] = (float) currentPosition.x();
-        vertices[++index] = (float) currentPosition.y();
-        vertices[++index] = (float) currentPosition.z();
-      }
-      DTriMeshData triMeshData = OdeHelper.createTriMeshData();
-      triMeshData.build(vertices, indices);
-      collisionGeometry = OdeHelper.createTriMesh(engine.getSpace(), triMeshData, null, null, null);
-    }
-    return collisionGeometry;
   }
 }

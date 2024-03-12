@@ -38,10 +38,6 @@ public class CentralizedGridRobot extends AbstractGridRobot {
 
     @Override
     public List<Action> act(Ode4jEngine engine) {
-        //TODO REMOVE DEBUG LIMITATION
-        /*if (engine.t() > 1d / 60d) {
-            return List.of();
-        }*/
         double[] controllerOutput = controller.step(engine.t(), previousStepSensorOutputs);
         EnumMap<Voxel.Edge, Double> controlMap = new EnumMap<>(Voxel.Edge.class);
         int index = -1;

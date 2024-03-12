@@ -3,9 +3,6 @@ package agents;
 import bodies.*;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import org.ode4j.ode.DGeom;
-import org.ode4j.ode.DTriMesh;
-import org.ode4j.ode.OdeHelper;
 import test.VisualTest;
 import utils.UnorderedPair;
 
@@ -28,13 +25,8 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     }
 
     @Override
-    public List<AbstractBody> getComponents() {
+    public List<AbstractBody> components() {
         return Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream)).collect(Collectors.toList());
-    }
-
-    @Override
-    public DGeom getCollisionGeometry(Ode4jEngine engine, double t) {
-        return null;
     }
 
     @Override
@@ -65,70 +57,70 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                     if (!Objects.isNull(grid[x][y][z])) {
                         if (x >= 1 && !Objects.isNull(grid[x - 1][y][z])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y][z], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y][z].getVertexBody(Voxel.Vertex.V100), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            engine.addFixedJoint(grid[x - 1][y][z].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
-                            engine.addFixedJoint(grid[x - 1][y][z].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
-                            engine.addFixedJoint(grid[x - 1][y][z].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                            engine.addFixedJoint(grid[x - 1][y][z].vertexBody(Voxel.Vertex.V100), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x - 1][y][z].vertexBody(Voxel.Vertex.V101), grid[x][y][z].vertexBody(Voxel.Vertex.V001));
+                            engine.addFixedJoint(grid[x - 1][y][z].vertexBody(Voxel.Vertex.V110), grid[x][y][z].vertexBody(Voxel.Vertex.V010));
+                            engine.addFixedJoint(grid[x - 1][y][z].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V011));
                         }
                         if (y >= 1 && !Objects.isNull(grid[x][y - 1][z])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x][y - 1][z], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V010), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            engine.addFixedJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V011), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
-                            engine.addFixedJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V100));
-                            engine.addFixedJoint(grid[x][y - 1][z].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V101));
+                            engine.addFixedJoint(grid[x][y - 1][z].vertexBody(Voxel.Vertex.V010), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x][y - 1][z].vertexBody(Voxel.Vertex.V011), grid[x][y][z].vertexBody(Voxel.Vertex.V001));
+                            engine.addFixedJoint(grid[x][y - 1][z].vertexBody(Voxel.Vertex.V110), grid[x][y][z].vertexBody(Voxel.Vertex.V100));
+                            engine.addFixedJoint(grid[x][y - 1][z].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V101));
                         }
                         if (z >= 1 && !Objects.isNull(grid[x][y][z - 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x][y][z - 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V001), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            engine.addFixedJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V011), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
-                            engine.addFixedJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V100));
-                            engine.addFixedJoint(grid[x][y][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V110));
+                            engine.addFixedJoint(grid[x][y][z - 1].vertexBody(Voxel.Vertex.V001), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x][y][z - 1].vertexBody(Voxel.Vertex.V011), grid[x][y][z].vertexBody(Voxel.Vertex.V010));
+                            engine.addFixedJoint(grid[x][y][z - 1].vertexBody(Voxel.Vertex.V101), grid[x][y][z].vertexBody(Voxel.Vertex.V100));
+                            engine.addFixedJoint(grid[x][y][z - 1].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V110));
                         }
                         if (x >= 1 && y >= 1 && !Objects.isNull(grid[x - 1][y - 1][z])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y - 1][z], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y - 1][z].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            engine.addFixedJoint(grid[x - 1][y - 1][z].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
+                            engine.addFixedJoint(grid[x - 1][y - 1][z].vertexBody(Voxel.Vertex.V110), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x - 1][y - 1][z].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V001));
                         }
                         if (x >= 1 && z >= 1 && !Objects.isNull(grid[x - 1][y][z - 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y][z - 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y][z - 1].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            engine.addFixedJoint(grid[x - 1][y][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
+                            engine.addFixedJoint(grid[x - 1][y][z - 1].vertexBody(Voxel.Vertex.V101), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x - 1][y][z - 1].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V010));
                         }
                         if (y >= 1 && z >= 1 && !Objects.isNull(grid[x][y - 1][z - 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x][y - 1][z - 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x][y - 1][z - 1].getVertexBody(Voxel.Vertex.V011), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            engine.addFixedJoint(grid[x][y - 1][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V100));
+                            engine.addFixedJoint(grid[x][y - 1][z - 1].vertexBody(Voxel.Vertex.V011), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x][y - 1][z - 1].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V100));
                         }
                         if (x >= 1 && y >= 1 && z >= 1 && !Objects.isNull(grid[x - 1][y - 1][z - 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y - 1][z - 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y - 1][z - 1].getVertexBody(Voxel.Vertex.V111), grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
+                            engine.addFixedJoint(grid[x - 1][y - 1][z - 1].vertexBody(Voxel.Vertex.V111), grid[x][y][z].vertexBody(Voxel.Vertex.V000));
                         }
                         if (x >= 1 && y < grid[0].length - 1 && !Objects.isNull(grid[x - 1][y + 1][z])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y + 1][z], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y + 1][z].getVertexBody(Voxel.Vertex.V100), grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
-                            engine.addFixedJoint(grid[x - 1][y + 1][z].getVertexBody(Voxel.Vertex.V101), grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                            engine.addFixedJoint(grid[x - 1][y + 1][z].vertexBody(Voxel.Vertex.V100), grid[x][y][z].vertexBody(Voxel.Vertex.V010));
+                            engine.addFixedJoint(grid[x - 1][y + 1][z].vertexBody(Voxel.Vertex.V101), grid[x][y][z].vertexBody(Voxel.Vertex.V011));
                         }
                         if (x >= 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x - 1][y][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y][z + 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y][z + 1].getVertexBody(Voxel.Vertex.V100), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
-                            engine.addFixedJoint(grid[x - 1][y][z + 1].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                            engine.addFixedJoint(grid[x - 1][y][z + 1].vertexBody(Voxel.Vertex.V100), grid[x][y][z].vertexBody(Voxel.Vertex.V001));
+                            engine.addFixedJoint(grid[x - 1][y][z + 1].vertexBody(Voxel.Vertex.V110), grid[x][y][z].vertexBody(Voxel.Vertex.V011));
                         }
                         if (y >= 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x][y - 1][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x][y - 1][z + 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x][y - 1][z + 1].getVertexBody(Voxel.Vertex.V010), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
-                            engine.addFixedJoint(grid[x][y - 1][z + 1].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V101));
+                            engine.addFixedJoint(grid[x][y - 1][z + 1].vertexBody(Voxel.Vertex.V010), grid[x][y][z].vertexBody(Voxel.Vertex.V001));
+                            engine.addFixedJoint(grid[x][y - 1][z + 1].vertexBody(Voxel.Vertex.V110), grid[x][y][z].vertexBody(Voxel.Vertex.V101));
                         }
                         if (x >= 1 && y >= 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x - 1][y - 1][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y - 1][z + 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y - 1][z + 1].getVertexBody(Voxel.Vertex.V110), grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
+                            engine.addFixedJoint(grid[x - 1][y - 1][z + 1].vertexBody(Voxel.Vertex.V110), grid[x][y][z].vertexBody(Voxel.Vertex.V001));
                         }
                         if (x >= 1 && y < grid[0].length - 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x - 1][y + 1][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y + 1][z + 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x - 1][y + 1][z + 1].getVertexBody(Voxel.Vertex.V100), grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                            engine.addFixedJoint(grid[x - 1][y + 1][z + 1].vertexBody(Voxel.Vertex.V100), grid[x][y][z].vertexBody(Voxel.Vertex.V011));
                         }
                         if (x < grid.length - 1 && y < grid[0].length - 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x + 1][y + 1][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x + 1][y + 1][z + 1], grid[x][y][z]));
-                            engine.addFixedJoint(grid[x + 1][y + 1][z + 1].getVertexBody(Voxel.Vertex.V000), grid[x][y][z].getVertexBody(Voxel.Vertex.V111));
+                            engine.addFixedJoint(grid[x + 1][y + 1][z + 1].vertexBody(Voxel.Vertex.V000), grid[x][y][z].vertexBody(Voxel.Vertex.V111));
                         }
                     }
                 }
@@ -139,10 +131,10 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                 for (int z = 0; z < grid[0][0].length; ++z) {
                     if (!Objects.isNull(grid[x][y][z])) {
                         if (x == 0 || Objects.isNull(grid[x - 1][y][z])) {
-                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V000));
-                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V010));
-                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V001));
-                            borderBodies.add(grid[x][y][z].getVertexBody(Voxel.Vertex.V011));
+                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V000));
+                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V010));
+                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V001));
+                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V011));
                         }
                     }
                 }

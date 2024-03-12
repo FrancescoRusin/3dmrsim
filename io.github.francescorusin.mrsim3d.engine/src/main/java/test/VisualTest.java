@@ -21,7 +21,6 @@ package test;/*-
 import static drawstuff.DrawStuff.*;
 
 import agents.CentralizedGridRobot;
-import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
 import bodies.Body;
 import bodies.Voxel;
@@ -34,7 +33,6 @@ import java.util.List;
 
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.ode4j.math.DVector3;
-import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
@@ -106,8 +104,8 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             return outputArray;
                         }));*/
         dsSimulationLoop(args, 1080, 720, this);
-        engine.getSpace().destroy();
-        engine.getWorld().destroy();
+        engine.space().destroy();
+        engine.world().destroy();
         OdeHelper.closeODE();
     }
 
@@ -163,8 +161,8 @@ public class VisualTest extends DrawStuff.dsFunctions {
         if (!pause) {
             engine.tick();
         }
-        engine.getAgents().forEach(agent -> agent.draw(this));
-        for (Body body : engine.getPassiveBodies()) {
+        engine.agents().forEach(agent -> agent.draw(this));
+        for (Body body : engine.passiveBodies()) {
             body.draw(this);
         }
         dsSetColor(1, 1, 1);

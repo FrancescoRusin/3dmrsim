@@ -34,7 +34,7 @@ public class Cube extends Body {
         cacheTime = new EnumMap<>(Cache.class);
     }
 
-    public double getSideLength() {
+    public double sideLength() {
         return sideLength;
     }
 
@@ -104,10 +104,10 @@ public class Cube extends Body {
         for (Cache c : Cache.values()) {
             cacheTime.put(c, -1d);
         }
-        body = OdeHelper.createBody(engine.getWorld());
+        body = OdeHelper.createBody(engine.world());
         body.setPosition(position.x(), position.y(), position.z());
         body.setMass(mass);
-        collisionGeometry = OdeHelper.createBox(engine.getSpace(), sideLength, sideLength, sideLength);
+        collisionGeometry = OdeHelper.createBox(engine.space(), sideLength, sideLength, sideLength);
         collisionGeometry.setBody(body);
     }
 

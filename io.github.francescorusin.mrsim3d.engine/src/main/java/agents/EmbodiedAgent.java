@@ -23,14 +23,12 @@ import actions.Action;
 import bodies.AbstractBody;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import org.ode4j.ode.DGeom;
 import test.VisualTest;
 
 import java.util.List;
 
 public interface EmbodiedAgent {
-  List<AbstractBody> getComponents();
-  DGeom getCollisionGeometry(Ode4jEngine engine, double t);
+  List<AbstractBody> components();
 
   List<Action> act(Ode4jEngine engine);
 

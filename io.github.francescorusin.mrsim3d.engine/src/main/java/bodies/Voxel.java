@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
-import org.ode4j.ode.OdeHelper;
 import sensors.AngleSensor;
 import sensors.Sensor;
 import sensors.VelocitySensor;
@@ -37,6 +36,7 @@ import utils.UnorderedPair;
 import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody {
+  //TODO SWITCH BACK TO CENTRAL BODY
   private static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
   private static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
   private static final double DEFAULT_MASS = 1d;
@@ -229,7 +229,7 @@ public class Voxel extends MultiBody implements SoftBody {
     return sensors;
   }
 
-  public Body getVertexBody(Vertex v) {
+  public Body vertexBody(Vertex v) {
     return rigidBodies.get(v);
   }
 
