@@ -101,8 +101,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             return outputArray;
                         }));
         dsSimulationLoop(args, 1080, 720, this);
-        engine.space().destroy();
-        engine.world().destroy();
+        engine.destroy();
         OdeHelper.closeODE();
     }
 
