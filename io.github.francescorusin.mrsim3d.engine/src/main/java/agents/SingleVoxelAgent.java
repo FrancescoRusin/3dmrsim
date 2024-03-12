@@ -21,22 +21,13 @@ package agents;
 
 import actions.Action;
 import bodies.AbstractBody;
-import bodies.Body;
-import bodies.Sphere;
 import bodies.Voxel;
-import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import java.util.*;
-import java.util.function.Function;
 
-import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
-import org.ode4j.math.DVector3;
-import org.ode4j.ode.*;
 import sensors.Sensor;
-import test.VisualTest;
 
-import static drawstuff.DrawStuff.*;
 import static drawstuff.DrawStuff.dsDrawLine;
 
 public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
@@ -44,8 +35,8 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final NumericalDynamicalSystem<?> controller;
 
   public SingleVoxelAgent(
-      double sphereCToSphereCSideLength,
-      double rigidSphereRadius,
+      double bodyCenterToBodyCenterLength,
+      double rigidBodyLength,
       double mass,
       double centralMassRatio,
       double springConstant,
@@ -55,8 +46,8 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       String sensorConfig,
       NumericalDynamicalSystem<?> controller) {
     super(
-        sphereCToSphereCSideLength,
-        rigidSphereRadius,
+        bodyCenterToBodyCenterLength,
+        rigidBodyLength,
         mass,
         centralMassRatio,
         springConstant,
@@ -69,6 +60,12 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     Arrays.fill(previousStepSensorOutputs, 0d);
     controller.checkDimension(previousStepSensorOutputs.length, 12);
     this.controller = controller;
+  }
+  public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller) {
+    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, DEFAULT_CENTRAL_MASS_RATIO,
+            DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
+            EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
+                    JointOption.SIDES, JointOption.INTERNAL), sensorConfig, controller);
   }
 
   @Override

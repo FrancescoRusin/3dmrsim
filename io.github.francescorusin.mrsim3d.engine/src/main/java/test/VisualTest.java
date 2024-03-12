@@ -53,10 +53,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
     }
 
     private static SingleVoxelAgent defaultSingleVoxelAgent() {
-        return new SingleVoxelAgent(1.4, 0.3, 1d, .5,
-                100d, 20d, 0.2,
-                EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS,
-                        Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL), "",
+        return new SingleVoxelAgent("",
                 NumericalStatelessSystem.from(0, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];

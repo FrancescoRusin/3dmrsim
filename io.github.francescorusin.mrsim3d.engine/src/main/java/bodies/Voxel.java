@@ -37,13 +37,13 @@ import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody {
   //TODO SWITCH BACK TO CENTRAL BODY
-  private static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
-  private static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
-  private static final double DEFAULT_MASS = 1d;
-  private static final double DEFAULT_SPRING_CONSTANT = 100d;
-  private static final double DEFAULT_DAMPING_CONSTANT = 20d;
-  private static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
-  private static final double DEFAULT_CENTER_SPHERE_MASS_RATIO = 0d;
+  protected static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
+  protected static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
+  protected static final double DEFAULT_MASS = 1d;
+  protected static final double DEFAULT_SPRING_CONSTANT = 100d;
+  protected static final double DEFAULT_DAMPING_CONSTANT = 20d;
+  protected static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
+  protected static final double DEFAULT_CENTRAL_MASS_RATIO = 0d;
 
   public enum Vertex {
     V000,
@@ -215,7 +215,7 @@ public class Voxel extends MultiBody implements SoftBody {
   }
 
   public Voxel(EnumSet<JointOption> jointOptions, String sensorConfig) {
-    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, DEFAULT_CENTER_SPHERE_MASS_RATIO,
+    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, DEFAULT_CENTRAL_MASS_RATIO,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             jointOptions, sensorConfig);
   }
