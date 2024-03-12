@@ -55,7 +55,8 @@ public class VisualTest extends DrawStuff.dsFunctions {
     private static SingleVoxelAgent defaultSingleVoxelAgent() {
         return new SingleVoxelAgent(1.4, 0.3, 1d, .5,
                 100d, 20d, 0.2,
-                EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS), "",
+                EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS,
+                        Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL), "",
                 NumericalStatelessSystem.from(0, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
@@ -74,8 +75,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
     }
 
     public void demo(String[] args) {
-        System.out.println("With collision:");
-        /*Voxel[][][] voxelGrid = new Voxel[4][3][3];
+        Voxel[][][] voxelGrid = new Voxel[4][3][3];
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 4; ++x) {
                 for (int z = 1; z < 3; ++z) {
@@ -102,7 +102,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                                 }
                             }
                             return outputArray;
-                        }));*/
+                        }));
         dsSimulationLoop(args, 1080, 720, this);
         engine.space().destroy();
         engine.world().destroy();
@@ -134,25 +134,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                                 outputArray[++index] = Math.sin(t);
                             }
                             return outputArray;
-                        })), new Vector3D(0d, 0d, 2d));
-        engine.addAgent(new SingleVoxelAgent(1.4, 0.3, 1d, .5,
-                100d, 20d, 0.2,
-                EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS), "",
-                NumericalStatelessSystem.from(0, 12,
-                        (t, inputs) -> {
-                            double[] outputArray = new double[12];
-                            int index = -1;
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 0d;
-                            }
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 0d;
-                            }
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = Math.sin(t);
-                            }
-                            return outputArray;
-                        })), new Vector3D(0d, 0.5, 4d));*/
+                        })), new Vector3D(0d, 0d, 2d));*/
         dsSetViewpoint(xyz, hpr);
     }
 
