@@ -34,7 +34,7 @@ public abstract class Body implements AbstractBody {
     return mass.getMass();
   }
 
-  public DGeom collisionGeometry(Ode4jEngine engine, double t) {
+  public DGeom collisionGeometry() {
     return collisionGeometry;
   }
 

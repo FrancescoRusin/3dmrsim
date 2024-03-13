@@ -38,8 +38,7 @@ import org.ode4j.ode.*;
 public class VisualTest extends DrawStuff.dsFunctions {
     private static final float[] xyz = {0f, -4f, 2.7600f};
     private static final float[] hpr = {90f, -10f, 0f};
-    private final Ode4jEngine engine = new Ode4jEngine();
-    private CentralizedGridRobot robot;
+    private Ode4jEngine engine;
 
     public static void main(String[] args) {
         new VisualTest().demo(args);
@@ -59,19 +58,29 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[12];
                             int index = -1;
                             for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 0d;
+                                outputArray[++index] = 1d;
                             }
                             for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 0d;
+                                outputArray[++index] = 1d;
                             }
                             for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = Math.sin(t);
+                                outputArray[++index] = 1d;
                             }
                             return outputArray;
                         }));
     }
-
-    public void demo(String[] args) {
+    private void singleVoxelTest() {
+        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
+    }
+    private void hundredVoxelsTest() {
+        for (int x = -3; x < 4; ++x) {
+            for (int y = -3; y < 4; ++y) {
+                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x * 2d, y * 2d, 2d));
+                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x * 2d + 1, y * 2d + 1, 4d));
+            }
+        }
+    }
+    private void robotTest() {
         Voxel[][][] voxelGrid = new Voxel[4][3][3];
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 4; ++x) {
@@ -82,7 +91,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
             voxelGrid[0][y][0] = defaultVoxel();
             voxelGrid[3][y][0] = defaultVoxel();
         }
-        robot = new CentralizedGridRobot(voxelGrid, 1d, 1d,
+        engine.addAgent(new CentralizedGridRobot(voxelGrid, 1d, 1d,
                 NumericalStatelessSystem.from(210, 360,
                         (t, inputs) -> {
                             double[] outputArray = new double[360];
@@ -99,7 +108,12 @@ public class VisualTest extends DrawStuff.dsFunctions {
                                 }
                             }
                             return outputArray;
-                        }));
+                        })), new Vector3D(0d, 0d, 2d));
+    }
+
+    public void demo(String[] args) {
+        engine = new Ode4jEngine();
+        singleVoxelTest();
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
@@ -107,13 +121,6 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
-        for (int x = 0; x < 10; ++x) {
-            for (int y = 0; y < 10; ++y) {
-                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x, y, 2d + (x % 2 + y % 2) * 2));
-            }
-        }
-        //engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
-        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
         dsSetViewpoint(xyz, hpr);
     }
 

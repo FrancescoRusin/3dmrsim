@@ -63,7 +63,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, DEFAULT_CENTRAL_MASS_RATIO,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
-                    JointOption.SIDES, JointOption.INTERNAL), sensorConfig, controller);
+                    JointOption.INTERNAL), sensorConfig, controller);
   }
 
   @Override

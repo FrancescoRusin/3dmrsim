@@ -6,6 +6,7 @@ import geometry.Vector3D;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DVector3;
+import org.ode4j.ode.DBox;
 import org.ode4j.ode.OdeHelper;
 import test.VisualTest;
 
