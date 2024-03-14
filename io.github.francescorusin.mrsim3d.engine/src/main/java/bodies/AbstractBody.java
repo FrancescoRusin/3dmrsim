@@ -39,7 +39,8 @@ public interface AbstractBody {
   Vector3D angle(double t);
 
   void assemble(Ode4jEngine engine, Vector3D position);
-  void rotate(Vector3D eulerAngles);
+  void rotate(Ode4jEngine engine, Vector3D eulerAngles);
+  void translate(Ode4jEngine engine, Vector3D translation);
   //TODO REPLACE DRAWER
   void draw(VisualTest test);
 }

@@ -19,6 +19,7 @@ package bodies; /*-
                  */
 
 import engine.Ode4jEngine;
+import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Stream;
@@ -37,7 +38,6 @@ import utils.UnorderedPair;
 import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody {
-  //TODO SWITCH BACK TO CENTRAL BODY
   protected static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
   protected static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
   protected static final double DEFAULT_MASS = 1d;
@@ -96,15 +96,15 @@ public class Voxel extends MultiBody implements SoftBody {
 
   public enum Edge {
     DOWN_BACK(Vertex.V000, Vertex.V100),
-    DOWN_RIGHT(Vertex.V100, Vertex.V110),
     DOWN_LEFT(Vertex.V000, Vertex.V010),
     DOWN_FRONT(Vertex.V010, Vertex.V110),
+    DOWN_RIGHT(Vertex.V100, Vertex.V110),
     UP_BACK(Vertex.V001, Vertex.V101),
     UP_RIGHT(Vertex.V101, Vertex.V111),
-    UP_LEFT(Vertex.V001, Vertex.V011),
     UP_FRONT(Vertex.V011, Vertex.V111),
-    SIDE_BR(Vertex.V100, Vertex.V101),
+    UP_LEFT(Vertex.V001, Vertex.V011),
     SIDE_BL(Vertex.V000, Vertex.V001),
+    SIDE_BR(Vertex.V100, Vertex.V101),
     SIDE_FR(Vertex.V110, Vertex.V111),
     SIDE_FL(Vertex.V010, Vertex.V011);
 
@@ -167,13 +167,14 @@ public class Voxel extends MultiBody implements SoftBody {
   private final double[] edgeLengthControlRatio;
 
   private enum Cache {
-    ANGLE, POSITION, VELOCITY, VOLUME
+    ANGLE, POSITION, VELOCITY, BBOX, VOLUME
   }
 
   private final EnumMap<Cache, Double> cacheTime;
   private Vector3D angleCacher;
   private Vector3D positionCacher;
   private Vector3D velocityCacher;
+  private BoundingBox bBoxCacher;
   private double volumeCacher;
 
   public Voxel(
@@ -453,7 +454,7 @@ public class Voxel extends MultiBody implements SoftBody {
                             position.y() + vertexBodyCenterShift,
                             position.z() + vertexBodyCenterShift));
     final Cube centralCube = new Cube(
-            bodyCenterToBodyCenterLength * edgeLengthControlRatio[0] + rigidBodyLength,
+            (bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[0] + rigidBodyLength,
             centralSphereMass);
     ulteriorBodies.put(UlteriorBody.CENTRAL_MASS, centralCube);
     centralCube.assemble(engine, position);
@@ -628,12 +629,9 @@ public class Voxel extends MultiBody implements SoftBody {
       joint = engine.addSpringJoint(ulteriorBodies.get(UlteriorBody.CENTRAL_MASS), rigidBodies.get(v),
               springConstant, dampingConstant,
               new Vector3D(new double[]{
-                      edgeLengthControlRatio[0] * bodyCenterToBodyCenterLength *
-                              (vertexName.charAt(1) == '0' ? -.5 : .5),
-                      edgeLengthControlRatio[0] * bodyCenterToBodyCenterLength *
-                              (vertexName.charAt(2) == '0' ? -.5 : .5),
-                      edgeLengthControlRatio[0] * bodyCenterToBodyCenterLength *
-                              (vertexName.charAt(3) == '0' ? -.5 : .5)
+                      centralCube.sideLength() * (vertexName.charAt(1) == '0' ? -.5 : .5),
+                      centralCube.sideLength() * (vertexName.charAt(2) == '0' ? -.5 : .5),
+                      centralCube.sideLength() * (vertexName.charAt(3) == '0' ? -.5 : .5)
               }),
               new Vector3D());
       ulteriorJoints.put(new Pair<>(v, UlteriorBody.CENTRAL_MASS), joint);
@@ -641,19 +639,32 @@ public class Voxel extends MultiBody implements SoftBody {
       jointMaxLength.put(joint,
               (edgeLengthControlRatio[1] - edgeLengthControlRatio[0]) *
                       (bodyCenterToBodyCenterLength - rigidBodyLength) * Math.sqrt(3) / 2);
-      //TODO REFACTOR BETTER
-      //engine.addCollisionException(rigidBodies.get(v).collisionGeometry(), centralCube.collisionGeometry());
+      engine.addCollisionException(rigidBodies.get(v).collisionGeometry(), centralCube.collisionGeometry());
     }
   }
 
   @Override
-  public void rotate(Vector3D eulerAngles) {
-    //TODO
+  public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
+    Vector3D center = position(engine.t());
+    for (Body vertexBody : rigidBodies.values()) {
+      Vector3D relativePosition = center.vectorDistance(vertexBody.position(engine.t()));
+      vertexBody.translate(engine, relativePosition.reverseRotate(eulerAngles).vectorDistance(relativePosition));
+      vertexBody.rotate(engine, eulerAngles);
+    }
+    for (Body otherBody : ulteriorBodies.values()) {
+      Vector3D relativePosition = center.vectorDistance(otherBody.position(engine.t()));
+      otherBody.translate(engine, relativePosition.reverseRotate(eulerAngles).vectorDistance(relativePosition));
+      otherBody.rotate(engine, eulerAngles);
+    }
   }
 
   @Override
   public void draw(VisualTest test) {
-    bodyParts().forEach(body -> body.draw(test));
+    dsSetColor(0, 0, 1);
+    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
+    rigidBodies.values().forEach(body -> body.draw(test));
+    dsSetColor(1, 0, 0);
+    ulteriorBodies.values().forEach(body -> body.draw(test));
     DVector3 anchor1 = new DVector3();
     DVector3 anchor2 = new DVector3();
     dsSetColor(0, 0, 0);
@@ -668,12 +679,9 @@ public class Voxel extends MultiBody implements SoftBody {
   }
 
   public void actOnInput(EnumMap<Edge, Double> input) {
-    // input is assumed to already be in [-1;1]; we have no time to waste on checks
-    //TODO REFACTOR ACTUATION
-
     EnumMap<Edge, Double> denormalizedInput = new EnumMap<>(Edge.class);
     for (Edge edge : Edge.values()) {
-      denormalizedInput.put(edge, (input.get(edge) * .5 + .5));
+      denormalizedInput.put(edge, Math.max(Math.min(input.get(edge) * .5 + .5, 1d), -1d));
     }
 
     // apply on edges
@@ -703,9 +711,6 @@ public class Voxel extends MultiBody implements SoftBody {
       vertexSum.put(e.v1, vertexSum.get(e.v1) + denormalizedInput.get(e));
       vertexSum.put(e.v2, vertexSum.get(e.v2) + denormalizedInput.get(e));
     }
-    for (Vertex v : Vertex.values()) {
-      vertexSum.put(v, vertexSum.get(v));
-    }
 
     // apply on internal
     if (jointOptions.contains(JointOption.INTERNAL)) {
@@ -730,7 +735,8 @@ public class Voxel extends MultiBody implements SoftBody {
     // apply on central body
     for (Vertex v : Vertex.values()) {
       DDoubleBallJoint joint = ulteriorJoints.get(new Pair<>(v, UlteriorBody.CENTRAL_MASS));
-      joint.setDistance(vertexSum.get(v) * (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 3);
+      joint.setDistance(jointMinLength.get(joint) +
+              vertexSum.get(v) * (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 3);
     }
   }
 }

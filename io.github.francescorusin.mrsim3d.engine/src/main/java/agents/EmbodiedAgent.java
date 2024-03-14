@@ -21,9 +21,13 @@ package agents;
 
 import actions.Action;
 import bodies.AbstractBody;
+import bodies.Body;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import org.ode4j.ode.DBody;
 import test.VisualTest;
+import utils.Pair;
+import utils.UnorderedPair;
 
 import java.util.List;
 

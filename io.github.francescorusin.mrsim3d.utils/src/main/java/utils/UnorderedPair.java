@@ -19,25 +19,27 @@
  */
 package utils;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
-public record UnorderedPair<T>(T first, T second) {
+public class UnorderedPair<T> {
+  private final Set<T> set;
+
+  public UnorderedPair(T first, T second) {
+    set = Set.of(first, second);
+  }
+
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof UnorderedPair pair) {
-      return (this.first.equals(pair.first) && this.second.equals(pair.second))
-          || (this.first.equals(pair.second) && this.second.equals(pair.first));
+    if (obj instanceof UnorderedPair<?> pair) {
+      return set.equals(pair.set);
     }
     return false;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(first, second);
-  }
-
-  @Override
-  public String toString() {
-    return String.format("[%s %s]", first.toString(), second.toString());
+    return set.hashCode();
   }
 }

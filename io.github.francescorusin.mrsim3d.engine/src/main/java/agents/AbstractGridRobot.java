@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractGridRobot implements EmbodiedAgent {
     protected final Voxel[][][] grid;
-    protected final List<Body> borderBodies;
     protected final double voxelSideLength;
     protected final double voxelMass;
     protected final Set<UnorderedPair<Voxel>> intraVoxelLocks;
@@ -21,12 +20,23 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         this.voxelSideLength = voxelSideLength;
         this.voxelMass = voxelMass;
         this.intraVoxelLocks = new HashSet<>(grid.length * grid[0].length * grid[0][0].length * 6);
-        borderBodies = new ArrayList<>();
     }
 
     @Override
     public List<AbstractBody> components() {
         return Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream)).collect(Collectors.toList());
+    }
+    public void ripLeg(Ode4jEngine engine) {
+        for (Body b1 : Voxel.Side.UP.vertices().stream().map(v -> grid[0][0][0].vertexBody(v)).toList()) {
+            for (Voxel voxel : List.of(grid[0][0][1], grid[1][0][1], grid[0][1][1], grid[1][1][1])) {
+                for (Voxel.Side side : Voxel.Side.values()) {
+                    for (Body b2 : side.vertices().stream().map(voxel::vertexBody).toList()) {
+                        engine.unleash(b1, b2);
+                    }
+                }
+            }
+        }
+        engine.foo(grid[0][0][0].vertexBody(Voxel.Vertex.V111), grid[1][1][1].vertexBody(Voxel.Vertex.V000));
     }
 
     @Override
@@ -121,20 +131,6 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                         if (x < grid.length - 1 && y < grid[0].length - 1 && z < grid[0][0].length - 1 && !Objects.isNull(grid[x + 1][y + 1][z + 1])) {
                             intraVoxelLocks.add(new UnorderedPair<>(grid[x + 1][y + 1][z + 1], grid[x][y][z]));
                             engine.addFixedJoint(grid[x + 1][y + 1][z + 1].vertexBody(Voxel.Vertex.V000), grid[x][y][z].vertexBody(Voxel.Vertex.V111));
-                        }
-                    }
-                }
-            }
-        }
-        for (int x = 0; x < grid.length; ++x) {
-            for (int y = 0; y < grid[0].length; ++y) {
-                for (int z = 0; z < grid[0][0].length; ++z) {
-                    if (!Objects.isNull(grid[x][y][z])) {
-                        if (x == 0 || Objects.isNull(grid[x - 1][y][z])) {
-                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V000));
-                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V010));
-                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V001));
-                            borderBodies.add(grid[x][y][z].vertexBody(Voxel.Vertex.V011));
                         }
                     }
                 }

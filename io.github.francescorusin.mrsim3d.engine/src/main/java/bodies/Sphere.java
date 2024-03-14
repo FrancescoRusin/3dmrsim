@@ -69,7 +69,7 @@ public class Sphere extends Body {
   }
 
   @Override
-  public void rotate(Vector3D eulerAngles) {}
+  public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {}
 
   @Override
   public void draw(VisualTest test) {

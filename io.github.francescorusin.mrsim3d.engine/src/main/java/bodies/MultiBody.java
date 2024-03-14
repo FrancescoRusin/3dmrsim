@@ -18,6 +18,7 @@ package bodies; /*-
                  * =========================LICENSE_END==================================
                  */
 
+import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.List;
@@ -45,7 +46,14 @@ public abstract class MultiBody implements AbstractBody {
     return bodyParts().stream()
         .map(b -> b.position(t).times(b.mass()))
         .reduce(Vector3D::sum)
-        .orElseThrow();
+        .orElseThrow().times(1d / mass());
+  }
+
+  @Override
+  public void translate(Ode4jEngine engine, Vector3D translation) {
+    for (Body body : bodyParts()) {
+      body.translate(engine, translation);
+    }
   }
 
   @Override

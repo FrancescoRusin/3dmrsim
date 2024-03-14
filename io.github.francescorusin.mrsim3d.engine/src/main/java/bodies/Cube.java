@@ -113,7 +113,7 @@ public class Cube extends Body {
     }
 
     @Override
-    public void rotate(Vector3D eulerAngles) {
+    public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
         Vector3D[] rotationBase = new Vector3D[]{
                 new Vector3D(1d, 0d, 0d).rotate(eulerAngles),
                 new Vector3D(0d, 1d, 0d).rotate(eulerAngles),
@@ -128,8 +128,6 @@ public class Cube extends Body {
 
     @Override
     public void draw(VisualTest test) {
-        dsSetColor(1, 0, 0);
-        dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
         dsDrawBox(body.getPosition(), body.getRotation(),
                 new DVector3(sideLength, sideLength, sideLength));
     }

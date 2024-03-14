@@ -68,7 +68,6 @@ public class Ode4jEngine {
   }
 
   private void collision(DGeom o1, DGeom o2) {
-    // TODO IMPROVE COLLISION STUFF
     if (!Objects.isNull(collisionExceptions.get(o1)) && collisionExceptions.get(o1).contains(o2)) {
       return;
     }
@@ -86,7 +85,7 @@ public class Ode4jEngine {
     world = OdeHelper.createWorld();
     world.setCFM(0d);
     world.setERP(0d);
-    space = OdeHelper.createHashSpace(null);
+    space = OdeHelper.createHashSpace();
     collisionGroup = OdeHelper.createJointGroup();
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
     world.setERP(0.9);
@@ -181,7 +180,14 @@ public class Ode4jEngine {
   }
 
   public void unleash(Body body1, Body body2) {
-    //TODO
+    if (!Objects.isNull(fixedJoints.get(new UnorderedPair<>(body1, body2)))) {
+      for (DFixedJoint joint : fixedJoints.remove(new UnorderedPair<>(body1, body2))) {
+        joint.destroy();
+      }
+    }
+  }
+  public void foo(Body b1, Body b2) {
+    System.out.println(fixedJoints.get(new UnorderedPair<>(b1, b2)));
   }
 
   public void addCollisionException(DGeom geom1, DGeom geom2) {

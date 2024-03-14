@@ -21,12 +21,17 @@ package agents;
 
 import actions.Action;
 import bodies.AbstractBody;
+import bodies.Body;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import java.util.*;
+import java.util.stream.Stream;
 
+import geometry.BoundingBox;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
+import org.ode4j.ode.DBody;
 import sensors.Sensor;
+import utils.UnorderedPair;
 
 public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;

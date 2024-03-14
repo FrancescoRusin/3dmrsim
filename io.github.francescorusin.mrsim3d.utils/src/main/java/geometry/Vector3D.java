@@ -42,8 +42,8 @@ public record Vector3D(double x, double y, double z) {
     return new Vector3D(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z);
   }
 
-  public Vector3D vectorDistance(Vector3D otherVector) {
-    return new Vector3D(otherVector.x - this.x, otherVector.y - this.y, otherVector.z - this.z);
+  public Vector3D vectorDistance(Vector3D origin) {
+    return new Vector3D(this.x - origin.x, this.y - origin.y, this.z - origin.z);
   }
 
   public double scalarProduct(Vector3D otherVector) {

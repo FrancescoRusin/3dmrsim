@@ -23,13 +23,17 @@ import static drawstuff.DrawStuff.*;
 import agents.CentralizedGridRobot;
 import agents.SingleVoxelAgent;
 import bodies.Body;
+import bodies.Cube;
+import bodies.Sphere;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.ode4j.math.DVector3;
@@ -39,6 +43,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
     private static final float[] xyz = {0f, -4f, 2.7600f};
     private static final float[] hpr = {90f, -10f, 0f};
     private Ode4jEngine engine;
+    private CentralizedGridRobot robot;
 
     public static void main(String[] args) {
         new VisualTest().demo(args);
@@ -56,31 +61,24 @@ public class VisualTest extends DrawStuff.dsFunctions {
                 NumericalStatelessSystem.from(0, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
-                            int index = -1;
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 1d;
-                            }
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 1d;
-                            }
-                            for (int i = 0; i < 4; ++i) {
-                                outputArray[++index] = 1d;
-                            }
+                            Arrays.fill(outputArray, 0d);
                             return outputArray;
                         }));
     }
-    private void singleVoxelTest() {
-        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
+    public void singleVoxelTest() {
+        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(1d, 0d, 2d));
+        engine.addPassiveBody(new Sphere(.1, 1d), new Vector3D(1d, 0d, 2d));
+        System.out.println(engine.agents().get(0).components().get(0).position(engine.t()));
     }
-    private void hundredVoxelsTest() {
+    public void hundredVoxelsTest() {
         for (int x = -3; x < 4; ++x) {
             for (int y = -3; y < 4; ++y) {
-                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x * 2d, y * 2d, 2d));
-                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x * 2d + 1, y * 2d + 1, 4d));
+                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x, y, 2d));
+                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x + 1, y + 1, 4d));
             }
         }
     }
-    private void robotTest() {
+    public void robotTest() {
         Voxel[][][] voxelGrid = new Voxel[4][3][3];
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 4; ++x) {
@@ -88,15 +86,17 @@ public class VisualTest extends DrawStuff.dsFunctions {
                     voxelGrid[x][y][z] = defaultVoxel();
                 }
             }
-            voxelGrid[0][y][0] = defaultVoxel();
-            voxelGrid[3][y][0] = defaultVoxel();
         }
-        engine.addAgent(new CentralizedGridRobot(voxelGrid, 1d, 1d,
-                NumericalStatelessSystem.from(210, 360,
+        voxelGrid[0][0][0] = defaultVoxel();
+        voxelGrid[0][2][0] = defaultVoxel();
+        voxelGrid[3][0][0] = defaultVoxel();
+        voxelGrid[3][2][0] = defaultVoxel();
+        robot = new CentralizedGridRobot(voxelGrid, 1d, 1d,
+                NumericalStatelessSystem.from(196, 336,
                         (t, inputs) -> {
-                            double[] outputArray = new double[360];
+                            double[] outputArray = new double[336];
                             int index = -1;
-                            for (int v = 0; v < 30; ++v) {
+                            for (int v = 0; v < 28; ++v) {
                                 for (int i = 0; i < 4; ++i) {
                                     outputArray[++index] = 0d;
                                 }
@@ -104,16 +104,17 @@ public class VisualTest extends DrawStuff.dsFunctions {
                                     outputArray[++index] = 0d;
                                 }
                                 for (int i = 0; i < 4; ++i) {
-                                    outputArray[++index] = Math.sin(t);
+                                    outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
                                 }
                             }
                             return outputArray;
-                        })), new Vector3D(0d, 0d, 2d));
+                        }));
+        engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
     }
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        singleVoxelTest();
+        robotTest();
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
@@ -130,13 +131,11 @@ public class VisualTest extends DrawStuff.dsFunctions {
             engine.tick();
         }
         engine.agents().forEach(agent -> agent.draw(this));
-        for (Body body : engine.passiveBodies()) {
-            body.draw(this);
-        }
+        engine.passiveBodies().forEach(body -> body.draw(this));
         dsSetColor(1, 1, 1);
         DVector3 anchor1 = new DVector3();
         DVector3 anchor2 = new DVector3();
-        for (DJoint joint : engine.fixedJoints.values().stream().flatMap(List::stream).toList()) {
+        for (DJoint joint : engine.fixedJoints.values().stream().filter(o -> !Objects.isNull(o)).flatMap(List::stream).toList()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {
                 doubleBallJoint.getAnchor1(anchor1);
                 doubleBallJoint.getAnchor2(anchor2);
@@ -150,7 +149,11 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void command(char cmd) {
-        engine.tick();
+        //engine.tick();
+        robot.ripLeg(engine);
+        for (Body body : Voxel.Side.LEFT.vertices().stream().map(v -> ((Voxel) robot.components().get(5)).vertexBody(v)).toList()) {
+            body.dBody().addForce(5d, 0d, 5d);
+        }
     }
 
     @Override

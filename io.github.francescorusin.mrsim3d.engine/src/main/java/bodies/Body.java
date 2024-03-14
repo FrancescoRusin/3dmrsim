@@ -45,6 +45,14 @@ public abstract class Body implements AbstractBody {
   }
 
   @Override
+  public void translate(Ode4jEngine engine, Vector3D translation) {
+    body.setPosition(
+            body.getPosition().get0() + translation.x(),
+            body.getPosition().get1() + translation.y(),
+            body.getPosition().get2() + translation.z());
+  }
+
+  @Override
   public Vector3D velocity(double t) {
     return new Vector3D(
             body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
