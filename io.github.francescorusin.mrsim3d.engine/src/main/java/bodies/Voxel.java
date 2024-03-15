@@ -27,10 +27,7 @@ import java.util.stream.Stream;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
-import sensors.AngleSensor;
-import sensors.Sensor;
-import sensors.VelocitySensor;
-import sensors.VolumeRatioSensor;
+import sensors.*;
 import test.VisualTest;
 import utils.Pair;
 import utils.UnorderedPair;
@@ -157,6 +154,7 @@ public class Voxel extends MultiBody implements SoftBody {
   protected Map<DDoubleBallJoint, Double> jointMinLength;
   protected Map<UlteriorBody, Body> ulteriorBodies;
   protected final List<Sensor> sensors;
+  protected final List<NearFieldSignalSensor> commSensors;
   private final double bodyCenterToBodyCenterLength;
   private final double rigidBodyLength;
   private final double mass;
@@ -209,13 +207,18 @@ public class Voxel extends MultiBody implements SoftBody {
                     * this.bodyCenterToBodyCenterLength;
     this.jointOptions = jointOptions;
     this.sensors = new ArrayList<>();
+    this.commSensors = new ArrayList<>();
     this.cacheTime = new EnumMap<>(Cache.class);
     for (String s : sensorConfig.split("-")) {
       switch (s) {
         case "ang" -> sensors.add(new AngleSensor(this));
         case "vlm" -> sensors.add(new VolumeRatioSensor(this));
         case "vlc" -> sensors.add(new VelocitySensor(this));
+        case "scr" -> sensors.add(new SideCompressionSensor(this));
         // TODO ADD SENSORS
+      }
+      if (s.matches("nfs[0-9]")) {
+        commSensors.add(new NearFieldSignalSensor(this, 2 * Character.getNumericValue(s.charAt(3)) + 1));
       }
     }
   }
@@ -232,8 +235,9 @@ public class Voxel extends MultiBody implements SoftBody {
   }
 
   public List<Sensor> sensors() {
-    return sensors;
+    return Stream.concat(sensors.stream(), commSensors.stream()).toList();
   }
+  public List<NearFieldSignalSensor> commSensors() {return commSensors;}
 
   public Body vertexBody(Vertex v) {
     return rigidBodies.get(v);
@@ -243,6 +247,9 @@ public class Voxel extends MultiBody implements SoftBody {
   public List<? extends DJoint> internalJoints() {
     return Stream.concat(vertexToVertexJoints.values().stream().flatMap(List::stream),
             ulteriorJoints.values().stream()).toList();
+  }
+  public double bodyCenterToBodyCenterLength() {
+    return bodyCenterToBodyCenterLength;
   }
 
   @Override
@@ -627,7 +634,7 @@ public class Voxel extends MultiBody implements SoftBody {
     for (Vertex v : Vertex.values()) {
       final String vertexName = v.name();
       joint = engine.addSpringJoint(ulteriorBodies.get(UlteriorBody.CENTRAL_MASS), rigidBodies.get(v),
-              springConstant, dampingConstant,
+              springConstant * 100, dampingConstant * 100,
               new Vector3D(new double[]{
                       centralCube.sideLength() * (vertexName.charAt(1) == '0' ? -.5 : .5),
                       centralCube.sideLength() * (vertexName.charAt(2) == '0' ? -.5 : .5),
@@ -656,6 +663,15 @@ public class Voxel extends MultiBody implements SoftBody {
       otherBody.translate(engine, relativePosition.reverseRotate(eulerAngles).vectorDistance(relativePosition));
       otherBody.rotate(engine, eulerAngles);
     }
+    cacheTime.put(Cache.ANGLE, -1d);
+    cacheTime.put(Cache.VELOCITY, -1d);
+    cacheTime.put(Cache.BBOX, -1d);
+  }
+
+  @Override
+  public void translate(Ode4jEngine engine, Vector3D translation) {
+    super.translate(engine, translation);
+    cacheTime.put(Cache.POSITION, -1d);
   }
 
   @Override

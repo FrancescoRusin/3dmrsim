@@ -6,7 +6,6 @@ import geometry.Vector3D;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.math.DVector3;
-import org.ode4j.ode.DBox;
 import org.ode4j.ode.OdeHelper;
 import test.VisualTest;
 
@@ -31,7 +30,7 @@ public class Cube extends Body {
     public Cube(double sideLength, double mass) {
         this.sideLength = sideLength;
         this.mass = OdeHelper.createMass();
-        this.mass.setBox(mass, sideLength, sideLength, sideLength);
+        this.mass.setBoxTotal(mass, sideLength, sideLength, sideLength);
         cacheTime = new EnumMap<>(Cache.class);
     }
 
@@ -108,7 +107,7 @@ public class Cube extends Body {
         body = OdeHelper.createBody(engine.world());
         body.setPosition(position.x(), position.y(), position.z());
         body.setMass(mass);
-        collisionGeometry = OdeHelper.createBox(engine.space(), sideLength, sideLength, sideLength);
+        collisionGeometry = OdeHelper.createBox(engine.bodySpace(), sideLength, sideLength, sideLength);
         collisionGeometry.setBody(body);
     }
 

@@ -3,6 +3,7 @@ package agents;
 import bodies.*;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import sensors.Sensor;
 import test.VisualTest;
 import utils.UnorderedPair;
 
@@ -25,18 +26,6 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     @Override
     public List<AbstractBody> components() {
         return Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream)).collect(Collectors.toList());
-    }
-    public void ripLeg(Ode4jEngine engine) {
-        for (Body b1 : Voxel.Side.UP.vertices().stream().map(v -> grid[0][0][0].vertexBody(v)).toList()) {
-            for (Voxel voxel : List.of(grid[0][0][1], grid[1][0][1], grid[0][1][1], grid[1][1][1])) {
-                for (Voxel.Side side : Voxel.Side.values()) {
-                    for (Body b2 : side.vertices().stream().map(voxel::vertexBody).toList()) {
-                        engine.unleash(b1, b2);
-                    }
-                }
-            }
-        }
-        engine.foo(grid[0][0][0].vertexBody(Voxel.Vertex.V111), grid[1][1][1].vertexBody(Voxel.Vertex.V000));
     }
 
     @Override

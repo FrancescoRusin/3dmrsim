@@ -30,18 +30,17 @@ import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
+import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
 public class VisualTest extends DrawStuff.dsFunctions {
-    private static final float[] xyz = {0f, -4f, 2.7600f};
+    private static final float[] xyz = {0f, -6f, 4.7600f};
     private static final float[] hpr = {90f, -10f, 0f};
+    private static final String defaultSensors = "ang-vlm-vlc-scr";
     private Ode4jEngine engine;
     private CentralizedGridRobot robot;
 
@@ -53,22 +52,23 @@ public class VisualTest extends DrawStuff.dsFunctions {
         return new Voxel(
                 EnumSet.of(Voxel.JointOption.EDGES_PARALLEL, Voxel.JointOption.EDGES_CROSSES, Voxel.JointOption.EDGES_DIAGONALS,
                         Voxel.JointOption.SIDES, Voxel.JointOption.INTERNAL),
-                "ang-vlm-vlc");
+                defaultSensors);
     }
 
     private static SingleVoxelAgent defaultSingleVoxelAgent() {
-        return new SingleVoxelAgent("",
-                NumericalStatelessSystem.from(0, 12,
+        return new SingleVoxelAgent(defaultSensors,
+                NumericalStatelessSystem.from(19, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
-                            Arrays.fill(outputArray, 0d);
+                            int index = -1;
+                            for (int i = 0; i < 12; ++i) {
+                                outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
+                            }
                             return outputArray;
                         }));
     }
     public void singleVoxelTest() {
-        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(1d, 0d, 2d));
-        engine.addPassiveBody(new Sphere(.1, 1d), new Vector3D(1d, 0d, 2d));
-        System.out.println(engine.agents().get(0).components().get(0).position(engine.t()));
+        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
     }
     public void hundredVoxelsTest() {
         for (int x = -3; x < 4; ++x) {
@@ -92,7 +92,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
         voxelGrid[3][0][0] = defaultVoxel();
         voxelGrid[3][2][0] = defaultVoxel();
         robot = new CentralizedGridRobot(voxelGrid, 1d, 1d,
-                NumericalStatelessSystem.from(196, 336,
+                NumericalStatelessSystem.from(532, 336,
                         (t, inputs) -> {
                             double[] outputArray = new double[336];
                             int index = -1;
@@ -111,7 +111,6 @@ public class VisualTest extends DrawStuff.dsFunctions {
                         }));
         engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
     }
-
     public void demo(String[] args) {
         engine = new Ode4jEngine();
         robotTest();
@@ -149,11 +148,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void command(char cmd) {
-        //engine.tick();
-        robot.ripLeg(engine);
-        for (Body body : Voxel.Side.LEFT.vertices().stream().map(v -> ((Voxel) robot.components().get(5)).vertexBody(v)).toList()) {
-            body.dBody().addForce(5d, 0d, 5d);
-        }
+        engine.tick();
     }
 
     @Override

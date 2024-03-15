@@ -20,28 +20,35 @@ package engine; /*-
 
 import actions.Action;
 import agents.EmbodiedAgent;
+import bodies.AbstractBody;
 import bodies.Body;
+import bodies.MultiBody;
+import bodies.Voxel;
 import geometry.Vector3D;
 import java.util.*;
 
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
+import sensors.NearFieldSignalSensor;
 import utils.UnorderedPair;
 
-public class Ode4jEngine {
+public final class Ode4jEngine {
   private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
-  private final DSpace space;
+  private final DSpace bodySpace;
+  private final DSpace signalSpace;
   private final DJointGroup collisionGroup;
   private double time;
   private final double timeStep;
-  protected List<EmbodiedAgent> agents;
-  protected List<Body> passiveBodies;
-  protected Map<DGeom, List<DGeom>> collisionExceptions;
-  public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> softJoints;
+  private final List<EmbodiedAgent> agents;
+  private final Map<DGeom, MultiBody> geometryMapper;
+  private final List<Body> passiveBodies;
+  private final Map<DRay, AbstractBody> rayEmitters;
+  private final Map<DGeom, List<DGeom>> collisionExceptions;
+  public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
   public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
-  protected DGeom terrain;
-  protected Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
+  private final DGeom terrain;
+  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
 
   public double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);
@@ -50,6 +57,7 @@ public class Ode4jEngine {
   public double CFM(double springConstant, double dampingConstant) {
     return 1d / (timeStep * springConstant + dampingConstant);
   }
+
   public void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
     DVector3 anchor1Position = new DVector3();
     DVector3 anchor2Position = new DVector3();
@@ -67,7 +75,7 @@ public class Ode4jEngine {
     );
   }
 
-  private void collision(DGeom o1, DGeom o2) {
+  private void bodyCollision(Object data, DGeom o1, DGeom o2) {
     if (!Objects.isNull(collisionExceptions.get(o1)) && collisionExceptions.get(o1).contains(o2)) {
       return;
     }
@@ -77,7 +85,45 @@ public class Ode4jEngine {
     contact.surface.mu = OdeConstants.dInfinity;
     if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
       OdeHelper.createContactJoint(world, collisionGroup, contact)
-          .attach(o1.getBody(), o2.getBody());
+              .attach(o1.getBody(), o2.getBody());
+    }
+  }
+
+  private void signalCollision(Object data, DGeom o1, DGeom o2) {
+    //TODO TESTING
+    if (geometryMapper.get(o1) instanceof Voxel voxel && o2 instanceof DRay ray) {
+      if (rayEmitters.get(ray) != voxel) {
+        Vector3D voxelAngle = voxel.angle(t());
+        Vector3D direction = new Vector3D(ray.getDirection().toDoubleArray()).reverseRotate(voxelAngle);
+        direction = direction.times(1 / direction.norm());
+        Voxel.Side side;
+        // if the signal hits a face with a 45 degree angle max on a side, it gets stored on that side
+        if (direction.x() > Math.sqrt(.5)) {
+          side = Voxel.Side.LEFT;
+        } else if (direction.x() < -Math.sqrt(.5)) {
+          side = Voxel.Side.RIGHT;
+        } else {
+          if (direction.y() > Math.sqrt(.5)) {
+            side = Voxel.Side.BACK;
+          } else if (direction.y() < -Math.sqrt(.5)) {
+            side = Voxel.Side.FRONT;
+          } else {
+            if (direction.z() > Math.sqrt(.5)) {
+              side = Voxel.Side.DOWN;
+            } else if (direction.z() < -Math.sqrt(.5)) {
+              side = Voxel.Side.UP;
+            } else {
+              return;
+            }
+          }
+        }
+        for (NearFieldSignalSensor sensor : voxel.commSensors()) {
+          if (sensor.channel == o2.getCollideBits()) {
+            // categoryBits stores the signal value as a long
+            sensor.readSignal(Double.longBitsToDouble(ray.getCategoryBits()), side);
+          }
+        }
+      }
     }
   }
 
@@ -85,18 +131,21 @@ public class Ode4jEngine {
     world = OdeHelper.createWorld();
     world.setCFM(0d);
     world.setERP(0d);
-    space = OdeHelper.createHashSpace();
+    bodySpace = OdeHelper.createHashSpace();
+    signalSpace = OdeHelper.createHashSpace();
     collisionGroup = OdeHelper.createJointGroup();
     world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
-    world.setERP(0.9);
-    world.setCFM(0.05);
+    world.setERP(1d - 1e-5);
+    world.setCFM(1e-5);
     agents = new ArrayList<>();
+    geometryMapper = new HashMap<>();
     passiveBodies = new ArrayList<>();
-    softJoints = new HashMap<>();
+    rayEmitters = new HashMap<>();
+    springJoints = new HashMap<>();
     fixedJoints = new HashMap<>();
     collisionExceptions = new HashMap<>();
     // TODO ADD TERRAINS
-    terrain = OdeHelper.createPlane(space, 0, 0, 1, 0);
+    terrain = OdeHelper.createPlane(bodySpace, 0, 0, 1, 0);
     time = 0d;
     timeStep = 1d / 60d;
   }
@@ -116,7 +165,12 @@ public class Ode4jEngine {
   public Snapshot tick() {
     world.quickStep(timeStep);
     collisionGroup.clear();
-    space.collide(space, (data, o1, o2) -> collision(o1, o2));
+    bodySpace.collide(0, this::bodyCollision);
+    OdeHelper.spaceCollide2(bodySpace, signalSpace, 0, this::signalCollision);
+    for (DGeom signal : signalSpace.getGeoms()) {
+      signal.destroy();
+    }
+    rayEmitters.clear();
     time += timeStep;
     List<Action> actions = new ArrayList<>();
     for (EmbodiedAgent agent : agents) {
@@ -133,13 +187,20 @@ public class Ode4jEngine {
     return world;
   }
 
-  public DSpace space() {
-    return space;
+  public DSpace bodySpace() {
+    return bodySpace;
   }
 
   public void addAgent(EmbodiedAgent agent, Vector3D position) {
     agent.assemble(this, position);
     agents.add(agent);
+    for (AbstractBody aBody : agent.components()) {
+      if (aBody instanceof MultiBody mBody) {
+        for (Body body : mBody.bodyParts()) {
+          geometryMapper.put(body.collisionGeometry(), mBody);
+        }
+      }
+    }
   }
 
   public void addPassiveBody(Body body, Vector3D position) {
@@ -148,23 +209,25 @@ public class Ode4jEngine {
   }
 
   public DDoubleBallJoint addSpringJoint(
-      Body body1, Body body2, double springConstant, double dampingConstant, Vector3D position1, Vector3D position2) {
+          Body body1, Body body2, double springConstant, double dampingConstant, Vector3D position1, Vector3D position2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
     joint.attach(body1.dBody(), body2.dBody());
     joint.setParam(DJoint.PARAM_N.dParamERP1, ERP(springConstant, dampingConstant));
     joint.setParam(DJoint.PARAM_N.dParamCFM1, CFM(springConstant, dampingConstant));
     moveAnchors(joint, position1, position2);
-    if (Objects.isNull(softJoints.get(bodyPair))) {
-      softJoints.put(bodyPair, new ArrayList<>());
+    if (Objects.isNull(springJoints.get(bodyPair))) {
+      springJoints.put(bodyPair, new ArrayList<>());
     }
-    softJoints.get(bodyPair).add(joint);
+    springJoints.get(bodyPair).add(joint);
     return joint;
   }
+
   public DDoubleBallJoint addSpringJoint(
           Body body1, Body body2, double springConstant, double dampingConstant) {
     return addSpringJoint(body1, body2, springConstant, dampingConstant, new Vector3D(), new Vector3D());
   }
+
   public DFixedJoint addFixedJoint(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     DFixedJoint joint = OdeHelper.createFixedJoint(world);
@@ -179,15 +242,32 @@ public class Ode4jEngine {
     return joint;
   }
 
-  public void unleash(Body body1, Body body2) {
-    if (!Objects.isNull(fixedJoints.get(new UnorderedPair<>(body1, body2)))) {
-      for (DFixedJoint joint : fixedJoints.remove(new UnorderedPair<>(body1, body2))) {
+  public void removeSpringJoints(Body body1, Body body2) {
+    UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
+    if (!Objects.isNull(springJoints.get(bodyPair))) {
+      for (DDoubleBallJoint joint : springJoints.get(bodyPair)) {
         joint.destroy();
       }
+      springJoints.remove(bodyPair);
     }
   }
-  public void foo(Body b1, Body b2) {
-    System.out.println(fixedJoints.get(new UnorderedPair<>(b1, b2)));
+
+  public void removeFixedJoints(Body body1, Body body2) {
+    UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
+    if (!Objects.isNull(fixedJoints.get(bodyPair))) {
+      for (DFixedJoint joint : fixedJoints.get(bodyPair)) {
+        joint.destroy();
+      }
+      fixedJoints.remove(bodyPair);
+    }
+  }
+
+  public void emitSignal(AbstractBody emitter, Vector3D direction, double length, double value) {
+    DRay ray = OdeHelper.createRay(signalSpace, length);
+    ray.set(emitter.position(t()).x(), emitter.position(t()).y(), emitter.position(t()).z(),
+            direction.x(), direction.y(), direction.z());
+    ray.setCategoryBits(Double.doubleToLongBits(value));
+    rayEmitters.put(ray, emitter);
   }
 
   public void addCollisionException(DGeom geom1, DGeom geom2) {
@@ -208,8 +288,9 @@ public class Ode4jEngine {
     collisionExceptions.get(geom1).remove(geom2);
     collisionExceptions.get(geom2).remove(geom1);
   }
+
   public void destroy() {
-    space.destroy();
+    bodySpace.destroy();
     world.destroy();
     collisionGroup.destroy();
   }

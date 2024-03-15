@@ -23,6 +23,7 @@ import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
+import org.ode4j.ode.DSpace;
 import org.ode4j.ode.OdeHelper;
 import test.VisualTest;
 
@@ -62,7 +63,7 @@ public class Sphere extends Body {
   @Override
   public void assemble(Ode4jEngine engine, Vector3D position) {
     body = OdeHelper.createBody(engine.world());
-    collisionGeometry = OdeHelper.createSphere(engine.space(), radius);
+    collisionGeometry = OdeHelper.createSphere(engine.bodySpace(), radius);
     collisionGeometry.setBody(body);
     body.setPosition(position.x(), position.y(), position.z());
     body.setMass(mass);
