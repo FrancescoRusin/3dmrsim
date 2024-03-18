@@ -18,6 +18,8 @@ package bodies; /*-
                  * =========================LICENSE_END==================================
                  */
 
+import actions.Action;
+import actions.EmitSignal;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
@@ -27,6 +29,7 @@ import java.util.stream.Stream;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
+import org.ode4j.ode.DRay;
 import sensors.*;
 import test.VisualTest;
 import utils.Pair;
@@ -34,10 +37,10 @@ import utils.UnorderedPair;
 
 import static drawstuff.DrawStuff.*;
 
-public class Voxel extends MultiBody implements SoftBody {
-  protected static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
-  protected static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
-  protected static final double DEFAULT_MASS = 1d;
+public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalDetector {
+  public static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.8;
+  public static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
+  public static final double DEFAULT_MASS = 1d;
   protected static final double DEFAULT_SPRING_CONSTANT = 100d;
   protected static final double DEFAULT_DAMPING_CONSTANT = 20d;
   protected static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
@@ -153,7 +156,7 @@ public class Voxel extends MultiBody implements SoftBody {
   protected Map<DDoubleBallJoint, Double> jointMaxLength;
   protected Map<DDoubleBallJoint, Double> jointMinLength;
   protected Map<UlteriorBody, Body> ulteriorBodies;
-  protected final List<Sensor> sensors;
+  protected final List<Sensor> internalSensors;
   protected final List<NearFieldSignalSensor> commSensors;
   private final double bodyCenterToBodyCenterLength;
   private final double rigidBodyLength;
@@ -206,19 +209,19 @@ public class Voxel extends MultiBody implements SoftBody {
                     * this.bodyCenterToBodyCenterLength
                     * this.bodyCenterToBodyCenterLength;
     this.jointOptions = jointOptions;
-    this.sensors = new ArrayList<>();
+    this.internalSensors = new ArrayList<>();
     this.commSensors = new ArrayList<>();
     this.cacheTime = new EnumMap<>(Cache.class);
     for (String s : sensorConfig.split("-")) {
       switch (s) {
-        case "ang" -> sensors.add(new AngleSensor(this));
-        case "vlm" -> sensors.add(new VolumeRatioSensor(this));
-        case "vlc" -> sensors.add(new VelocitySensor(this));
-        case "scr" -> sensors.add(new SideCompressionSensor(this));
+        case "ang" -> internalSensors.add(new AngleSensor(this));
+        case "vlm" -> internalSensors.add(new VolumeRatioSensor(this));
+        case "vlc" -> internalSensors.add(new VelocitySensor(this));
+        case "scr" -> internalSensors.add(new SideCompressionSensor(this));
         // TODO ADD SENSORS
       }
       if (s.matches("nfs[0-9]")) {
-        commSensors.add(new NearFieldSignalSensor(this, 2 * Character.getNumericValue(s.charAt(3)) + 1));
+        commSensors.add(new NearFieldSignalSensor(this, Character.getNumericValue(s.charAt(3))));
       }
     }
   }
@@ -235,9 +238,12 @@ public class Voxel extends MultiBody implements SoftBody {
   }
 
   public List<Sensor> sensors() {
-    return Stream.concat(sensors.stream(), commSensors.stream()).toList();
+    return Stream.concat(internalSensors.stream(), commSensors.stream()).toList();
   }
-  public List<NearFieldSignalSensor> commSensors() {return commSensors;}
+
+  public List<NearFieldSignalSensor> commSensors() {
+    return commSensors;
+  }
 
   public Body vertexBody(Vertex v) {
     return rigidBodies.get(v);
@@ -248,6 +254,7 @@ public class Voxel extends MultiBody implements SoftBody {
     return Stream.concat(vertexToVertexJoints.values().stream().flatMap(List::stream),
             ulteriorJoints.values().stream()).toList();
   }
+
   public double bodyCenterToBodyCenterLength() {
     return bodyCenterToBodyCenterLength;
   }
@@ -652,6 +659,7 @@ public class Voxel extends MultiBody implements SoftBody {
 
   @Override
   public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
+    //TODO DEBUG
     Vector3D center = position(engine.t());
     for (Body vertexBody : rigidBodies.values()) {
       Vector3D relativePosition = center.vectorDistance(vertexBody.position(engine.t()));
@@ -664,14 +672,16 @@ public class Voxel extends MultiBody implements SoftBody {
       otherBody.rotate(engine, eulerAngles);
     }
     cacheTime.put(Cache.ANGLE, -1d);
-    cacheTime.put(Cache.VELOCITY, -1d);
     cacheTime.put(Cache.BBOX, -1d);
+    cacheTime.put(Cache.POSITION, -1d);
+    cacheTime.put(Cache.VELOCITY, -1d);
   }
 
   @Override
   public void translate(Ode4jEngine engine, Vector3D translation) {
     super.translate(engine, translation);
     cacheTime.put(Cache.POSITION, -1d);
+    cacheTime.put(Cache.BBOX, -1d);
   }
 
   @Override
@@ -753,6 +763,66 @@ public class Voxel extends MultiBody implements SoftBody {
       DDoubleBallJoint joint = ulteriorJoints.get(new Pair<>(v, UlteriorBody.CENTRAL_MASS));
       joint.setDistance(jointMinLength.get(joint) +
               vertexSum.get(v) * (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 3);
+    }
+  }
+
+  @Override
+  public List<Action> emitSignals(Ode4jEngine engine, double length, int channel, double[] values) {
+    double shift = bodyCenterToBodyCenterLength / 2 + length;
+    int index = -1;
+    List<Action> outputActions = new ArrayList<>();
+    for (Side side : Side.values()) {
+      Vector3D sideCenter = switch (side) {
+        case UP -> new Vector3D(0, 0, 1);
+        case DOWN -> new Vector3D(0, 0, -1);
+        case FRONT -> new Vector3D(0, 1, 0);
+        case BACK -> new Vector3D(0, -1, 0);
+        case RIGHT -> new Vector3D(1, 0, 0);
+        case LEFT -> new Vector3D(-1, 0, 0);
+      };
+      outputActions.add(new EmitSignal(this, sideCenter.rotate(angle(engine.t())),
+              shift, channel, values[++index]));
+    }
+    return outputActions;
+  }
+  @Override
+  public void readSignal(Ode4jEngine engine, DRay signal) {
+    //TODO REDO
+    Vector3D direction = new Vector3D(signal.getDirection().toDoubleArray()).reverseRotate(angle(engine.t()));
+    Vector3D origin = new Vector3D(signal.getPosition().toDoubleArray())
+            .vectorDistance(position(engine.t()))
+            .reverseRotate(angle(engine.t()));
+    EnumMap<Side, Double> reachT = new EnumMap<>(Side.class);
+    reachT.put(Side.UP, (1d - origin.z()) / direction.z());
+    reachT.put(Side.DOWN, (-1d - origin.z()) / direction.z());
+    reachT.put(Side.FRONT, (1d - origin.y()) / direction.y());
+    reachT.put(Side.BACK, (-1d - origin.y()) / direction.y());
+    reachT.put(Side.RIGHT, (1d - origin.x()) / direction.x());
+    reachT.put(Side.LEFT, (-1d - origin.x()) / direction.x());
+    Voxel.Side side = Collections.min(List.of(Side.values()), Comparator.comparing(s -> reachT.get(s) < 0 ? Double.MAX_VALUE : reachT.get(s)));
+    // if the signal hits a face with a 45 degree angle max, it gets stored on that side
+    switch (side) {
+      case LEFT, RIGHT:
+        if (Math.abs(direction.x()) < Math.sqrt(.5)) {
+          return;
+        }
+        break;
+      case FRONT, BACK:
+        if (Math.abs(direction.y()) < Math.sqrt(.5)) {
+          return;
+        }
+        break;
+      case UP, DOWN:
+        if (Math.abs(direction.z()) < Math.sqrt(.5)) {
+          return;
+        }
+    }
+    System.out.println(side);
+    int channel = Math.toIntExact(~signal.getCollideBits());
+    for (NearFieldSignalSensor sensor : commSensors) {
+      if (sensor.channel == channel) {
+        sensor.readSignal(Double.longBitsToDouble(signal.getCategoryBits()), side);
+      }
     }
   }
 }

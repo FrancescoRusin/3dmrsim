@@ -32,6 +32,7 @@ import utils.UnorderedPair;
 import java.util.List;
 
 public interface EmbodiedAgent {
+  double DEFAULT_COMM_LENGTH = 1.5;
   List<AbstractBody> components();
 
   List<Action> act(Ode4jEngine engine);

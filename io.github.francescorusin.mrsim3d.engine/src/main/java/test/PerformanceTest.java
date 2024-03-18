@@ -8,6 +8,7 @@ import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import test.VisualTest;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 
 public class PerformanceTest {

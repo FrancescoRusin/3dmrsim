@@ -3,7 +3,6 @@ package agents;
 import bodies.*;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import sensors.Sensor;
 import test.VisualTest;
 import utils.UnorderedPair;
 

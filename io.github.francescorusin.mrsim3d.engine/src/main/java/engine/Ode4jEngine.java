@@ -20,10 +20,7 @@ package engine; /*-
 
 import actions.Action;
 import agents.EmbodiedAgent;
-import bodies.AbstractBody;
-import bodies.Body;
-import bodies.MultiBody;
-import bodies.Voxel;
+import bodies.*;
 import geometry.Vector3D;
 import java.util.*;
 
@@ -43,12 +40,12 @@ public final class Ode4jEngine {
   private final List<EmbodiedAgent> agents;
   private final Map<DGeom, MultiBody> geometryMapper;
   private final List<Body> passiveBodies;
-  private final Map<DRay, AbstractBody> rayEmitters;
+  private final Map<DRay, SignalEmitter> rayEmitters;
   private final Map<DGeom, List<DGeom>> collisionExceptions;
   public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
   public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
   private final DGeom terrain;
-  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
+  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, 0d);
 
   public double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);
@@ -88,42 +85,17 @@ public final class Ode4jEngine {
               .attach(o1.getBody(), o2.getBody());
     }
   }
+  int counter = 0;
 
   private void signalCollision(Object data, DGeom o1, DGeom o2) {
-    //TODO TESTING
-    if (geometryMapper.get(o1) instanceof Voxel voxel && o2 instanceof DRay ray) {
-      if (rayEmitters.get(ray) != voxel) {
-        Vector3D voxelAngle = voxel.angle(t());
-        Vector3D direction = new Vector3D(ray.getDirection().toDoubleArray()).reverseRotate(voxelAngle);
-        direction = direction.times(1 / direction.norm());
-        Voxel.Side side;
-        // if the signal hits a face with a 45 degree angle max on a side, it gets stored on that side
-        if (direction.x() > Math.sqrt(.5)) {
-          side = Voxel.Side.LEFT;
-        } else if (direction.x() < -Math.sqrt(.5)) {
-          side = Voxel.Side.RIGHT;
-        } else {
-          if (direction.y() > Math.sqrt(.5)) {
-            side = Voxel.Side.BACK;
-          } else if (direction.y() < -Math.sqrt(.5)) {
-            side = Voxel.Side.FRONT;
-          } else {
-            if (direction.z() > Math.sqrt(.5)) {
-              side = Voxel.Side.DOWN;
-            } else if (direction.z() < -Math.sqrt(.5)) {
-              side = Voxel.Side.UP;
-            } else {
-              return;
-            }
-          }
-        }
-        for (NearFieldSignalSensor sensor : voxel.commSensors()) {
-          if (sensor.channel == o2.getCollideBits()) {
-            // categoryBits stores the signal value as a long
-            sensor.readSignal(Double.longBitsToDouble(ray.getCategoryBits()), side);
-          }
-        }
+    if (t() % 2 > 1 / 60d) {
+      return;
+    }
+    if (geometryMapper.get(o1) instanceof SignalDetector detector && o2 instanceof DRay ray) {
+      if (o1 instanceof SignalEmitter emitter && rayEmitters.get(ray) == emitter) {
+        return;
       }
+      detector.readSignal(this, ray);
     }
   }
 
@@ -189,6 +161,9 @@ public final class Ode4jEngine {
 
   public DSpace bodySpace() {
     return bodySpace;
+  }
+  public DSpace signalSpace() {
+    return signalSpace;
   }
 
   public void addAgent(EmbodiedAgent agent, Vector3D position) {
@@ -262,11 +237,14 @@ public final class Ode4jEngine {
     }
   }
 
-  public void emitSignal(AbstractBody emitter, Vector3D direction, double length, double value) {
+  public void emitSignal(SignalEmitter emitter, Vector3D direction, double length, int channel, double value) {
     DRay ray = OdeHelper.createRay(signalSpace, length);
     ray.set(emitter.position(t()).x(), emitter.position(t()).y(), emitter.position(t()).z(),
             direction.x(), direction.y(), direction.z());
+    // categoryBits stores the signal value as a long
     ray.setCategoryBits(Double.doubleToLongBits(value));
+    // collideBits last 4 bits store the signal channel with inverted bits, while all the rest are 1
+    ray.setCollideBits(~Integer.toUnsignedLong(channel));
     rayEmitters.put(ray, emitter);
   }
 

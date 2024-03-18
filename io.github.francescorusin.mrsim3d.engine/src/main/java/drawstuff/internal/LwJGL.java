@@ -65,7 +65,7 @@ import org.ode4j.ode.internal.Common;
  * Main window and event handling for LWJGL.
  * Ported from x11.cpp.
  */
-abstract class LwJGL extends Internal implements DrawStuffApi {
+public abstract class LwJGL extends Internal implements DrawStuffApi {
 
   // ***************************************************************************
   // error handling for unix
@@ -124,7 +124,7 @@ abstract class LwJGL extends Internal implements DrawStuffApi {
   // static GLXContext glx_context=null;	// openGL rendering context
   private static int last_key_pressed = 0; // last key pressed in the window
   private static boolean run = true; // 1 if simulation running
-  private static boolean pause = false; // 1 if in `pause' mode
+  public static boolean pause = false; // 1 if in `pause' mode
   private static boolean singlestep = false; // 1 if single step key pressed
   private static boolean writeframes = false; // 1 if frame files to be written
 
@@ -632,8 +632,9 @@ abstract class LwJGL extends Internal implements DrawStuffApi {
       } else {
         long timeUsed = 5000 + (startTime - System.currentTimeMillis());
         startTime = System.currentTimeMillis() + 5000;
-        System.out.println(
-            fps + " frames in " + (timeUsed / 1000f) + " seconds = " + (fps / (timeUsed / 1000f)));
+        //TODO
+        //System.out.println(
+        //    fps + " frames in " + (timeUsed / 1000f) + " seconds = " + (fps / (timeUsed / 1000f)));
         fps = 0;
       }
       //    glFlush();
