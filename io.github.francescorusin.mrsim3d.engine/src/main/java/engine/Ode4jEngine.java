@@ -25,8 +25,8 @@ import geometry.Vector3D;
 import java.util.*;
 
 import org.ode4j.math.DVector3;
+import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
-import sensors.NearFieldSignalSensor;
 import utils.UnorderedPair;
 
 public final class Ode4jEngine {
@@ -38,14 +38,15 @@ public final class Ode4jEngine {
   private double time;
   private final double timeStep;
   private final List<EmbodiedAgent> agents;
-  private final Map<DGeom, MultiBody> geometryMapper;
+  private final Map<DGeom, AbstractBody> geometryMapper;
   private final List<Body> passiveBodies;
-  private final Map<DRay, SignalEmitter> rayEmitters;
+  private final Map<DRay, SignalEmitter> signalEmitters;
+  private final Map<DGeom, Boolean> signalDetectors;
   private final Map<DGeom, List<DGeom>> collisionExceptions;
   public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
   public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
   private final DGeom terrain;
-  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, 0d);
+  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
 
   public double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);
@@ -88,14 +89,16 @@ public final class Ode4jEngine {
   int counter = 0;
 
   private void signalCollision(Object data, DGeom o1, DGeom o2) {
-    if (t() % 2 > 1 / 60d) {
-      return;
-    }
-    if (geometryMapper.get(o1) instanceof SignalDetector detector && o2 instanceof DRay ray) {
-      if (o1 instanceof SignalEmitter emitter && rayEmitters.get(ray) == emitter) {
+    if (geometryMapper.get(o1) instanceof SignalDetector detector && signalDetectors.get(o1) && o2 instanceof DRay ray) {
+      if (signalEmitters.get(ray) == geometryMapper.get(o1)) {
         return;
       }
-      detector.readSignal(this, ray);
+      DContactBuffer contacts = new DContactBuffer(1);
+      if (OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer()) != 0) {
+        DVector3C contactPosition = contacts.get(0).geom.pos;
+        detector.readSignal(this, ray,
+                new Vector3D(contactPosition.get0(), contactPosition.get1(), contactPosition.get2()));
+      }
     }
   }
 
@@ -112,7 +115,8 @@ public final class Ode4jEngine {
     agents = new ArrayList<>();
     geometryMapper = new HashMap<>();
     passiveBodies = new ArrayList<>();
-    rayEmitters = new HashMap<>();
+    signalEmitters = new HashMap<>();
+    signalDetectors = new HashMap<>();
     springJoints = new HashMap<>();
     fixedJoints = new HashMap<>();
     collisionExceptions = new HashMap<>();
@@ -142,7 +146,7 @@ public final class Ode4jEngine {
     for (DGeom signal : signalSpace.getGeoms()) {
       signal.destroy();
     }
-    rayEmitters.clear();
+    signalEmitters.clear();
     time += timeStep;
     List<Action> actions = new ArrayList<>();
     for (EmbodiedAgent agent : agents) {
@@ -172,7 +176,16 @@ public final class Ode4jEngine {
     for (AbstractBody aBody : agent.components()) {
       if (aBody instanceof MultiBody mBody) {
         for (Body body : mBody.bodyParts()) {
-          geometryMapper.put(body.collisionGeometry(), mBody);
+          geometryMapper.put(body.collisionGeometry(), aBody);
+          signalDetectors.put(body.collisionGeometry(), false);
+        }
+      } else if (aBody instanceof Body body) {
+        geometryMapper.put(body.collisionGeometry(), aBody);
+        signalDetectors.put(body.collisionGeometry(), false);
+      }
+      if (aBody instanceof SignalDetector detector) {
+        for (Body body : detector.detectorBodies()) {
+          signalDetectors.put(body.collisionGeometry(), true);
         }
       }
     }
@@ -245,7 +258,7 @@ public final class Ode4jEngine {
     ray.setCategoryBits(Double.doubleToLongBits(value));
     // collideBits last 4 bits store the signal channel with inverted bits, while all the rest are 1
     ray.setCollideBits(~Integer.toUnsignedLong(channel));
-    rayEmitters.put(ray, emitter);
+    signalEmitters.put(ray, emitter);
   }
 
   public void addCollisionException(DGeom geom1, DGeom geom2) {

@@ -22,6 +22,7 @@ import static drawstuff.DrawStuff.*;
 import static drawstuff.internal.LwJGL.pause;
 
 import agents.CentralizedGridRobot;
+import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
 import bodies.Cube;
 import bodies.Voxel;
@@ -55,7 +56,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     private static SingleVoxelAgent defaultSingleVoxelAgent() {
         return new SingleVoxelAgent(defaultSensors,
-                NumericalStatelessSystem.from(31, 20,
+                NumericalStatelessSystem.from(25, 20,
                         (t, inputs) -> {
                             double[] outputArray = new double[20];
                             int index = -1;
@@ -70,8 +71,8 @@ public class VisualTest extends DrawStuff.dsFunctions {
     }
 
     private static SingleVoxelAgent defaultNoCommSingleVoxelAgent() {
-        return new SingleVoxelAgent(defaultSensors,
-                NumericalStatelessSystem.from(31, 12,
+        return new SingleVoxelAgent(defaultSensors.substring(0, defaultSensors.length() - 5),
+                NumericalStatelessSystem.from(19, 12,
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
                             int index = -1;
@@ -90,6 +91,11 @@ public class VisualTest extends DrawStuff.dsFunctions {
         for (int i = 0; i < number; ++i) {
             engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(-number + 2 * i, 0d, 2d));
         }
+        System.out.print("Voxels: ");
+        for (EmbodiedAgent agent : engine.agents()) {
+            System.out.printf("%s ", agent);
+        }
+        System.out.println();
     }
 
     public void hundredVoxelsTest() {
@@ -137,6 +143,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
+        multiVoxelTest(2);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
@@ -144,50 +151,37 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
-        voxel = defaultNoCommSingleVoxelAgent();
-        engine.addAgent(voxel, new Vector3D(0, 0, 2));
-        //voxel.rotate(engine, new Vector3D(0d, Math.PI / 2, 0d));
-        direction = new Vector3D(0, 1, 0);
         dsSetViewpoint(xyz, hpr);
     }
-    SingleVoxelAgent voxel;
-    DRay ray;
-    Vector3D direction;
-
     @Override
     public void step(boolean pause) {
         if (!pause) {
-            direction = direction.rotate(new Vector3D(.005, 0, 0));
-            ray = OdeHelper.createRay(engine.signalSpace(), 1);
-            ray.set(-direction.x(), -direction.y(), 2 - direction.z(), direction.x(), direction.y(), direction.z());
-            dsDrawLine(new float[]{(float) -direction.x(), (float) -direction.y(), (float) (2 - direction.z())},
-                    new float[]{0, 0, 2});
             engine.tick();
         }
         engine.agents().forEach(agent -> agent.draw(this));
         engine.passiveBodies().forEach(body -> body.draw(this));
         dsSetColor(1, 1, 1);
-        DVector3 anchor1 = new DVector3();
-        DVector3 anchor2 = new DVector3();
+        DVector3 placeholder1 = new DVector3();
+        DVector3 placeholder2 = new DVector3();
         for (DJoint joint : engine.fixedJoints.values().stream().filter(o -> !Objects.isNull(o)).flatMap(List::stream).toList()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {
-                doubleBallJoint.getAnchor1(anchor1);
-                doubleBallJoint.getAnchor2(anchor2);
-                dsDrawLine(anchor1, anchor2);
+                doubleBallJoint.getAnchor1(placeholder1);
+                doubleBallJoint.getAnchor2(placeholder2);
+                dsDrawLine(placeholder1, placeholder2);
             }
             if (joint instanceof DFixedJoint fixedJoint) {
                 dsDrawLine(fixedJoint.getBody(0).getPosition(), fixedJoint.getBody(1).getPosition());
             }
         }
         dsSetColor(0, 1, 0);
-        /*for (DGeom geom : engine.signalSpace().getGeoms()) {
+        for (DGeom geom : engine.signalSpace().getGeoms()) {
             if (geom instanceof DRay ray) {
-                ray.get(position, direction);
-                direction.scale(ray.getLength());
-                direction.add(position);
-                dsDrawLine(position, direction);
+                ray.get(placeholder1, placeholder2);
+                placeholder2.scale(ray.getLength());
+                placeholder2.add(placeholder1);
+                dsDrawLine(placeholder1, placeholder2);
             }
-        }*/
+        }
     }
 
     @Override
@@ -195,7 +189,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
         if (cmd == 'p') {
             pause = !pause;
         } else {
-            //engine.tick();
+            engine.tick();
         }
     }
 

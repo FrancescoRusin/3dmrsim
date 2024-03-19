@@ -18,6 +18,9 @@ package geometry; /*-
                    * =========================LICENSE_END==================================
                    */
 
+import java.util.Date;
+import java.util.function.Function;
+
 public record Vector3D(double x, double y, double z) {
   public Vector3D() {
     this(0d, 0d, 0d);
@@ -76,5 +79,9 @@ public record Vector3D(double x, double y, double z) {
                     this.y * (cosines.z * cosines.x - sines.z * sines.y * sines.x) - this.z * cosines.y * sines.x,
             this.x * (-cosines.z * sines.y * cosines.x + sines.z * sines.x) +
                     this.y * (cosines.z * sines.x + sines.z * sines.y * cosines.x) + this.z * cosines.y * cosines.x);
+  }
+
+  public Vector3D forEach(Function<Double, Double> function) {
+    return new Vector3D(function.apply(this.x), function.apply(this.y), function.apply(this.z));
   }
 }

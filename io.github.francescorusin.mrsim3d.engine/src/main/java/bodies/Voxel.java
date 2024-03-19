@@ -237,6 +237,16 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
     return Stream.concat(rigidBodies.values().stream(), ulteriorBodies.values().stream()).toList();
   }
 
+  @Override
+  public List<Body> detectorBodies() {
+    return List.of(ulteriorBodies.get(UlteriorBody.CENTRAL_MASS));
+  }
+
+  @Override
+  public int nOfSides() {
+    return 6;
+  }
+
   public List<Sensor> sensors() {
     return Stream.concat(internalSensors.stream(), commSensors.stream()).toList();
   }
@@ -771,58 +781,53 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
     double shift = bodyCenterToBodyCenterLength / 2 + length;
     int index = -1;
     List<Action> outputActions = new ArrayList<>();
-    for (Side side : Side.values()) {
-      Vector3D sideCenter = switch (side) {
-        case UP -> new Vector3D(0, 0, 1);
-        case DOWN -> new Vector3D(0, 0, -1);
-        case FRONT -> new Vector3D(0, 1, 0);
-        case BACK -> new Vector3D(0, -1, 0);
-        case RIGHT -> new Vector3D(1, 0, 0);
-        case LEFT -> new Vector3D(-1, 0, 0);
-      };
+    for (Vector3D sideCenter : List.of(
+            new Vector3D(0, 0, 1), new Vector3D(0, 0, -1),
+            new Vector3D(0, 1, 0), new Vector3D(0, -1, 0),
+            new Vector3D(1, 0, 0), new Vector3D(-1, 0, 0))) {
       outputActions.add(new EmitSignal(this, sideCenter.rotate(angle(engine.t())),
               shift, channel, values[++index]));
     }
     return outputActions;
   }
+
   @Override
-  public void readSignal(Ode4jEngine engine, DRay signal) {
-    //TODO REDO
-    Vector3D direction = new Vector3D(signal.getDirection().toDoubleArray()).reverseRotate(angle(engine.t()));
-    Vector3D origin = new Vector3D(signal.getPosition().toDoubleArray())
-            .vectorDistance(position(engine.t()))
-            .reverseRotate(angle(engine.t()));
-    EnumMap<Side, Double> reachT = new EnumMap<>(Side.class);
-    reachT.put(Side.UP, (1d - origin.z()) / direction.z());
-    reachT.put(Side.DOWN, (-1d - origin.z()) / direction.z());
-    reachT.put(Side.FRONT, (1d - origin.y()) / direction.y());
-    reachT.put(Side.BACK, (-1d - origin.y()) / direction.y());
-    reachT.put(Side.RIGHT, (1d - origin.x()) / direction.x());
-    reachT.put(Side.LEFT, (-1d - origin.x()) / direction.x());
-    Voxel.Side side = Collections.min(List.of(Side.values()), Comparator.comparing(s -> reachT.get(s) < 0 ? Double.MAX_VALUE : reachT.get(s)));
-    // if the signal hits a face with a 45 degree angle max, it gets stored on that side
-    switch (side) {
-      case LEFT, RIGHT:
-        if (Math.abs(direction.x()) < Math.sqrt(.5)) {
-          return;
-        }
-        break;
-      case FRONT, BACK:
-        if (Math.abs(direction.y()) < Math.sqrt(.5)) {
-          return;
-        }
-        break;
-      case UP, DOWN:
-        if (Math.abs(direction.z()) < Math.sqrt(.5)) {
-          return;
-        }
+  public void readSignal(Ode4jEngine engine, DRay signal, Vector3D contactPosition) {
+    if (commSensors.isEmpty()) {
+      return;
     }
-    System.out.println(side);
+    Vector3D relativeContactPosition = contactPosition.vectorDistance(position(engine.t())).reverseRotate(angle(engine.t()));
+    Side side = closestSide(relativeContactPosition);
     int channel = Math.toIntExact(~signal.getCollideBits());
     for (NearFieldSignalSensor sensor : commSensors) {
       if (sensor.channel == channel) {
         sensor.readSignal(Double.longBitsToDouble(signal.getCategoryBits()), side);
       }
     }
+  }
+
+  private static Side closestSide(Vector3D relativeContactPosition) {
+    Vector3D absoluteValues = relativeContactPosition.forEach(Math::abs);
+    Side side;
+    if (absoluteValues.x() > absoluteValues.y() && absoluteValues.x() > absoluteValues.z()) {
+      if (relativeContactPosition.x() > 0) {
+        side = Side.RIGHT;
+      } else {
+        side = Side.LEFT;
+      }
+    } else if (absoluteValues.y() > absoluteValues.x() && absoluteValues.y() > absoluteValues.z()) {
+      if (relativeContactPosition.y() > 0) {
+        side = Side.FRONT;
+      } else {
+        side = Side.BACK;
+      }
+    } else {
+      if (relativeContactPosition.z() > 0) {
+        side = Side.UP;
+      } else {
+        side = Side.DOWN;
+      }
+    }
+    return side;
   }
 }

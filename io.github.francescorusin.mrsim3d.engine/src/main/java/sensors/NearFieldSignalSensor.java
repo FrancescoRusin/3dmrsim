@@ -1,6 +1,7 @@
 package sensors;
 
 import bodies.AbstractBody;
+import bodies.SignalDetector;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import sensors.Sensor;
@@ -8,13 +9,13 @@ import sensors.Sensor;
 import java.util.Arrays;
 
 public class NearFieldSignalSensor implements Sensor {
-    private final AbstractBody emitter;
+    private final SignalDetector body;
     public final int channel;
     private final double[] readings;
-    public NearFieldSignalSensor(AbstractBody emitter, int channel) {
-        this.emitter = emitter;
+    public NearFieldSignalSensor(SignalDetector body, int channel) {
+        this.body = body;
         this.channel = channel;
-        readings = new double[12];
+        readings = new double[body.nOfSides()];
     }
     public void resetReadings() {
         Arrays.fill(readings, 0d);
@@ -30,15 +31,11 @@ public class NearFieldSignalSensor implements Sensor {
         for (int i = 0; i < readings.length; ++i) {
             readingsCopy[i] = Math.max(-1d, Math.min(1d, readings[i]));
         }
-        if (engine.t() % 1 < 1d / 60d) {
-            //TODO TEST
-            //System.out.println(Arrays.stream(readingsCopy).boxed().toList());
-        }
         resetReadings();
         return readingsCopy;
     }
     @Override
     public int outputSize() {
-        return 12;
+        return body.nOfSides();
     }
 }

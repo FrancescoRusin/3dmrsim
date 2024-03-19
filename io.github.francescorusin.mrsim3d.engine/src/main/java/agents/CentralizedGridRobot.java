@@ -1,6 +1,7 @@
 package agents;
 
 import actions.Action;
+import bodies.SignalEmitter;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
@@ -34,7 +35,7 @@ public class CentralizedGridRobot extends AbstractGridRobot {
 
     public CentralizedGridRobot(Voxel[][][] grid, double voxelSideLength, double voxelMass, int commChannels,
                                 NumericalDynamicalSystem<?> controller) {
-        this(grid, voxelSideLength, voxelMass, commChannels, DEFAULT_COMM_LENGTH, controller);
+        this(grid, voxelSideLength, voxelMass, commChannels, SignalEmitter.DEFAULT_COMM_LENGTH, controller);
     }
 
     public CentralizedGridRobot(Voxel[][][] grid, double voxelSideLength, double voxelMass,
@@ -44,7 +45,7 @@ public class CentralizedGridRobot extends AbstractGridRobot {
 
     public CentralizedGridRobot(Voxel[][][] grid, int commChannels, NumericalDynamicalSystem<?> controller) {
         this(grid, Voxel.DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, Voxel.DEFAULT_MASS, commChannels,
-                DEFAULT_COMM_LENGTH, controller);
+                SignalEmitter.DEFAULT_COMM_LENGTH, controller);
     }
 
     public CentralizedGridRobot(Voxel[][][] grid, NumericalDynamicalSystem<?> controller) {

@@ -1,8 +1,13 @@
 package bodies;
 
 import engine.Ode4jEngine;
+import geometry.Vector3D;
 import org.ode4j.ode.DRay;
 
-public interface SignalDetector {
-    void readSignal(Ode4jEngine engine, DRay signal);
+import java.util.List;
+
+public interface SignalDetector extends AbstractBody {
+    List<Body> detectorBodies();
+    int nOfSides();
+    void readSignal(Ode4jEngine engine, DRay signal, Vector3D contactPosition);
 }
