@@ -61,7 +61,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[20];
                             int index = -1;
                             for (int i = 0; i < 12; ++i) {
-                                outputArray[++index] = 0d;//Math.sin(4 * (t) + i * Math.PI / 4);
+                                outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
                             }
                             for (int j = 12; j < 20; ++j) {
                                 outputArray[++index] = Math.sin(t + j);
@@ -77,7 +77,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[12];
                             int index = -1;
                             for (int i = 0; i < 12; ++i) {
-                                outputArray[++index] = 0;//Math.sin(4 * (t) + i * Math.PI / 4);
+                                outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
                             }
                             return outputArray;
                         }), 0);
@@ -120,21 +120,13 @@ public class VisualTest extends DrawStuff.dsFunctions {
         voxelGrid[0][2][0] = defaultVoxel();
         voxelGrid[3][0][0] = defaultVoxel();
         voxelGrid[3][2][0] = defaultVoxel();
-        robot = new CentralizedGridRobot(voxelGrid, 1d, 1d,
-                NumericalStatelessSystem.from(868, 336,
+        robot = new CentralizedGridRobot(voxelGrid, 0,
+                NumericalStatelessSystem.from(700, 336,
                         (t, inputs) -> {
                             double[] outputArray = new double[336];
                             int index = -1;
-                            for (int v = 0; v < 28; ++v) {
-                                for (int i = 0; i < 4; ++i) {
-                                    outputArray[++index] = 0d;
-                                }
-                                for (int i = 0; i < 4; ++i) {
-                                    outputArray[++index] = 0d;
-                                }
-                                for (int i = 0; i < 4; ++i) {
-                                    outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
-                                }
+                            for (int v = 0; v < 336; ++v) {
+                                outputArray[++index] = 0d;
                             }
                             return outputArray;
                         }));
@@ -143,7 +135,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        multiVoxelTest(2);
+        robotTest();
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
@@ -151,6 +143,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
+        pause = true;
         dsSetViewpoint(xyz, hpr);
     }
     @Override

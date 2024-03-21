@@ -22,7 +22,9 @@ package agents;
 import actions.Action;
 import bodies.AbstractBody;
 import bodies.Body;
+import bodies.SimulationObject;
 import engine.Ode4jEngine;
+import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.ode.DBody;
 import test.VisualTest;
@@ -32,12 +34,54 @@ import utils.UnorderedPair;
 import java.util.List;
 import java.util.stream.Stream;
 
-public interface EmbodiedAgent {
+public interface EmbodiedAgent extends SimulationObject {
   List<AbstractBody> components();
 
-  List<Action> act(Ode4jEngine engine);
+  @Override
+  default BoundingBox boundingBox(double t) {
+    List<AbstractBody> components = components();
+    return components.stream()
+            .map(b -> b.boundingBox(t))
+            .reduce(BoundingBox::enclosing)
+            .orElseThrow();
+  }
 
-  void assemble(Ode4jEngine engine, Vector3D position);
+  @Override
+  default Vector3D position(double t) {
+    List<AbstractBody> components = components();
+    return components.stream()
+            .map(b -> b.position(t))
+            .reduce(Vector3D::sum)
+            .orElseThrow().times(1d / components.size());
+  }
+
+  @Override
+  default Vector3D velocity(double t) {
+    List<AbstractBody> components = components();
+    return components.stream()
+            .map(b -> b.velocity(t))
+            .reduce(Vector3D::sum)
+            .orElseThrow().times(1d / components.size());
+  }
+
+  @Override
+  default void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
+    Vector3D center = position(engine.t());
+    for (AbstractBody component : components()) {
+      Vector3D relativePosition = component.position(engine.t()).vectorDistance(center);
+      component.translate(engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
+      component.rotate(engine, eulerAngles);
+    }
+  }
+
+  @Override
+  default void translate(Ode4jEngine engine, Vector3D translation) {
+    for (AbstractBody component : components()) {
+      component.translate(engine, translation);
+    }
+  }
+
+  List<Action> act(Ode4jEngine engine);
   //TODO REPLACE DRAWER
   void draw(VisualTest test);
 }

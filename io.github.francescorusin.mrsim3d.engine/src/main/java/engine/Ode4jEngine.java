@@ -46,7 +46,7 @@ public final class Ode4jEngine {
   public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
   public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
   private final DGeom terrain;
-  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, 9.81);
+  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
 
   public double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);

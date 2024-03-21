@@ -26,7 +26,7 @@ import org.ode4j.ode.DGeom;
 import org.ode4j.ode.DSpace;
 import test.VisualTest;
 
-public interface AbstractBody {
+public interface AbstractBody extends SimulationObject {
   double mass();
 
   double currentVolume(double t);
@@ -38,10 +38,6 @@ public interface AbstractBody {
   Vector3D velocity(double t);
 
   Vector3D angle(double t);
-
-  void assemble(Ode4jEngine engine, Vector3D position);
-  void rotate(Ode4jEngine engine, Vector3D eulerAngles);
-  void translate(Ode4jEngine engine, Vector3D translation);
   //TODO REPLACE DRAWER
   void draw(VisualTest test);
 }
