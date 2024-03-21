@@ -36,7 +36,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double commLength;
 
   public SingleVoxelAgent(
-          double bodyCenterToBodyCenterLength,
+          double sideLength,
           double rigidBodyLength,
           double mass,
           int commChannels,
@@ -49,7 +49,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
           String sensorConfig,
           NumericalDynamicalSystem<?> controller) {
     super(
-            bodyCenterToBodyCenterLength,
+            sideLength,
             rigidBodyLength,
             mass,
             centralMassRatio,
@@ -68,7 +68,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller, int commChannels) {
-    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, commChannels, DEFAULT_COMM_LENGTH,
+    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, commChannels, DEFAULT_COMM_LENGTH,
             DEFAULT_CENTRAL_MASS_RATIO,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
@@ -76,7 +76,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller) {
-    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, 0, DEFAULT_COMM_LENGTH,
+    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, 0, DEFAULT_COMM_LENGTH,
             DEFAULT_CENTRAL_MASS_RATIO, DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
                     JointOption.INTERNAL), sensorConfig, controller);

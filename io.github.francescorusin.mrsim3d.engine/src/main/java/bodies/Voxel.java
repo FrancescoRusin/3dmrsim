@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
+import org.ode4j.ode.DFixedJoint;
 import org.ode4j.ode.DJoint;
 import org.ode4j.ode.DRay;
 import sensors.*;
@@ -38,9 +39,8 @@ import utils.UnorderedPair;
 import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalDetector {
-  public static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.6;
   public static final double DEFAULT_SIDE_LENGTH = 1d;
-  public static final double DEFAULT_RIGID_BODY_LENGTH = (DEFAULT_SIDE_LENGTH - DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH) / 2;
+  public static final double DEFAULT_RIGID_BODY_LENGTH = .2;
   public static final double DEFAULT_MASS = 1d;
   protected static final double DEFAULT_SPRING_CONSTANT = 100d;
   protected static final double DEFAULT_DAMPING_CONSTANT = 20d;
@@ -180,7 +180,7 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
   private double volumeCacher;
 
   public Voxel(
-          double bodyCenterToBodyCenterLength,
+          double sideLength,
           double rigidBodyLength,
           double mass,
           double centralMassRatio,
@@ -191,14 +191,14 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
           String sensorConfig) {
     this.springConstant = springConstant;
     this.dampingConstant = dampingConstant;
-    if (bodyCenterToBodyCenterLength < rigidBodyLength * 2) {
+    if (sideLength < rigidBodyLength * 2) {
       throw new IllegalArgumentException(
               String.format(
                       "Attempted to construct voxel with invalid rigid sphere length ratio (length %.2f on total %.2f)",
-                      rigidBodyLength, bodyCenterToBodyCenterLength));
+                      rigidBodyLength, sideLength));
     }
+    this.bodyCenterToBodyCenterLength = sideLength - rigidBodyLength;
     this.rigidBodyLength = rigidBodyLength;
-    this.bodyCenterToBodyCenterLength = bodyCenterToBodyCenterLength;
     this.mass = mass;
     this.centralMassRatio = centralMassRatio;
     this.edgeLengthControlRatio =
@@ -228,7 +228,7 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
   }
 
   public Voxel(EnumSet<JointOption> jointOptions, String sensorConfig) {
-    this(DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, DEFAULT_CENTRAL_MASS_RATIO,
+    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, DEFAULT_CENTRAL_MASS_RATIO,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             jointOptions, sensorConfig);
   }
@@ -393,6 +393,15 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
       angleCacher = new Vector3D(angle[0], angle[1], angle[2]);
     }
     return angleCacher;
+  }
+
+  @Override
+  public BoundingBox boundingBox(double t) {
+    if (cacheTime.get(Cache.BBOX) != t) {
+      cacheTime.put(Cache.BBOX, t);
+      bBoxCacher = super.boundingBox(t);
+    }
+    return bBoxCacher;
   }
 
   @Override
@@ -649,10 +658,14 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
       jointMaxLength.put(joint, maxLength);
       jointMinLength.put(joint, minLength);
     }
+    // central mass joints
+    minLength = 0d;
+    maxLength = (edgeLengthControlRatio[1] - edgeLengthControlRatio[0]) *
+            (bodyCenterToBodyCenterLength - rigidBodyLength) * Math.sqrt(3) / 2;
     for (Vertex v : Vertex.values()) {
       final String vertexName = v.name();
       joint = engine.addSpringJoint(ulteriorBodies.get(UlteriorBody.CENTRAL_MASS), rigidBodies.get(v),
-              springConstant * 100, dampingConstant * 100,
+              springConstant, dampingConstant,
               new Vector3D(new double[]{
                       centralCube.sideLength() * (vertexName.charAt(1) == '0' ? -.5 : .5),
                       centralCube.sideLength() * (vertexName.charAt(2) == '0' ? -.5 : .5),
@@ -660,10 +673,8 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
               }),
               new Vector3D());
       ulteriorJoints.put(new Pair<>(v, UlteriorBody.CENTRAL_MASS), joint);
-      jointMinLength.put(joint, 0d);
-      jointMaxLength.put(joint,
-              (edgeLengthControlRatio[1] - edgeLengthControlRatio[0]) *
-                      (bodyCenterToBodyCenterLength - rigidBodyLength) * Math.sqrt(3) / 2);
+      jointMinLength.put(joint, minLength);
+      jointMaxLength.put(joint, maxLength);
       engine.addCollisionException(rigidBodies.get(v).collisionGeometry(), centralCube.collisionGeometry());
     }
   }

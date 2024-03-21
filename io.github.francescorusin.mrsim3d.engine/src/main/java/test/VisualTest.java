@@ -77,14 +77,14 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[12];
                             int index = -1;
                             for (int i = 0; i < 12; ++i) {
-                                outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
+                                outputArray[++index] = -1;//Math.sin(4 * (t) + i * Math.PI / 4);
                             }
                             return outputArray;
                         }), 0);
     }
 
     public void singleVoxelTest() {
-        engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
+        engine.addAgent(defaultNoCommSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
     }
 
     public void multiVoxelTest(int number) {
@@ -125,8 +125,10 @@ public class VisualTest extends DrawStuff.dsFunctions {
                         (t, inputs) -> {
                             double[] outputArray = new double[336];
                             int index = -1;
-                            for (int v = 0; v < 336; ++v) {
-                                outputArray[++index] = 0d;
+                            for (int v = 0; v < 28; ++v) {
+                                for (int i = 0; i < 12; ++i) {
+                                    outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
+                                }
                             }
                             return outputArray;
                         }));
