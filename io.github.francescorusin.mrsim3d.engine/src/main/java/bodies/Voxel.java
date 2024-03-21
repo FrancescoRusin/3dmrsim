@@ -39,8 +39,8 @@ import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalDetector {
   public static final double DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH = 0.6;
-  public static final double DEFAULT_RIGID_BODY_LENGTH = 0.2;
-  public static final double DEFAULT_SIDE_LENGTH = DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH + DEFAULT_RIGID_BODY_LENGTH * 2;
+  public static final double DEFAULT_SIDE_LENGTH = 1d;
+  public static final double DEFAULT_RIGID_BODY_LENGTH = (DEFAULT_SIDE_LENGTH - DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH) / 2;
   public static final double DEFAULT_MASS = 1d;
   protected static final double DEFAULT_SPRING_CONSTANT = 100d;
   protected static final double DEFAULT_DAMPING_CONSTANT = 20d;

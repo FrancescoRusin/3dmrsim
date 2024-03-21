@@ -49,7 +49,7 @@ public class CentralizedGridRobot extends AbstractGridRobot {
     }
 
     public CentralizedGridRobot(Voxel[][][] grid, NumericalDynamicalSystem<?> controller) {
-        this(grid, Voxel.DEFAULT_BODY_CENTER_TO_BODY_CENTER_LENGTH, Voxel.DEFAULT_MASS, controller);
+        this(grid, Voxel.DEFAULT_SIDE_LENGTH, Voxel.DEFAULT_MASS, controller);
     }
 
     @Override

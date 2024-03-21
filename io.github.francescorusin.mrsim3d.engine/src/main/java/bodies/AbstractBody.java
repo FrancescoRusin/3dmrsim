@@ -31,12 +31,6 @@ public interface AbstractBody extends SimulationObject {
 
   double currentVolume(double t);
 
-  BoundingBox boundingBox(double t);
-
-  Vector3D position(double t);
-
-  Vector3D velocity(double t);
-
   Vector3D angle(double t);
   //TODO REPLACE DRAWER
   void draw(VisualTest test);
