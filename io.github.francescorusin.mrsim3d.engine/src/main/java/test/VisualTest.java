@@ -46,6 +46,23 @@ public class VisualTest extends DrawStuff.dsFunctions {
     public static void main(String[] args) {
         new VisualTest().demo(args);
     }
+    private static int[] computeIO(String sensorConfig, int nOfVoxels, int commChannels) {
+        int[] IO = new int[2];
+        for (String s : sensorConfig.split("-")) {
+            IO[0] += switch (s) {
+                case "ang", "vlc" -> 3;
+                case "vlm" -> 1;
+                case "scr" -> 12;
+                default -> 0;
+            };
+            if (s.matches("nfs[0-9]")) {
+                IO[0] += 6;
+            }
+        }
+        IO[0] *= nOfVoxels;
+        IO[1] = nOfVoxels * (12 + 6 * commChannels);
+        return IO;
+    }
 
     private static Voxel defaultVoxel() {
         return new Voxel(
@@ -54,16 +71,17 @@ public class VisualTest extends DrawStuff.dsFunctions {
                 defaultSensors);
     }
 
-    private static SingleVoxelAgent defaultSingleVoxelAgent() {
+    private static SingleVoxelAgent defaultSingleVoxelAgent(int commChannels) {
+        final int[] IO = computeIO(defaultSensors, 1, commChannels);
         return new SingleVoxelAgent(defaultSensors,
-                NumericalStatelessSystem.from(25, 20,
+                NumericalStatelessSystem.from(IO[0], IO[1],
                         (t, inputs) -> {
-                            double[] outputArray = new double[20];
+                            double[] outputArray = new double[IO[1]];
                             int index = -1;
                             for (int i = 0; i < 12; ++i) {
                                 outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
                             }
-                            for (int j = 12; j < 20; ++j) {
+                            for (int j = 12; j < IO[1]; ++j) {
                                 outputArray[++index] = Math.sin(t + j);
                             }
                             return outputArray;
@@ -71,8 +89,10 @@ public class VisualTest extends DrawStuff.dsFunctions {
     }
 
     private static SingleVoxelAgent defaultNoCommSingleVoxelAgent() {
-        return new SingleVoxelAgent(defaultSensors.substring(0, defaultSensors.length() - 5),
-                NumericalStatelessSystem.from(19, 12,
+        final String noCommSensors = defaultSensors.substring(0, defaultSensors.length() - 5);
+        final int[] IO = computeIO(noCommSensors, 1, 0);
+        return new SingleVoxelAgent(noCommSensors,
+                NumericalStatelessSystem.from(IO[0], IO[1],
                         (t, inputs) -> {
                             double[] outputArray = new double[12];
                             int index = -1;
@@ -82,32 +102,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             return outputArray;
                         }), 0);
     }
-
-    public void singleVoxelTest() {
-        engine.addAgent(defaultNoCommSingleVoxelAgent(), new Vector3D(0d, 0d, 2d));
-    }
-
-    public void multiVoxelTest(int number) {
-        for (int i = 0; i < number; ++i) {
-            engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(-number + 2 * i, 0d, 2d));
-        }
-        System.out.print("Voxels: ");
-        for (EmbodiedAgent agent : engine.agents()) {
-            System.out.printf("%s ", agent);
-        }
-        System.out.println();
-    }
-
-    public void hundredVoxelsTest() {
-        for (int x = -3; x < 4; ++x) {
-            for (int y = -3; y < 4; ++y) {
-                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x, y, 2d));
-                engine.addAgent(defaultSingleVoxelAgent(), new Vector3D(x + 1, y + 1, 4d));
-            }
-        }
-    }
-
-    public void robotTest() {
+    private static CentralizedGridRobot defaultCentralizedRobot(int commChannels) {
         Voxel[][][] voxelGrid = new Voxel[4][3][3];
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 4; ++x) {
@@ -120,24 +115,59 @@ public class VisualTest extends DrawStuff.dsFunctions {
         voxelGrid[0][2][0] = defaultVoxel();
         voxelGrid[3][0][0] = defaultVoxel();
         voxelGrid[3][2][0] = defaultVoxel();
-        robot = new CentralizedGridRobot(voxelGrid, 0,
-                NumericalStatelessSystem.from(700, 336,
+        final int nOfVoxels = Math.toIntExact(Arrays.stream(voxelGrid).flatMap(aa -> Arrays.stream(aa)
+                .flatMap(Arrays::stream)).filter(v -> !Objects.isNull(v)).count());
+        final int[] IO = computeIO(defaultSensors, nOfVoxels, commChannels);
+        return new CentralizedGridRobot(voxelGrid, commChannels,
+                NumericalStatelessSystem.from(IO[0], IO[1],
                         (t, inputs) -> {
-                            double[] outputArray = new double[336];
+                            double[] outputArray = new double[IO[1]];
                             int index = -1;
-                            for (int v = 0; v < 28; ++v) {
+                            for (int v = 0; v < nOfVoxels; ++v) {
                                 for (int i = 0; i < 12; ++i) {
+                                    outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
+                                }
+                                for (int i = 0; i < 6 * commChannels; ++i) {
                                     outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
                                 }
                             }
                             return outputArray;
                         }));
+    }
+
+    public void singleVoxelTest(int commChannels) {
+        SingleVoxelAgent agent = commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels);
+        engine.addAgent(agent, new Vector3D(0d, 0d, 2d));
+    }
+
+    public void multiVoxelTest(int number) {
+        for (int i = 0; i < number; ++i) {
+            engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(-number + 2 * i, 0d, 2d));
+        }
+        System.out.print("Voxels: ");
+        for (EmbodiedAgent agent : engine.agents()) {
+            System.out.printf("%s ", agent);
+        }
+        System.out.println();
+    }
+
+    public void hundredVoxelsTest() {
+        for (int x = -3; x < 4; ++x) {
+            for (int y = -3; y < 4; ++y) {
+                engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(x, y, 2d));
+                engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(x + 1, y + 1, 4d));
+            }
+        }
+    }
+
+    public void robotTest(int commChannels) {
+        robot = defaultCentralizedRobot(commChannels);
         engine.addAgent(robot, new Vector3D(0d, 0d, 2d));
     }
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        robotTest();
+        robotTest(1);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
