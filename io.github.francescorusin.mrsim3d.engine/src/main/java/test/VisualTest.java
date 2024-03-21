@@ -61,7 +61,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[20];
                             int index = -1;
                             for (int i = 0; i < 12; ++i) {
-                                outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
+                                outputArray[++index] = 0d;//Math.sin(4 * (t) + i * Math.PI / 4);
                             }
                             for (int j = 12; j < 20; ++j) {
                                 outputArray[++index] = Math.sin(t + j);

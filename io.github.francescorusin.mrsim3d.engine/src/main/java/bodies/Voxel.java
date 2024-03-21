@@ -168,7 +168,7 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
   private final double[] edgeLengthControlRatio;
 
   private enum Cache {
-    ANGLE, POSITION, VELOCITY, BBOX, VOLUME
+    ANGLE, BBOX, POSITION, VELOCITY, VOLUME
   }
 
   private final EnumMap<Cache, Double> cacheTime;
@@ -669,18 +669,7 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
 
   @Override
   public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
-    //TODO DEBUG
-    Vector3D center = position(engine.t());
-    for (Body vertexBody : rigidBodies.values()) {
-      Vector3D relativePosition = center.vectorDistance(vertexBody.position(engine.t()));
-      vertexBody.translate(engine, relativePosition.reverseRotate(eulerAngles).vectorDistance(relativePosition));
-      vertexBody.rotate(engine, eulerAngles);
-    }
-    for (Body otherBody : ulteriorBodies.values()) {
-      Vector3D relativePosition = center.vectorDistance(otherBody.position(engine.t()));
-      otherBody.translate(engine, relativePosition.reverseRotate(eulerAngles).vectorDistance(relativePosition));
-      otherBody.rotate(engine, eulerAngles);
-    }
+    super.rotate(engine, eulerAngles);
     cacheTime.put(Cache.ANGLE, -1d);
     cacheTime.put(Cache.BBOX, -1d);
     cacheTime.put(Cache.POSITION, -1d);
@@ -690,8 +679,8 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
   @Override
   public void translate(Ode4jEngine engine, Vector3D translation) {
     super.translate(engine, translation);
-    cacheTime.put(Cache.POSITION, -1d);
     cacheTime.put(Cache.BBOX, -1d);
+    cacheTime.put(Cache.POSITION, -1d);
   }
 
   @Override

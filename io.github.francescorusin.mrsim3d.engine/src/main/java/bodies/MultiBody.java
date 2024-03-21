@@ -50,6 +50,16 @@ public abstract class MultiBody implements AbstractBody {
   }
 
   @Override
+  public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
+    Vector3D center = position(engine.t());
+    for (Body bodyPart : bodyParts()) {
+      Vector3D relativePosition = bodyPart.position(engine.t()).vectorDistance(center);
+      bodyPart.translate(engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
+      bodyPart.rotate(engine, eulerAngles);
+    }
+  }
+
+  @Override
   public void translate(Ode4jEngine engine, Vector3D translation) {
     for (Body body : bodyParts()) {
       body.translate(engine, translation);
