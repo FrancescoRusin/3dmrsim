@@ -22,7 +22,7 @@ package sensors;
 import bodies.SoftBody;
 import engine.Ode4jEngine;
 
-public final class VolumeRatioSensor implements Sensor {
+public class VolumeRatioSensor implements Sensor {
   private final SoftBody body;
 
   public VolumeRatioSensor(SoftBody body) {

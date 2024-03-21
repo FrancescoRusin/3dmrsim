@@ -23,7 +23,7 @@ import bodies.AbstractBody;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 
-public final class AngleSensor implements Sensor {
+public class AngleSensor implements Sensor {
   private final AbstractBody body;
 
   public AngleSensor(AbstractBody body) {

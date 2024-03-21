@@ -20,16 +20,15 @@
 package agents;
 
 import actions.Action;
-import actions.EmitSignal;
 import bodies.AbstractBody;
 import bodies.Voxel;
 import engine.Ode4jEngine;
-import java.util.*;
-
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import sensors.Sensor;
 
-public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
+import java.util.*;
+
+public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
   private final NumericalDynamicalSystem<?> controller;
   private final int commChannels;
@@ -61,7 +60,7 @@ public final class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     this.previousStepSensorOutputs =
             new double[sensors().stream().mapToInt(Sensor::outputSize).sum()];
     Arrays.fill(previousStepSensorOutputs, 0d);
-    controller.checkDimension(previousStepSensorOutputs.length, 12 + 8 * commChannels);
+    controller.checkDimension(previousStepSensorOutputs.length, 12 + 6 * commChannels);
     this.controller = controller;
     this.commChannels = commChannels;
     this.commLength = commLength;

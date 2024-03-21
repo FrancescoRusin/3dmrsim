@@ -27,6 +27,8 @@ import java.util.*;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
+import sensors.ContactSensor;
+import sensors.Sensor;
 import utils.UnorderedPair;
 
 public final class Ode4jEngine {
@@ -39,6 +41,7 @@ public final class Ode4jEngine {
   private final double timeStep;
   private final List<EmbodiedAgent> agents;
   private final Map<DGeom, AbstractBody> geometryMapper;
+  private final Map<AbstractBody, EmbodiedAgent> agentMapper;
   private final List<Body> passiveBodies;
   private final Map<DRay, SignalEmitter> signalEmitters;
   private final Map<DGeom, Boolean> signalDetectors;
@@ -84,9 +87,25 @@ public final class Ode4jEngine {
     if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
       OdeHelper.createContactJoint(world, collisionGroup, contact)
               .attach(o1.getBody(), o2.getBody());
+      if (Objects.isNull(geometryMapper.get(o1)) || Objects.isNull(geometryMapper.get(o2)) ||
+              agentMapper.get(geometryMapper.get(o1)) != agentMapper.get(geometryMapper.get(o2))) {
+        if (geometryMapper.get(o1) instanceof SensingBody sb) {
+          for (Sensor s : sb.sensors()) {
+            if (s instanceof ContactSensor cs) {
+              cs.detectContact();
+            }
+          }
+        }
+        if (geometryMapper.get(o2) instanceof SensingBody sb) {
+          for (Sensor s : sb.sensors()) {
+            if (s instanceof ContactSensor cs) {
+              cs.detectContact();
+            }
+          }
+        }
+      }
     }
   }
-  int counter = 0;
 
   private void signalCollision(Object data, DGeom o1, DGeom o2) {
     if (geometryMapper.get(o1) instanceof SignalDetector detector && signalDetectors.get(o1) && o2 instanceof DRay ray) {
@@ -114,6 +133,7 @@ public final class Ode4jEngine {
     world.setCFM(1e-5);
     agents = new ArrayList<>();
     geometryMapper = new HashMap<>();
+    agentMapper = new HashMap<>();
     passiveBodies = new ArrayList<>();
     signalEmitters = new HashMap<>();
     signalDetectors = new HashMap<>();
@@ -188,6 +208,7 @@ public final class Ode4jEngine {
           signalDetectors.put(body.collisionGeometry(), true);
         }
       }
+      agentMapper.put(aBody, agent);
     }
   }
 

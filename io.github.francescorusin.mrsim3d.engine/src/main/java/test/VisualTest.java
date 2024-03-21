@@ -18,30 +18,31 @@ package test;/*-
  * =========================LICENSE_END==================================
  */
 
-import static drawstuff.DrawStuff.*;
-import static drawstuff.internal.LwJGL.pause;
-
 import agents.CentralizedGridRobot;
 import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
-import bodies.Cube;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-
-import java.util.*;
-
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Objects;
+
+import static drawstuff.DrawStuff.*;
+import static drawstuff.internal.LwJGL.pause;
+
 public class VisualTest extends DrawStuff.dsFunctions {
-    private static final float[] xyz = {0f, -6f, 4.7600f};
-    private static final float[] hpr = {90f, -10f, 0f};
-    private static final String defaultSensors = "ang-vlm-vlc-scr-nfs0";
-    private Ode4jEngine engine;
-    private CentralizedGridRobot robot;
+    protected static final float[] xyz = {0f, -6f, 4.7600f};
+    protected static final float[] hpr = {90f, -10f, 0f};
+    private static final String defaultSensors = "ang-vlm-vlc-scr-cnt-nfs0";
+    protected Ode4jEngine engine;
+    protected CentralizedGridRobot robot;
 
     public static void main(String[] args) {
         new VisualTest().demo(args);
@@ -51,7 +52,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
         for (String s : sensorConfig.split("-")) {
             IO[0] += switch (s) {
                 case "ang", "vlc" -> 3;
-                case "vlm" -> 1;
+                case "vlm", "cnt" -> 1;
                 case "scr" -> 12;
                 default -> 0;
             };
@@ -152,8 +153,8 @@ public class VisualTest extends DrawStuff.dsFunctions {
     }
 
     public void hundredVoxelsTest() {
-        for (int x = -3; x < 4; ++x) {
-            for (int y = -3; y < 4; ++y) {
+        for (int x = -4; x < 5; ++x) {
+            for (int y = -4; y < 5; ++y) {
                 engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(x, y, 2d));
                 engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(x + 1, y + 1, 4d));
             }
@@ -167,7 +168,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        robotTest(1);
+        hundredVoxelsTest();
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();

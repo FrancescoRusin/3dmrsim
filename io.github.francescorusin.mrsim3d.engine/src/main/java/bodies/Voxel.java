@@ -23,12 +23,8 @@ import actions.EmitSignal;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import java.util.*;
-import java.util.stream.Stream;
-
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
-import org.ode4j.ode.DFixedJoint;
 import org.ode4j.ode.DJoint;
 import org.ode4j.ode.DRay;
 import sensors.*;
@@ -36,9 +32,12 @@ import test.VisualTest;
 import utils.Pair;
 import utils.UnorderedPair;
 
+import java.util.*;
+import java.util.stream.Stream;
+
 import static drawstuff.DrawStuff.*;
 
-public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalDetector {
+public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmitter, SignalDetector {
   public static final double DEFAULT_SIDE_LENGTH = 1d;
   public static final double DEFAULT_RIGID_BODY_LENGTH = .2;
   public static final double DEFAULT_MASS = 1d;
@@ -219,6 +218,7 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
         case "vlm" -> internalSensors.add(new VolumeRatioSensor(this));
         case "vlc" -> internalSensors.add(new VelocitySensor(this));
         case "scr" -> internalSensors.add(new SideCompressionSensor(this));
+        case "cnt" -> internalSensors.add(new ContactSensor(this));
         // TODO ADD SENSORS
       }
       if (s.matches("nfs[0-9]")) {
@@ -248,6 +248,7 @@ public class Voxel extends MultiBody implements SoftBody, SignalEmitter, SignalD
     return 6;
   }
 
+  @Override
   public List<Sensor> sensors() {
     return Stream.concat(internalSensors.stream(), commSensors.stream()).toList();
   }

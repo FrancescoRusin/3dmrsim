@@ -4,7 +4,7 @@ import bodies.AbstractBody;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 
-public final class VelocitySensor implements Sensor {
+public class VelocitySensor implements Sensor {
     private final AbstractBody body;
 
     public VelocitySensor(AbstractBody body) {
