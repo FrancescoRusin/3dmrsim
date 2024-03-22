@@ -23,6 +23,7 @@ import agents.EmbodiedAgent;
 import bodies.*;
 import geometry.Vector3D;
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
@@ -31,7 +32,7 @@ import sensors.ContactSensor;
 import sensors.Sensor;
 import utils.UnorderedPair;
 
-public final class Ode4jEngine {
+public class Ode4jEngine {
   private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
   private final DSpace bodySpace;
@@ -144,6 +145,8 @@ public final class Ode4jEngine {
     terrain = OdeHelper.createPlane(bodySpace, 0, 0, 1, 0);
     time = 0d;
     timeStep = 1d / 60d;
+    timeTickEngine = 0L;
+    timeTickOther = 0L;
   }
 
   public List<EmbodiedAgent> agents() {
@@ -153,15 +156,24 @@ public final class Ode4jEngine {
   public List<Body> passiveBodies() {
     return passiveBodies;
   }
+  public Stream<SimulationObject> allBodiesStream() {
+    return Stream.concat(agents.stream(), passiveBodies.stream());
+  }
 
   public double t() {
     return time;
   }
+  public long timeTickEngine;
+  public long timeTickOther;
 
   public Snapshot tick() {
+    long startTime = System.currentTimeMillis();
+    long secondTime;
     world.quickStep(timeStep);
+    secondTime = System.currentTimeMillis();
     collisionGroup.clear();
     bodySpace.collide(0, this::bodyCollision);
+    timeTickEngine += secondTime - startTime;
     OdeHelper.spaceCollide2(bodySpace, signalSpace, 0, this::signalCollision);
     for (DGeom signal : signalSpace.getGeoms()) {
       signal.destroy();
@@ -175,6 +187,7 @@ public final class Ode4jEngine {
     for (Action action : actions) {
       action.execute(this);
     }
+    timeTickOther += System.currentTimeMillis() - secondTime;
     // TODO SNAPSHOT
     return null;
   }

@@ -6,8 +6,8 @@ import engine.Ode4jEngine;
 import java.util.Arrays;
 
 public class SideCompressionSensor implements Sensor {
-    final Voxel voxel;
-    final double[] range;
+    private final Voxel voxel;
+    private final double[] range;
 
     public SideCompressionSensor(Voxel voxel, double range) {
         this.voxel = voxel;

@@ -3,7 +3,7 @@ package sensors;
 import bodies.AbstractBody;
 
 public class ContactSensor extends InteractiveSensor {
-    private AbstractBody body;
+    private final AbstractBody body;
     public ContactSensor(AbstractBody body) {
         this.body = body;
         this.currentState = new double[1];

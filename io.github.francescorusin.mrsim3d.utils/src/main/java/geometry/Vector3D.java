@@ -44,6 +44,13 @@ public record Vector3D(double x, double y, double z) {
   public Vector3D sum(Vector3D otherVector) {
     return new Vector3D(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z);
   }
+  public Vector3D weightedSum(Vector3D otherVector, double firstWeight, double otherWeight) {
+    return new Vector3D(
+            this.x * firstWeight + otherVector.x * otherWeight,
+            this.y * firstWeight + otherVector.y * otherWeight,
+            this.z * firstWeight + otherVector.z * otherWeight
+    );
+  }
 
   public Vector3D vectorDistance(Vector3D origin) {
     return new Vector3D(this.x - origin.x, this.y - origin.y, this.z - origin.z);

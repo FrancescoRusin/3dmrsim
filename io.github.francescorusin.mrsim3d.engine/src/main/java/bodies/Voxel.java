@@ -20,6 +20,7 @@ package bodies; /*-
 
 import actions.Action;
 import actions.EmitSignal;
+import ad.Attachable;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
@@ -37,12 +38,12 @@ import java.util.stream.Stream;
 
 import static drawstuff.DrawStuff.*;
 
-public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmitter, SignalDetector {
+public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmitter, SignalDetector, Attachable {
   public static final double DEFAULT_SIDE_LENGTH = 1d;
   public static final double DEFAULT_RIGID_BODY_LENGTH = .2;
   public static final double DEFAULT_MASS = 1d;
-  protected static final double DEFAULT_SPRING_CONSTANT = 100d;
-  protected static final double DEFAULT_DAMPING_CONSTANT = 20d;
+  public static final double DEFAULT_SPRING_CONSTANT = 100d;
+  public static final double DEFAULT_DAMPING_CONSTANT = 20d;
   protected static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
   protected static final double DEFAULT_CENTRAL_MASS_RATIO = .01;
 
@@ -403,6 +404,11 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
       bBoxCacher = super.boundingBox(t);
     }
     return bBoxCacher;
+  }
+
+  @Override
+  public List<List<Body>> attachPossibilities() {
+    return Arrays.stream(Side.values()).map(Side::vertices).map(vl -> vl.stream().map(rigidBodies::get).toList()).toList();
   }
 
   @Override

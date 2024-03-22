@@ -18,6 +18,11 @@ public class PerformanceTest extends VisualTest {
                 engine.tick();
             }
             System.out.printf("Hundred voxels test result: %.4f seconds\n", (System.currentTimeMillis() - startTimeMillis) / 1000d);
+            System.out.printf("Time spent on engine: %.4f; time spent on other: %.4f (%.4f vs %.4f)\n",
+                    engine.timeTickEngine / 1000d, engine.timeTickOther / 1000d,
+                    engine.timeTickEngine / (double) (engine.timeTickEngine + engine.timeTickOther),
+                    engine.timeTickOther / (double) (engine.timeTickEngine + engine.timeTickOther)
+            );
         }
     }
 }
