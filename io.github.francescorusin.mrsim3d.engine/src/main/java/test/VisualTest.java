@@ -56,7 +56,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                 case "scr" -> 12;
                 default -> 0;
             };
-            if (s.matches("nfs[0-9]")) {
+            if (s.matches("nfc[0-9]")) {
                 IO[0] += 6;
             }
         }
