@@ -32,14 +32,12 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
   private final NumericalDynamicalSystem<?> controller;
   private final int commChannels;
-  private final double commLength;
 
   public SingleVoxelAgent(
           double sideLength,
           double rigidBodyLength,
           double mass,
           int commChannels,
-          double commLength,
           double centralMassRatio,
           double springConstant,
           double dampingConstant,
@@ -63,20 +61,18 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     controller.checkDimension(previousStepSensorOutputs.length, 12 + 6 * commChannels);
     this.controller = controller;
     this.commChannels = commChannels;
-    this.commLength = commLength;
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller, int commChannels) {
-    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, commChannels, DEFAULT_COMM_LENGTH,
-            DEFAULT_CENTRAL_MASS_RATIO,
+    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, commChannels, DEFAULT_CENTRAL_MASS_RATIO,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
                     JointOption.INTERNAL), sensorConfig, controller);
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller) {
-    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, 0, DEFAULT_COMM_LENGTH,
-            DEFAULT_CENTRAL_MASS_RATIO, DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
+    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, 0, DEFAULT_CENTRAL_MASS_RATIO,
+            DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
                     JointOption.INTERNAL), sensorConfig, controller);
   }
@@ -103,7 +99,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     ++index;
     List<Action> outputActions = new ArrayList<>();
     for (int channel = 0; channel < commChannels; ++channel) {
-      outputActions.addAll(super.emitSignals(engine, commLength, channel,
+      outputActions.addAll(super.emitSignals(engine, channel,
               Arrays.copyOfRange(controllerOutput, index, index + 6)));
       index += 6;
     }

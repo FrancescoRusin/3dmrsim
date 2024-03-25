@@ -22,7 +22,9 @@ import actions.Action;
 import agents.EmbodiedAgent;
 import bodies.*;
 import geometry.Vector3D;
+
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.ode4j.math.DVector3;
@@ -33,6 +35,26 @@ import sensors.Sensor;
 import utils.UnorderedPair;
 
 public class Ode4jEngine {
+  public record Configuration(
+          Vector3D gravity,
+          Function<DSpace, DGeom> terrainSupplier,
+          double maxAttachDistance,
+          double maxAttractDistance,
+          double attachSpringRestDistance,
+          double attractForceModule,
+          double nfcRange
+          ) {
+  }
+  public final static Configuration DEFAULT_CONFIGURATION = new Configuration(
+          new Vector3D(0d, 0d, -9.81),
+          dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
+          .5,
+          2d,
+          .25,
+          10d,
+          1.5
+  );
+  public final Configuration configuration;
   private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
   private final DSpace bodySpace;
@@ -50,7 +72,38 @@ public class Ode4jEngine {
   public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
   public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
   private final DGeom terrain;
-  public static final Vector3D DEFAULT_GRAVITY = new Vector3D(0d, 0d, -9.81);
+
+  public Ode4jEngine(Configuration configuration) {
+    this.configuration = configuration;
+    world = OdeHelper.createWorld();
+    world.setCFM(0d);
+    world.setERP(0d);
+    bodySpace = OdeHelper.createHashSpace();
+    signalSpace = OdeHelper.createHashSpace();
+    collisionGroup = OdeHelper.createJointGroup();
+    world.setGravity(configuration.gravity.x(), configuration.gravity.y(), configuration.gravity.z());
+    world.setERP(1d - 1e-5);
+    world.setCFM(1e-5);
+    agents = new ArrayList<>();
+    geometryMapper = new HashMap<>();
+    agentMapper = new HashMap<>();
+    passiveBodies = new ArrayList<>();
+    signalEmitters = new HashMap<>();
+    signalDetectors = new HashMap<>();
+    springJoints = new HashMap<>();
+    fixedJoints = new HashMap<>();
+    collisionExceptions = new HashMap<>();
+    // TODO ADD TERRAINS
+    terrain = configuration.terrainSupplier.apply(bodySpace);
+    time = 0d;
+    timeStep = 1d / 60d;
+    timeTickEngine = 0L;
+    timeTickSignals = 0L;
+    timeTickOther = 0L;
+  }
+  public Ode4jEngine() {
+    this(DEFAULT_CONFIGURATION);
+  }
 
   public double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);
@@ -61,6 +114,9 @@ public class Ode4jEngine {
   }
 
   public void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
+    if (initialize == 1) {
+      System.out.println("Engine initialized");
+    }
     DVector3 anchor1Position = new DVector3();
     DVector3 anchor2Position = new DVector3();
     joint.getAnchor1(anchor1Position);
@@ -78,7 +134,7 @@ public class Ode4jEngine {
   }
 
   private void bodyCollision(Object data, DGeom o1, DGeom o2) {
-    if (!Objects.isNull(collisionExceptions.get(o1)) && collisionExceptions.get(o1).contains(o2)) {
+    if (Objects.nonNull(collisionExceptions.get(o1)) && collisionExceptions.get(o1).contains(o2)) {
       return;
     }
     DContactBuffer contacts = new DContactBuffer(1);
@@ -122,33 +178,6 @@ public class Ode4jEngine {
     }
   }
 
-  public Ode4jEngine() {
-    world = OdeHelper.createWorld();
-    world.setCFM(0d);
-    world.setERP(0d);
-    bodySpace = OdeHelper.createHashSpace();
-    signalSpace = OdeHelper.createHashSpace();
-    collisionGroup = OdeHelper.createJointGroup();
-    world.setGravity(DEFAULT_GRAVITY.x(), DEFAULT_GRAVITY.y(), DEFAULT_GRAVITY.z());
-    world.setERP(1d - 1e-5);
-    world.setCFM(1e-5);
-    agents = new ArrayList<>();
-    geometryMapper = new HashMap<>();
-    agentMapper = new HashMap<>();
-    passiveBodies = new ArrayList<>();
-    signalEmitters = new HashMap<>();
-    signalDetectors = new HashMap<>();
-    springJoints = new HashMap<>();
-    fixedJoints = new HashMap<>();
-    collisionExceptions = new HashMap<>();
-    // TODO ADD TERRAINS
-    terrain = OdeHelper.createPlane(bodySpace, 0, 0, 1, 0);
-    time = 0d;
-    timeStep = 1d / 60d;
-    timeTickEngine = 0L;
-    timeTickOther = 0L;
-  }
-
   public List<EmbodiedAgent> agents() {
     return agents;
   }
@@ -156,7 +185,7 @@ public class Ode4jEngine {
   public List<Body> passiveBodies() {
     return passiveBodies;
   }
-  public Stream<SimulationObject> allBodiesStream() {
+  public Stream<SimulationObject> allObjectsStream() {
     return Stream.concat(agents.stream(), passiveBodies.stream());
   }
 
@@ -164,21 +193,25 @@ public class Ode4jEngine {
     return time;
   }
   public long timeTickEngine;
+  public long timeTickSignals;
   public long timeTickOther;
 
   public Snapshot tick() {
     long startTime = System.currentTimeMillis();
     long secondTime;
     world.quickStep(timeStep);
-    secondTime = System.currentTimeMillis();
     collisionGroup.clear();
     bodySpace.collide(0, this::bodyCollision);
+    secondTime = System.currentTimeMillis();
     timeTickEngine += secondTime - startTime;
+    startTime = secondTime;
     OdeHelper.spaceCollide2(bodySpace, signalSpace, 0, this::signalCollision);
     for (DGeom signal : signalSpace.getGeoms()) {
       signal.destroy();
     }
     signalEmitters.clear();
+    secondTime = System.currentTimeMillis();
+    timeTickSignals += secondTime - startTime;
     time += timeStep;
     List<Action> actions = new ArrayList<>();
     for (EmbodiedAgent agent : agents) {
@@ -266,7 +299,7 @@ public class Ode4jEngine {
 
   public void removeSpringJoints(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
-    if (!Objects.isNull(springJoints.get(bodyPair))) {
+    if (Objects.nonNull(springJoints.get(bodyPair))) {
       for (DDoubleBallJoint joint : springJoints.get(bodyPair)) {
         joint.destroy();
       }
@@ -276,7 +309,7 @@ public class Ode4jEngine {
 
   public void removeFixedJoints(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
-    if (!Objects.isNull(fixedJoints.get(bodyPair))) {
+    if (Objects.nonNull(fixedJoints.get(bodyPair))) {
       for (DFixedJoint joint : fixedJoints.get(bodyPair)) {
         joint.destroy();
       }
@@ -284,8 +317,8 @@ public class Ode4jEngine {
     }
   }
 
-  public void emitSignal(SignalEmitter emitter, Vector3D direction, double length, int channel, double value) {
-    DRay ray = OdeHelper.createRay(signalSpace, length);
+  public void emitSignal(SignalEmitter emitter, Vector3D direction, int channel, double value) {
+    DRay ray = OdeHelper.createRay(signalSpace, configuration.nfcRange);
     ray.set(emitter.position(t()).x(), emitter.position(t()).y(), emitter.position(t()).z(),
             direction.x(), direction.y(), direction.z());
     // categoryBits stores the signal value as a long

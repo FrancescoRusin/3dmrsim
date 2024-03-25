@@ -1,6 +1,5 @@
-package bodies;
+package engine;
 
-import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 

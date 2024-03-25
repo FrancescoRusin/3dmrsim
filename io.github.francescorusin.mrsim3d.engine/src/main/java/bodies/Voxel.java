@@ -44,8 +44,8 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   public static final double DEFAULT_MASS = 1d;
   public static final double DEFAULT_SPRING_CONSTANT = 100d;
   public static final double DEFAULT_DAMPING_CONSTANT = 20d;
-  protected static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
-  protected static final double DEFAULT_CENTRAL_MASS_RATIO = .01;
+  public static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
+  public static final double DEFAULT_CENTRAL_MASS_RATIO = .01;
 
   public enum Vertex {
     V000,
@@ -158,7 +158,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   protected Map<DDoubleBallJoint, Double> jointMinLength;
   protected Map<UlteriorBody, Body> ulteriorBodies;
   protected final List<Sensor> internalSensors;
-  protected final List<NearFieldSignalSensor> commSensors;
+  protected final List<NearFieldCommunicationSensor> commSensors;
   private final double bodyCenterToBodyCenterLength;
   private final double rigidBodyLength;
   private final double mass;
@@ -173,11 +173,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   }
 
   private final EnumMap<Cache, Double> cacheTime;
-  private Vector3D angleCacher;
-  private Vector3D positionCacher;
-  private Vector3D velocityCacher;
-  private BoundingBox bBoxCacher;
-  private double volumeCacher;
+  private final EnumMap<Cache, Object> cacher;
 
   public Voxel(
           double sideLength,
@@ -213,6 +209,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     this.internalSensors = new ArrayList<>();
     this.commSensors = new ArrayList<>();
     this.cacheTime = new EnumMap<>(Cache.class);
+    this.cacher = new EnumMap<>(Cache.class);
     for (String s : sensorConfig.split("-")) {
       switch (s) {
         case "ang" -> internalSensors.add(new AngleSensor(this));
@@ -222,8 +219,8 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
         case "cnt" -> internalSensors.add(new ContactSensor());
         // TODO ADD SENSORS
       }
-      if (s.matches("nfs[0-9]")) {
-        commSensors.add(new NearFieldSignalSensor(this, Character.getNumericValue(s.charAt(3))));
+      if (s.matches("nfc[0-9]")) {
+        commSensors.add(new NearFieldCommunicationSensor(this, Character.getNumericValue(s.charAt(3))));
       }
     }
   }
@@ -254,7 +251,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     return Stream.concat(internalSensors.stream(), commSensors.stream()).toList();
   }
 
-  public List<NearFieldSignalSensor> commSensors() {
+  public List<NearFieldCommunicationSensor> commSensors() {
     return commSensors;
   }
 
@@ -319,27 +316,36 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
                                 .vectorProduct(currentVectorsFromV000.get(ttr.v3))
                                 .scalarProduct(currentVectorsFromV000.get(ttr.v4)));
       }
-      volumeCacher = volume / 6d;
+      cacher.put(Cache.VOLUME, volume / 6d);
     }
-    return volumeCacher;
+    return (double) cacher.get(Cache.VOLUME);
+  }
+
+  @Override
+  public BoundingBox boundingBox(double t) {
+    if (cacheTime.get(Cache.BBOX) != t) {
+      cacheTime.put(Cache.BBOX, t);
+      cacher.put(Cache.BBOX, super.boundingBox(t));
+    }
+    return (BoundingBox) cacher.get(Cache.BBOX);
   }
 
   @Override
   public Vector3D position(double t) {
     if (cacheTime.get(Cache.POSITION) != t) {
       cacheTime.put(Cache.POSITION, t);
-      positionCacher = super.position(t);
+      cacher.put(Cache.POSITION, super.position(t));
     }
-    return positionCacher;
+    return (Vector3D) cacher.get(Cache.POSITION);
   }
 
   @Override
   public Vector3D velocity(double t) {
     if (cacheTime.get(Cache.VELOCITY) != t) {
       cacheTime.put(Cache.VELOCITY, t);
-      velocityCacher = super.velocity(t);
+      cacher.put(Cache.VELOCITY, super.velocity(t));
     }
-    return velocityCacher;
+    return (Vector3D) cacher.get(Cache.VELOCITY);
   }
 
   @Override
@@ -392,18 +398,9 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
       angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
       angle[1] = Math.asin(-angleVector1.z());
       angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
-      angleCacher = new Vector3D(angle[0], angle[1], angle[2]);
+      cacher.put(Cache.ANGLE, new Vector3D(angle[0], angle[1], angle[2]));
     }
-    return angleCacher;
-  }
-
-  @Override
-  public BoundingBox boundingBox(double t) {
-    if (cacheTime.get(Cache.BBOX) != t) {
-      cacheTime.put(Cache.BBOX, t);
-      bBoxCacher = super.boundingBox(t);
-    }
-    return bBoxCacher;
+    return (Vector3D) cacher.get(Cache.ANGLE);
   }
 
   @Override
@@ -691,7 +688,6 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     super.rotate(engine, eulerAngles);
     cacheTime.put(Cache.ANGLE, -1d);
     cacheTime.put(Cache.BBOX, -1d);
-    cacheTime.put(Cache.POSITION, -1d);
     cacheTime.put(Cache.VELOCITY, -1d);
   }
 
@@ -785,16 +781,14 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   }
 
   @Override
-  public List<Action> emitSignals(Ode4jEngine engine, double length, int channel, double[] values) {
-    double shift = bodyCenterToBodyCenterLength / 2 + length;
+  public List<Action> emitSignals(Ode4jEngine engine, int channel, double[] values) {
     int index = -1;
     List<Action> outputActions = new ArrayList<>();
     for (Vector3D sideCenter : List.of(
             new Vector3D(0, 0, 1), new Vector3D(0, 0, -1),
             new Vector3D(0, 1, 0), new Vector3D(0, -1, 0),
             new Vector3D(1, 0, 0), new Vector3D(-1, 0, 0))) {
-      outputActions.add(new EmitSignal(this, sideCenter.rotate(angle(engine.t())),
-              shift, channel, values[++index]));
+      outputActions.add(new EmitSignal(this, sideCenter.rotate(angle(engine.t())), channel, values[++index]));
     }
     return outputActions;
   }
@@ -807,7 +801,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     Vector3D relativeContactPosition = contactPosition.vectorDistance(position(engine.t())).reverseRotate(angle(engine.t()));
     Side side = closestSide(relativeContactPosition);
     int channel = Math.toIntExact(~signal.getCollideBits());
-    for (NearFieldSignalSensor sensor : commSensors) {
+    for (NearFieldCommunicationSensor sensor : commSensors) {
       if (sensor.channel == channel) {
         sensor.readSignal(Double.longBitsToDouble(signal.getCategoryBits()), side.ordinal());
       }

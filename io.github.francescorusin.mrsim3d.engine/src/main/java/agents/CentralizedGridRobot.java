@@ -1,10 +1,8 @@
 package agents;
 
 import actions.Action;
-import bodies.SignalEmitter;
 import bodies.Voxel;
 import engine.Ode4jEngine;
-import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import sensors.Sensor;
 
@@ -12,40 +10,32 @@ import java.util.*;
 
 public class CentralizedGridRobot extends AbstractGridRobot {
     private final int commChannels;
-    private final double commLength;
     private final NumericalDynamicalSystem<?> controller;
     private final double[] previousStepSensorOutputs;
 
-    public CentralizedGridRobot(Voxel[][][] grid, double voxelSideLength, double voxelMass, int commChannels, double commLength,
+    public CentralizedGridRobot(Voxel[][][] grid, double voxelSideLength, double voxelMass, int commChannels,
                                 NumericalDynamicalSystem<?> controller) {
         super(grid, voxelSideLength, voxelMass);
         this.commChannels = commChannels;
         this.previousStepSensorOutputs =
                 new double[
                         Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream))
-                                .filter(v -> !Objects.isNull(v))
+                                .filter(Objects::nonNull)
                                 .mapToInt(v -> v.sensors().stream().mapToInt(Sensor::outputSize).sum()).sum()];
-        this.commLength = commLength;
         Arrays.fill(previousStepSensorOutputs, 0d);
         controller.checkDimension(previousStepSensorOutputs.length,
                 ((int) Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream))
-                        .filter(v -> !Objects.isNull(v)).count() * (12 + 6 * commChannels)));
+                        .filter(Objects::nonNull).count() * (12 + 6 * commChannels)));
         this.controller = controller;
-    }
-
-    public CentralizedGridRobot(Voxel[][][] grid, double voxelSideLength, double voxelMass, int commChannels,
-                                NumericalDynamicalSystem<?> controller) {
-        this(grid, voxelSideLength, voxelMass, commChannels, SignalEmitter.DEFAULT_COMM_LENGTH, controller);
     }
 
     public CentralizedGridRobot(Voxel[][][] grid, double voxelSideLength, double voxelMass,
                                 NumericalDynamicalSystem<?> controller) {
-        this(grid, voxelSideLength, voxelMass, 0, 0, controller);
+        this(grid, voxelSideLength, voxelMass, 0, controller);
     }
 
     public CentralizedGridRobot(Voxel[][][] grid, int commChannels, NumericalDynamicalSystem<?> controller) {
-        this(grid, Voxel.DEFAULT_SIDE_LENGTH, Voxel.DEFAULT_MASS, commChannels,
-                SignalEmitter.DEFAULT_COMM_LENGTH, controller);
+        this(grid, Voxel.DEFAULT_SIDE_LENGTH, Voxel.DEFAULT_MASS, commChannels, controller);
     }
 
     public CentralizedGridRobot(Voxel[][][] grid, NumericalDynamicalSystem<?> controller) {
@@ -59,7 +49,7 @@ public class CentralizedGridRobot extends AbstractGridRobot {
         for (Voxel[][] voxelMatrix : grid) {
             for (Voxel[] voxelRow : voxelMatrix) {
                 for (Voxel voxel : voxelRow) {
-                    if (!Objects.isNull(voxel)) {
+                    if (Objects.nonNull(voxel)) {
                         for (Sensor s : voxel.sensors()) {
                             System.arraycopy(s.sense(engine), 0, previousStepSensorOutputs, sensorIndex, s.outputSize());
                             sensorIndex += s.outputSize();
@@ -74,13 +64,13 @@ public class CentralizedGridRobot extends AbstractGridRobot {
         for (Voxel[][] voxelMatrix : grid) {
             for (Voxel[] voxelRow : voxelMatrix) {
                 for (Voxel voxel : voxelRow) {
-                    if (!Objects.isNull(voxel)) {
+                    if (Objects.nonNull(voxel)) {
                         for (Voxel.Edge e : Voxel.Edge.values()) {
                             controlMap.put(e, controllerOutput[index++]);
                         }
                         voxel.actOnInput(controlMap);
                         for (int channel = 0; channel < commChannels; ++channel) {
-                            outputActions.addAll(voxel.emitSignals(engine, commLength, channel,
+                            outputActions.addAll(voxel.emitSignals(engine, channel,
                                     Arrays.copyOfRange(controllerOutput, index, index + 6)));
                             index += 6;
                         }

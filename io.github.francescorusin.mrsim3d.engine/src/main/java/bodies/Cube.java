@@ -46,6 +46,7 @@ public class Cube extends Body {
     @Override
     public BoundingBox boundingBox(double t) {
         if (cacheTime.get(Cache.BBOX) != t) {
+            cacheTime.put(Cache.BBOX, t);
             Vector3D angle = angle(t);
             List<Vector3D> rotatedVertices =
                     Stream.of(new Vector3D(1d, 1d, 1d), new Vector3D(-1d, 1d, 1d),
@@ -90,6 +91,7 @@ public class Cube extends Body {
     @Override
     public Vector3D angle(double t) {
         if (cacheTime.get(Cache.ANGLE) != t) {
+            cacheTime.put(Cache.ANGLE, t);
             DMatrix3C rotationMatrix = body.getRotation();
             angleCacher = new Vector3D(
                     Math.atan2(rotationMatrix.get21(), rotationMatrix.get22()),

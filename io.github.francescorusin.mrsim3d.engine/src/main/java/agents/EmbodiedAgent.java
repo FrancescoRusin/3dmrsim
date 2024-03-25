@@ -21,18 +21,13 @@ package agents;
 
 import actions.Action;
 import bodies.AbstractBody;
-import bodies.Body;
-import bodies.SimulationObject;
+import engine.SimulationObject;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import org.ode4j.ode.DBody;
 import test.VisualTest;
-import utils.Pair;
-import utils.UnorderedPair;
 
 import java.util.List;
-import java.util.stream.Stream;
 
 public interface EmbodiedAgent extends SimulationObject {
   List<AbstractBody> components();

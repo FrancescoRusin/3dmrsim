@@ -38,9 +38,9 @@ import static drawstuff.DrawStuff.*;
 import static drawstuff.internal.LwJGL.pause;
 
 public class VisualTest extends DrawStuff.dsFunctions {
-    protected static final float[] xyz = {0f, -6f, 4.7600f};
+    protected static final float[] xyz = {0f, -6f, 4.2600f};
     protected static final float[] hpr = {90f, -10f, 0f};
-    private static final String defaultSensors = "ang-vlm-vlc-scr-cnt-nfs0";
+    private static final String defaultSensors = "ang-vlm-vlc-scr-cnt-nfc0";
     protected Ode4jEngine engine;
     protected CentralizedGridRobot robot;
 
@@ -117,7 +117,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
         voxelGrid[3][0][0] = defaultVoxel();
         voxelGrid[3][2][0] = defaultVoxel();
         final int nOfVoxels = Math.toIntExact(Arrays.stream(voxelGrid).flatMap(aa -> Arrays.stream(aa)
-                .flatMap(Arrays::stream)).filter(v -> !Objects.isNull(v)).count());
+                .flatMap(Arrays::stream)).filter(Objects::nonNull).count());
         final int[] IO = computeIO(defaultSensors, nOfVoxels, commChannels);
         return new CentralizedGridRobot(voxelGrid, commChannels,
                 NumericalStatelessSystem.from(IO[0], IO[1],
@@ -126,7 +126,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             int index = -1;
                             for (int v = 0; v < nOfVoxels; ++v) {
                                 for (int i = 0; i < 12; ++i) {
-                                    outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
+                                    outputArray[++index] = 0d;//Math.sin(4 * (t) + i * Math.PI / 4);
                                 }
                                 for (int i = 0; i < 6 * commChannels; ++i) {
                                     outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
@@ -168,7 +168,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        hundredVoxelsTest();
+        robotTest(0);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
@@ -176,20 +176,20 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     @Override
     public void start() {
-        pause = true;
         dsSetViewpoint(xyz, hpr);
     }
     @Override
     public void step(boolean pause) {
         if (!pause) {
             engine.tick();
+            robot.rotate(engine, new Vector3D(0d, 0d, 0.01));
         }
         engine.agents().forEach(agent -> agent.draw(this));
         engine.passiveBodies().forEach(body -> body.draw(this));
         dsSetColor(1, 1, 1);
         DVector3 placeholder1 = new DVector3();
         DVector3 placeholder2 = new DVector3();
-        for (DJoint joint : engine.fixedJoints.values().stream().filter(o -> !Objects.isNull(o)).flatMap(List::stream).toList()) {
+        for (DJoint joint : engine.fixedJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
             if (joint instanceof DDoubleBallJoint doubleBallJoint) {
                 doubleBallJoint.getAnchor1(placeholder1);
                 doubleBallJoint.getAnchor2(placeholder2);

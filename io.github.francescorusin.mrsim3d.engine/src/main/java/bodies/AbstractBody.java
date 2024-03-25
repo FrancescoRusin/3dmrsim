@@ -19,11 +19,8 @@
  */
 package bodies;
 
-import engine.Ode4jEngine;
-import geometry.BoundingBox;
+import engine.SimulationObject;
 import geometry.Vector3D;
-import org.ode4j.ode.DGeom;
-import org.ode4j.ode.DSpace;
 import test.VisualTest;
 
 public interface AbstractBody extends SimulationObject {

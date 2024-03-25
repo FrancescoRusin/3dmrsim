@@ -40,8 +40,7 @@ public abstract class Body implements AbstractBody {
 
   @Override
   public Vector3D position(double t) {
-    return new Vector3D(
-            body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
+    return new Vector3D(body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
   }
 
   @Override
@@ -49,13 +48,13 @@ public abstract class Body implements AbstractBody {
     body.setPosition(
             body.getPosition().get0() + translation.x(),
             body.getPosition().get1() + translation.y(),
-            body.getPosition().get2() + translation.z());
+            body.getPosition().get2() + translation.z()
+    );
   }
 
   @Override
   public Vector3D velocity(double t) {
-    return new Vector3D(
-            body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
+    return new Vector3D(body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
   }
 
   public DBody dBody() {

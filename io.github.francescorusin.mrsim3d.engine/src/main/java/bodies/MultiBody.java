@@ -21,10 +21,9 @@ package bodies; /*-
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import java.util.List;
-
-import org.ode4j.ode.DGeom;
 import org.ode4j.ode.DJoint;
+
+import java.util.List;
 
 public abstract class MultiBody implements AbstractBody {
   @Override
