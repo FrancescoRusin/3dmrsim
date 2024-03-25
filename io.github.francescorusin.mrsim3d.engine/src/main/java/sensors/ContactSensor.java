@@ -1,7 +1,5 @@
 package sensors;
 
-import bodies.AbstractBody;
-
 public class ContactSensor extends InteractiveSensor {
     public ContactSensor() {
         this.currentState = new double[1];
