@@ -19,4 +19,9 @@ public abstract class InteractiveSensor implements Sensor {
         resetReadings();
         return readingsCopy;
     }
+
+    @Override
+    public int outputSize() {
+        return currentState.length;
+    }
 }

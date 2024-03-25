@@ -219,7 +219,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
         case "vlm" -> internalSensors.add(new VolumeRatioSensor(this));
         case "vlc" -> internalSensors.add(new VelocitySensor(this));
         case "scr" -> internalSensors.add(new SideCompressionSensor(this));
-        case "cnt" -> internalSensors.add(new ContactSensor(this));
+        case "cnt" -> internalSensors.add(new ContactSensor());
         // TODO ADD SENSORS
       }
       if (s.matches("nfs[0-9]")) {
