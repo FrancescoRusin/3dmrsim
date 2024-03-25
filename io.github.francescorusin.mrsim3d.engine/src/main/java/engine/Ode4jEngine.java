@@ -74,6 +74,9 @@ public class Ode4jEngine {
   private final DGeom terrain;
 
   public Ode4jEngine(Configuration configuration) {
+    if (initialize == 1) {
+      System.out.println("Engine initialized");
+    }
     this.configuration = configuration;
     world = OdeHelper.createWorld();
     world.setCFM(0d);
@@ -114,9 +117,6 @@ public class Ode4jEngine {
   }
 
   public void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
-    if (initialize == 1) {
-      System.out.println("Engine initialized");
-    }
     DVector3 anchor1Position = new DVector3();
     DVector3 anchor2Position = new DVector3();
     joint.getAnchor1(anchor1Position);
