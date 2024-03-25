@@ -809,7 +809,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     int channel = Math.toIntExact(~signal.getCollideBits());
     for (NearFieldSignalSensor sensor : commSensors) {
       if (sensor.channel == channel) {
-        sensor.readSignal(Double.longBitsToDouble(signal.getCategoryBits()), side);
+        sensor.readSignal(Double.longBitsToDouble(signal.getCategoryBits()), side.ordinal());
       }
     }
   }

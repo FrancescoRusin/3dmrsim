@@ -10,7 +10,7 @@ public class NearFieldSignalSensor extends InteractiveSensor {
         currentState = new double[body.nOfSides()];
     }
 
-    public void readSignal(double value, Voxel.Side side) {
-        currentState[side.ordinal()] += value;
+    public void readSignal(double value, int side) {
+        currentState[side] += value;
     }
 }
