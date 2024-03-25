@@ -1,7 +1,6 @@
 package sensors;
 
 import bodies.SignalDetector;
-import bodies.Voxel;
 
 public class NearFieldSignalSensor extends InteractiveSensor {
     public final int channel;
