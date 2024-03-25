@@ -77,6 +77,7 @@ public class RequestAttachment implements Action {
         }
         Pair<Body, Body> minDistanceBodies = Collections.min(bodyDistances.keySet(), Comparator.comparingDouble(bodyDistances::get));
         if (bodyDistances.get(minDistanceBodies) > engine.configuration.maxAttachDistance()) {
+            //TODO ACTUALLY ENCODE FORCES
             for (Body b1 : requesterAttachGroup) {
                 b1.dBody().addForce(0d, 0d, 0d);
             }
