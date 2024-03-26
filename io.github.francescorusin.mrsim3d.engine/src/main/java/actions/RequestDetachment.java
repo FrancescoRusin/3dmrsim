@@ -18,6 +18,7 @@ public class RequestDetachment implements Action {
 
     @Override
     public void execute(Ode4jEngine engine) {
+        //TODO TEST
         for (Body requesterBody : requesterAttachGroup) {
             for (Body attachedBody : requester.attachedBodies().get(requesterBody)) {
                 engine.removeSpringJoints(requesterBody, attachedBody);

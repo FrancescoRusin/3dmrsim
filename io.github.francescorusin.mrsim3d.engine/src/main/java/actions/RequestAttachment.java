@@ -31,7 +31,7 @@ public class RequestAttachment implements Action {
 
     @Override
     public void execute(Ode4jEngine engine) {
-        //TODO TEST
+        //TODO DEBUG
         Vector3D basePos = requesterAttachGroup.stream()
                 .map(b -> b.position(engine.t()).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
                 .times(1d / requesterAttachGroup.stream().mapToDouble(Body::mass).sum());
