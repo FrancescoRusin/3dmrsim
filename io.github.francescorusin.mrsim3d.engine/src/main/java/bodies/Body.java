@@ -24,6 +24,8 @@ import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
 import org.ode4j.ode.DMass;
 
+import java.util.List;
+
 public abstract class Body implements AbstractBody {
   protected DBody body;
   protected DMass mass;
@@ -36,6 +38,11 @@ public abstract class Body implements AbstractBody {
 
   public DGeom collisionGeometry() {
     return collisionGeometry;
+  }
+
+  @Override
+  public List<Body> bodyParts() {
+    return List.of(this);
   }
 
   @Override

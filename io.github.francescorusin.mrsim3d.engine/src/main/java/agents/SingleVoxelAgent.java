@@ -20,6 +20,8 @@
 package agents;
 
 import actions.Action;
+import actions.RequestAttachment;
+import actions.RequestDetachment;
 import bodies.AbstractBody;
 import bodies.Voxel;
 import engine.Ode4jEngine;
@@ -102,6 +104,16 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       outputActions.addAll(super.emitSignals(engine, channel,
               Arrays.copyOfRange(controllerOutput, index, index + 6)));
       index += 6;
+    }
+    //TODO REMOVE TEST
+    if (Math.sin(engine.t()) > 0) {
+      outputActions.addAll(Arrays.stream(Side.values()).map(Side::vertices)
+              .map(l -> new RequestAttachment(this, l.stream().map(rigidBodies::get).toList()))
+              .toList());
+    } else {
+      outputActions.addAll(Arrays.stream(Side.values()).map(Side::vertices)
+              .map(l -> new RequestDetachment(this, l.stream().map(rigidBodies::get).toList()))
+              .toList());
     }
     return outputActions;
   }

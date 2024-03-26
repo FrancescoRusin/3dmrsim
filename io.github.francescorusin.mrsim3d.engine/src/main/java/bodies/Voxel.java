@@ -45,7 +45,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   public static final double DEFAULT_SPRING_CONSTANT = 100d;
   public static final double DEFAULT_DAMPING_CONSTANT = 20d;
   public static final double DEFAULT_SIDE_LENGTH_STRETCH_RATIO = .2;
-  public static final double DEFAULT_CENTRAL_MASS_RATIO = .01;
+  public static final double DEFAULT_CENTRAL_MASS_RATIO = .5;
 
   public enum Vertex {
     V000,
@@ -159,6 +159,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   protected Map<UlteriorBody, Body> ulteriorBodies;
   protected final List<Sensor> internalSensors;
   protected final List<NearFieldCommunicationSensor> commSensors;
+  private final Map<Body, Set<Body>> attachedBodies;
   private final double bodyCenterToBodyCenterLength;
   private final double rigidBodyLength;
   private final double mass;
@@ -208,6 +209,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     this.jointOptions = jointOptions;
     this.internalSensors = new ArrayList<>();
     this.commSensors = new ArrayList<>();
+    this.attachedBodies = new LinkedHashMap<>();
     this.cacheTime = new EnumMap<>(Cache.class);
     this.cacher = new EnumMap<>(Cache.class);
     for (String s : sensorConfig.split("-")) {
@@ -386,15 +388,14 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
                                       .reduce(Vector3D::sum)
                                       .get()
                                       .times(-1d));
-      angleVector1 = angleVector1.times(1d / angleVector1.norm());
-      angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2)));
-      angleVector2 = angleVector2.times(1d / angleVector2.norm());
+      angleVector1 = angleVector1.normalize();
+      angleVector2 = angleVector2.sum(angleVector1.times(-angleVector1.scalarProduct(angleVector2))).normalize();
       angleVector3 =
               angleVector3.sum(
-                      angleVector1
-                              .times(-angleVector1.scalarProduct(angleVector3))
-                              .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))));
-      angleVector3 = angleVector3.times(1d / angleVector3.norm());
+                              angleVector1
+                                      .times(-angleVector1.scalarProduct(angleVector3))
+                                      .sum(angleVector2.times(-angleVector2.scalarProduct(angleVector3))))
+                      .normalize();
       angle[0] = Math.atan2(angleVector2.z(), angleVector3.z());
       angle[1] = Math.asin(-angleVector1.z());
       angle[2] = Math.atan2(angleVector1.y(), angleVector1.x());
@@ -409,13 +410,23 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   }
 
   @Override
+  public Map<Body, Set<Body>> attachedBodies() {
+    return attachedBodies;
+  }
+
+  @Override
+  public boolean checkAttachment(Body body) {
+    return Arrays.stream(Vertex.values()).anyMatch(v -> rigidBodies.get(v).dBody().isConnectedTo(body.dBody()));
+  }
+
+  @Override
   public void assemble(Ode4jEngine engine, Vector3D position) {
     rigidBodies = new EnumMap<>(Vertex.class);
     ulteriorBodies = new EnumMap<>(UlteriorBody.class);
     vertexToVertexJoints = new LinkedHashMap<>();
     ulteriorJoints = new LinkedHashMap<>();
-    jointMaxLength = new LinkedHashMap<>();
-    jointMinLength = new LinkedHashMap<>();
+    jointMaxLength = new HashMap<>();
+    jointMinLength = new HashMap<>();
     for (Cache c : Cache.values()) {
       cacheTime.put(c, -1d);
     }
@@ -426,6 +437,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     // building rigid bodies
     for (Vertex v : Vertex.values()) {
       rigidBodies.put(v, new Cube(rigidBodyLength, rigidSphereMass));
+      attachedBodies.put(rigidBodies.get(v), new HashSet<>());
     }
     rigidBodies
             .get(Vertex.V000)
@@ -798,7 +810,8 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     if (commSensors.isEmpty()) {
       return;
     }
-    Vector3D relativeContactPosition = contactPosition.vectorDistance(position(engine.t())).reverseRotate(angle(engine.t()));
+    Vector3D relativeContactPosition = contactPosition.vectorDistance(position(engine.t())).normalize()
+            .reverseRotate(angle(engine.t()));
     Side side = closestSide(relativeContactPosition);
     int channel = Math.toIntExact(~signal.getCollideBits());
     for (NearFieldCommunicationSensor sensor : commSensors) {

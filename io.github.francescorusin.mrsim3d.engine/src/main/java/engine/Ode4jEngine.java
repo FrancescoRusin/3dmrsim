@@ -19,20 +19,20 @@ package engine; /*-
                  */
 
 import actions.Action;
+import ad.Attachable;
 import agents.EmbodiedAgent;
 import bodies.*;
 import geometry.Vector3D;
-
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Stream;
-
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
 import sensors.ContactSensor;
 import sensors.Sensor;
 import utils.UnorderedPair;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 public class Ode4jEngine {
   public record Configuration(
@@ -46,12 +46,12 @@ public class Ode4jEngine {
           ) {
   }
   public final static Configuration DEFAULT_CONFIGURATION = new Configuration(
-          new Vector3D(0d, 0d, -9.81),
+          /*new Vector3D(0d, 0d, -9.81)*/new Vector3D(0d, 0d, 0d),
           dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
           .5,
           2d,
           .25,
-          10d,
+          8d,
           1.5
   );
   public final Configuration configuration;
@@ -240,12 +240,7 @@ public class Ode4jEngine {
     agent.assemble(this, position);
     agents.add(agent);
     for (AbstractBody aBody : agent.components()) {
-      if (aBody instanceof MultiBody mBody) {
-        for (Body body : mBody.bodyParts()) {
-          geometryMapper.put(body.collisionGeometry(), aBody);
-          signalDetectors.put(body.collisionGeometry(), false);
-        }
-      } else if (aBody instanceof Body body) {
+      for (Body body : aBody.bodyParts()) {
         geometryMapper.put(body.collisionGeometry(), aBody);
         signalDetectors.put(body.collisionGeometry(), false);
       }
@@ -315,6 +310,16 @@ public class Ode4jEngine {
       }
       fixedJoints.remove(bodyPair);
     }
+  }
+  public boolean areConnected(Attachable attachable1, Attachable attachable2) {
+    for (Body b1 : attachable1.bodyParts()) {
+      for (Body b2 : attachable2.bodyParts()) {
+        if (Objects.nonNull(springJoints.get(new UnorderedPair<>(b1, b2)))) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   public void emitSignal(SignalEmitter emitter, Vector3D direction, int channel, double value) {

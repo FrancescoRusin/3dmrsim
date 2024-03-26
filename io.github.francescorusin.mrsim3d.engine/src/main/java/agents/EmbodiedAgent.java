@@ -21,16 +21,23 @@ package agents;
 
 import actions.Action;
 import bodies.AbstractBody;
-import engine.SimulationObject;
+import bodies.Body;
 import engine.Ode4jEngine;
+import engine.SimulationObject;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import test.VisualTest;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface EmbodiedAgent extends SimulationObject {
   List<AbstractBody> components();
+
+  @Override
+  default List<Body> bodyParts() {
+    return components().stream().map(AbstractBody::bodyParts).flatMap(Collection::stream).toList();
+  }
 
   @Override
   default BoundingBox boundingBox(double t) {

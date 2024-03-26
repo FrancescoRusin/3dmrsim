@@ -18,21 +18,23 @@ package test;/*-
  * =========================LICENSE_END==================================
  */
 
+import ad.Attachable;
 import agents.CentralizedGridRobot;
 import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
+import bodies.Body;
+import bodies.Sphere;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
+import engine.SimulationObject;
+import geometry.BoundingBox;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static drawstuff.DrawStuff.*;
 import static drawstuff.internal.LwJGL.pause;
@@ -143,7 +145,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void multiVoxelTest(int number) {
         for (int i = 0; i < number; ++i) {
-            engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(-number + 2 * i, 0d, 2d));
+            engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(-number + 2 * i + 1, 0d, 2d));
         }
         System.out.print("Voxels: ");
         for (EmbodiedAgent agent : engine.agents()) {
@@ -168,21 +170,20 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        robotTest(0);
+        multiVoxelTest(2);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
     }
-
     @Override
     public void start() {
+        pause = true;
         dsSetViewpoint(xyz, hpr);
     }
     @Override
     public void step(boolean pause) {
         if (!pause) {
             engine.tick();
-            robot.rotate(engine, new Vector3D(0d, 0d, 0.01));
         }
         engine.agents().forEach(agent -> agent.draw(this));
         engine.passiveBodies().forEach(body -> body.draw(this));

@@ -18,8 +18,10 @@ package geometry; /*-
                    * =========================LICENSE_END==================================
                    */
 
-import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public record Vector3D(double x, double y, double z) {
   public Vector3D() {
@@ -36,6 +38,9 @@ public record Vector3D(double x, double y, double z) {
   public double norm() {
     return Math.sqrt(x * x + y * y + z * z);
   }
+  public Vector3D normalize() {
+    return this.times(1d / norm());
+  }
 
   public Vector3D times(double d) {
     return new Vector3D(this.x * d, this.y * d, this.z * d);
@@ -44,11 +49,11 @@ public record Vector3D(double x, double y, double z) {
   public Vector3D sum(Vector3D otherVector) {
     return new Vector3D(this.x + otherVector.x, this.y + otherVector.y, this.z + otherVector.z);
   }
-  public Vector3D weightedSum(Vector3D otherVector, double firstWeight, double otherWeight) {
+  public static Vector3D weightedSum(Vector3D firstVector, Vector3D secondVector, double firstWeight, double secondWeight) {
     return new Vector3D(
-            this.x * firstWeight + otherVector.x * otherWeight,
-            this.y * firstWeight + otherVector.y * otherWeight,
-            this.z * firstWeight + otherVector.z * otherWeight
+            firstVector.x * firstWeight + secondVector.x * secondWeight,
+            firstVector.y * firstWeight + secondVector.y * secondWeight,
+            firstVector.z * firstWeight + secondVector.z * secondWeight
     );
   }
 
@@ -65,6 +70,13 @@ public record Vector3D(double x, double y, double z) {
             this.y * otherVector.z - this.z * otherVector.y,
             this.z * otherVector.x - this.x * otherVector.z,
             this.x * otherVector.y - this.y * otherVector.x);
+  }
+
+  public static Vector3D weirdNormalApproximation(List<Vector3D> vectors) {
+    return Stream.concat(
+            IntStream.range(1, vectors.size() - 1).boxed().map(i -> vectors.get(i).vectorProduct(vectors.get(i - 1))),
+            Stream.of(vectors.get(vectors.size() - 1).vectorProduct(vectors.get(0)))
+    ).reduce(Vector3D::sum).orElse(new Vector3D()).normalize();
   }
 
   public Vector3D rotate(Vector3D eulerAngles) {

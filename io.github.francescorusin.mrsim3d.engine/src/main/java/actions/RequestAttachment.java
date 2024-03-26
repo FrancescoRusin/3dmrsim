@@ -24,7 +24,7 @@ public class RequestAttachment implements Action {
         this.dampingConstant = dampingConstant;
     }
 
-    public RequestAttachment(List<Body> requesterAttachGroup, Attachable requester) {
+    public RequestAttachment(Attachable requester, List<Body> requesterAttachGroup) {
         this(requester, requesterAttachGroup,
                 Voxel.DEFAULT_SPRING_CONSTANT, Voxel.DEFAULT_DAMPING_CONSTANT);
     }
@@ -32,41 +32,49 @@ public class RequestAttachment implements Action {
     @Override
     public void execute(Ode4jEngine engine) {
         //TODO TEST
-        Pair<Vector3D, Double> basePosAndMass = requesterAttachGroup.stream().map(b -> new Pair<>(b.position(engine.t()), b.mass()))
-                .reduce((p1, p2) -> new Pair<>(p1.first().weightedSum(p2.first(), p1.second(), p2.second()), p1.second() + p2.second()))
-                .orElseThrow();
-        Vector3D basePos = basePosAndMass.first().times(1d / basePosAndMass.second());
+        Vector3D basePos = requesterAttachGroup.stream()
+                .map(b -> b.position(engine.t()).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
+                .times(1d / requesterAttachGroup.stream().mapToDouble(Body::mass).sum());
+        Vector3D planeNormal = Vector3D.weirdNormalApproximation(
+                requesterAttachGroup.stream().map(v -> v.position(engine.t()).vectorDistance(basePos)).toList());
+        double planeC = basePos.scalarProduct(planeNormal);
+        double correctSign = -Math.signum(requester.position(engine.t()).scalarProduct(planeNormal) - planeC);
         Vector3D maxBasePos = basePos.sum(new Vector3D(
-                engine.configuration.maxAttachDistance(),
-                engine.configuration.maxAttachDistance(),
-                engine.configuration.maxAttachDistance())
+                engine.configuration.maxAttractDistance(),
+                engine.configuration.maxAttractDistance(),
+                engine.configuration.maxAttractDistance())
         );
         Vector3D minBasePos = basePos.sum(new Vector3D(
-                -engine.configuration.maxAttachDistance(),
-                -engine.configuration.maxAttachDistance(),
-                -engine.configuration.maxAttachDistance())
+                -engine.configuration.maxAttractDistance(),
+                -engine.configuration.maxAttractDistance(),
+                -engine.configuration.maxAttractDistance())
         );
         // cull attachment possibilities by filtering out anything that is not in range by using cached bounding box
-        Attachable closestAttachable = (Attachable) engine.allObjectsStream()
-                .filter(sb -> sb instanceof Attachable && sb != requester)
-                .filter(sb ->
-                        sb.boundingBox(engine.t()).min().x() < maxBasePos.x() &&
-                                sb.boundingBox(engine.t()).max().x() > minBasePos.x() &&
-                                sb.boundingBox(engine.t()).min().y() < maxBasePos.y() &&
-                                sb.boundingBox(engine.t()).max().y() > minBasePos.y() &&
-                                sb.boundingBox(engine.t()).min().z() < maxBasePos.z() &&
-                                sb.boundingBox(engine.t()).max().z() > minBasePos.z()
-                ).min(Comparator.comparingDouble(v -> v.position(engine.t()).vectorDistance(basePos).norm()))
+        Attachable closestAttachable = engine.allObjectsStream()
+                .filter(sb -> sb.boundingBox(engine.t()).min().x() < maxBasePos.x() &&
+                        sb.boundingBox(engine.t()).max().x() > minBasePos.x() &&
+                        sb.boundingBox(engine.t()).min().y() < maxBasePos.y() &&
+                        sb.boundingBox(engine.t()).max().y() > minBasePos.y() &&
+                        sb.boundingBox(engine.t()).min().z() < maxBasePos.z() &&
+                        sb.boundingBox(engine.t()).max().z() > minBasePos.z()
+                )
+                .filter(sb -> sb instanceof Attachable && sb != requester &&
+                        correctSign * (sb.position(engine.t()).scalarProduct(planeNormal) - planeC) > 0)
+                .map(sb -> (Attachable) sb).min(Comparator.comparingDouble(v -> v.position(engine.t()).vectorDistance(basePos).norm()))
                 .orElse(null);
         if (Objects.isNull(closestAttachable) ||
                 closestAttachable.position(engine.t()).vectorDistance(basePos).norm() > engine.configuration.maxAttractDistance()) {
             return;
         }
+        Map<List<Body>, Vector3D> possibilitiesPositions = new HashMap<>();
         Map<List<Body>, Double> possibilitiesDistances = new HashMap<>();
         for (List<Body> attachPossibility : closestAttachable.attachPossibilities()) {
-            possibilitiesDistances.put(attachPossibility, attachPossibility.stream().map(b -> new Pair<>(b.position(engine.t()), b.mass()))
-                    .reduce((p1, p2) -> new Pair<>(p1.first().weightedSum(p2.first(), p1.second(), p2.second()), p1.second() + p2.second()))
-                    .orElseThrow().second());
+            possibilitiesPositions.put(attachPossibility, attachPossibility.stream()
+                    .map(b -> b.position(engine.t()).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
+                    .times(1d / attachPossibility.stream().mapToDouble(Body::mass).sum()));
+            possibilitiesDistances.put(attachPossibility,
+                    possibilitiesPositions.get(attachPossibility).vectorDistance(basePos).norm()
+            );
         }
         List<Body> bestAnchorBlock = Collections.min(possibilitiesDistances.keySet(), Comparator.comparingDouble(possibilitiesDistances::get));
         Map<Pair<Body, Body>, Double> bodyDistances = new HashMap<>();
@@ -77,12 +85,13 @@ public class RequestAttachment implements Action {
         }
         Pair<Body, Body> minDistanceBodies = Collections.min(bodyDistances.keySet(), Comparator.comparingDouble(bodyDistances::get));
         if (bodyDistances.get(minDistanceBodies) > engine.configuration.maxAttachDistance()) {
-            //TODO ACTUALLY ENCODE FORCES
+            Vector3D force = possibilitiesPositions.get(bestAnchorBlock).vectorDistance(basePos).normalize()
+                    .times(engine.configuration.attractForceModule());
             for (Body b1 : requesterAttachGroup) {
-                b1.dBody().addForce(0d, 0d, 0d);
+                b1.dBody().addForce(force.x(), force.y(), force.z());
             }
             for (Body b2 : bestAnchorBlock) {
-                b2.dBody().addForce(0d, 0d, 0d);
+                b2.dBody().addForce(-force.x(), -force.y(), -force.z());
             }
             return;
         }
@@ -97,11 +106,19 @@ public class RequestAttachment implements Action {
         while (!sortedBodyPairs.isEmpty()) {
             Pair<Body, Body> newMinDistanceBodies = sortedBodyPairs.remove(sortedBodyPairs.size() - 1);
             if (bodyDistances.get(newMinDistanceBodies) > engine.configuration.maxAttachDistance()) {
-                break;
+                if (bodyDistances.get(newMinDistanceBodies) > engine.configuration.maxAttractDistance()) {
+                    break;
+                }
+                Vector3D force = newMinDistanceBodies.second().position(engine.t())
+                        .vectorDistance(newMinDistanceBodies.first().position(engine.t()));
+                force = force.times(bodyDistances.get(newMinDistanceBodies) / engine.configuration.maxAttractDistance());
+                newMinDistanceBodies.first().dBody().addForce(force.x(), force.y(), force.z());
+                newMinDistanceBodies.second().dBody().addForce(-force.x(), -force.y(), -force.z());
             }
-            if (!newMinDistanceBodies.first().dBody().isConnectedTo(newMinDistanceBodies.second().dBody())) {
+            if (!requester.attachedBodies().get(newMinDistanceBodies.first()).contains(newMinDistanceBodies.second())) {
                 engine.addSpringJoint(newMinDistanceBodies.first(), newMinDistanceBodies.second(), springConstant, dampingConstant)
                         .setDistance(engine.configuration.attachSpringRestDistance());
+                requester.attachedBodies().get(newMinDistanceBodies.first()).add(newMinDistanceBodies.second());
             }
             sortedBodyPairs.removeIf(bp -> bp.first() == newMinDistanceBodies.first() || bp.second() == newMinDistanceBodies.second());
         }
