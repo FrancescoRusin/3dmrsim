@@ -170,7 +170,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   private final double[] edgeLengthControlRatio;
 
   private enum Cache {
-    ANGLE, BBOX, POSITION, VELOCITY, VOLUME
+    ANGLE, BBOX, POSITION, SIDECPOSITIONS, VELOCITY, VOLUME
   }
 
   private final EnumMap<Cache, Double> cacheTime;
@@ -407,6 +407,21 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   @Override
   public List<List<Body>> attachPossibilities() {
     return Arrays.stream(Side.values()).map(Side::vertices).map(vl -> vl.stream().map(rigidBodies::get).toList()).toList();
+  }
+
+  @Override
+  public Map<List<Body>, Vector3D> attachPossibilitiesPositions(double t) {
+    if (cacheTime.get(Cache.SIDECPOSITIONS) != t) {
+      cacheTime.put(Cache.SIDECPOSITIONS, t);
+      Map<List<Body>, Vector3D> sideCPositions = new HashMap<>();
+      for (List<Body> bodies : attachPossibilities()) {
+        sideCPositions.put(bodies, bodies.stream().map(b -> b.position(t).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
+                .times(1d / bodies.stream().mapToDouble(Body::mass).sum()));
+      }
+      cacher.put(Cache.SIDECPOSITIONS, sideCPositions);
+      System.out.println(cacher.get(Cache.SIDECPOSITIONS));
+    }
+    return (Map<List<Body>, Vector3D>) cacher.get(Cache.SIDECPOSITIONS);
   }
 
   @Override
@@ -700,6 +715,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     super.rotate(engine, eulerAngles);
     cacheTime.put(Cache.ANGLE, -1d);
     cacheTime.put(Cache.BBOX, -1d);
+    cacheTime.put(Cache.SIDECPOSITIONS, -1d);
     cacheTime.put(Cache.VELOCITY, -1d);
   }
 
@@ -708,6 +724,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     super.translate(engine, translation);
     cacheTime.put(Cache.BBOX, -1d);
     cacheTime.put(Cache.POSITION, -1d);
+    cacheTime.put(Cache.SIDECPOSITIONS, -1d);
   }
 
   @Override

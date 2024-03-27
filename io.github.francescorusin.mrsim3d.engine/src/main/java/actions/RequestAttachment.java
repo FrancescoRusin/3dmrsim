@@ -31,10 +31,8 @@ public class RequestAttachment implements Action {
 
     @Override
     public void execute(Ode4jEngine engine) {
-        //TODO BETTER OPTIMIZATION
-        Vector3D basePos = requesterAttachGroup.stream()
-                .map(b -> b.position(engine.t()).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
-                .times(1d / requesterAttachGroup.stream().mapToDouble(Body::mass).sum());
+        //TODO FIX BUG
+        Vector3D basePos = requester.attachPossibilitiesPositions(engine.t()).get(requesterAttachGroup);
         Vector3D planeNormal = Vector3D.weirdNormalApproximation(
                 requesterAttachGroup.stream().map(v -> v.position(engine.t()).vectorDistance(basePos)).toList());
         double planeC = basePos.scalarProduct(planeNormal);
@@ -69,9 +67,8 @@ public class RequestAttachment implements Action {
         Map<List<Body>, Vector3D> possibilitiesPositions = new HashMap<>();
         Map<List<Body>, Double> possibilitiesDistances = new HashMap<>();
         for (List<Body> attachPossibility : closestAttachable.attachPossibilities()) {
-            possibilitiesPositions.put(attachPossibility, attachPossibility.stream()
-                    .map(b -> b.position(engine.t()).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
-                    .times(1d / attachPossibility.stream().mapToDouble(Body::mass).sum()));
+            possibilitiesPositions.put(attachPossibility,
+                    closestAttachable.attachPossibilitiesPositions(engine.t()).get(closestAttachable));
             possibilitiesDistances.put(attachPossibility,
                     possibilitiesPositions.get(attachPossibility).vectorDistance(basePos).norm()
             );
