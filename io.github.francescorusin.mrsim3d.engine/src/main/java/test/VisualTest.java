@@ -22,6 +22,7 @@ import ad.Attachable;
 import agents.CentralizedGridRobot;
 import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
+import bodies.AbstractBody;
 import bodies.Body;
 import bodies.Sphere;
 import bodies.Voxel;
@@ -147,6 +148,9 @@ public class VisualTest extends DrawStuff.dsFunctions {
         for (int i = 0; i < number; ++i) {
             engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(-number + 2 * i + 1, 0d, 2d));
         }
+        for (int i = 0; i < number; ++i) {
+            engine.agents().get(i).rotate(engine, new Vector3D(0d, 0d, .01));
+        }
         System.out.print("Voxels: ");
         for (EmbodiedAgent agent : engine.agents()) {
             System.out.printf("%s ", agent);
@@ -170,7 +174,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        multiVoxelTest(2);
+        multiVoxelTest(5);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
@@ -190,15 +194,18 @@ public class VisualTest extends DrawStuff.dsFunctions {
         dsSetColor(1, 1, 1);
         DVector3 placeholder1 = new DVector3();
         DVector3 placeholder2 = new DVector3();
-        for (DJoint joint : engine.fixedJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
-            if (joint instanceof DDoubleBallJoint doubleBallJoint) {
-                doubleBallJoint.getAnchor1(placeholder1);
-                doubleBallJoint.getAnchor2(placeholder2);
-                dsDrawLine(placeholder1, placeholder2);
+        for (DFixedJoint joint : engine.fixedJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
+            dsDrawLine(joint.getBody(0).getPosition(), joint.getBody(1).getPosition());
+        }
+        List<? extends DJoint> agentsInternalJoints = engine.agents().stream().map(EmbodiedAgent::components)
+                .flatMap(Collection::stream).map(v -> ((Voxel) v).internalJoints()).flatMap(List::stream).toList();
+        for (DDoubleBallJoint joint : engine.springJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
+            if (agentsInternalJoints.contains(joint)) {
+                continue;
             }
-            if (joint instanceof DFixedJoint fixedJoint) {
-                dsDrawLine(fixedJoint.getBody(0).getPosition(), fixedJoint.getBody(1).getPosition());
-            }
+            joint.getAnchor1(placeholder1);
+            joint.getAnchor2(placeholder2);
+            dsDrawLine(placeholder1, placeholder2);
         }
         dsSetColor(0, 1, 0);
         for (DGeom geom : engine.signalSpace().getGeoms()) {

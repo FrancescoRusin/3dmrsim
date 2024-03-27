@@ -46,11 +46,11 @@ public class Ode4jEngine {
           ) {
   }
   public final static Configuration DEFAULT_CONFIGURATION = new Configuration(
-          /*new Vector3D(0d, 0d, -9.81)*/new Vector3D(0d, 0d, 0d),
+          new Vector3D(0d, 0d, -9.81),
           dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
           .5,
           2d,
-          .25,
+          .21,
           8d,
           1.5
   );
@@ -79,8 +79,6 @@ public class Ode4jEngine {
     }
     this.configuration = configuration;
     world = OdeHelper.createWorld();
-    world.setCFM(0d);
-    world.setERP(0d);
     bodySpace = OdeHelper.createHashSpace();
     signalSpace = OdeHelper.createHashSpace();
     collisionGroup = OdeHelper.createJointGroup();

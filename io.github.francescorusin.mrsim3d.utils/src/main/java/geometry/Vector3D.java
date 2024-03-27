@@ -73,6 +73,8 @@ public record Vector3D(double x, double y, double z) {
   }
 
   public static Vector3D weirdNormalApproximation(List<Vector3D> vectors) {
+    // attempt to approximate the normal of the plain containing the input points by using
+    // the mean of the vector products of two subsequent vectors
     return Stream.concat(
             IntStream.range(1, vectors.size() - 1).boxed().map(i -> vectors.get(i).vectorProduct(vectors.get(i - 1))),
             Stream.of(vectors.get(vectors.size() - 1).vectorProduct(vectors.get(0)))

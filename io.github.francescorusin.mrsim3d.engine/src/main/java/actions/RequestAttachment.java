@@ -31,7 +31,7 @@ public class RequestAttachment implements Action {
 
     @Override
     public void execute(Ode4jEngine engine) {
-        //TODO DEBUG
+        //TODO BETTER OPTIMIZATION
         Vector3D basePos = requesterAttachGroup.stream()
                 .map(b -> b.position(engine.t()).times(b.mass())).reduce(Vector3D::sum).orElseThrow()
                 .times(1d / requesterAttachGroup.stream().mapToDouble(Body::mass).sum());
@@ -95,32 +95,33 @@ public class RequestAttachment implements Action {
             }
             return;
         }
-        if (!minDistanceBodies.first().dBody().isConnectedTo(minDistanceBodies.second().dBody())) {
+        if (!requester.attachedBodies().get(minDistanceBodies.first()).contains(minDistanceBodies.second())) {
             engine.addSpringJoint(minDistanceBodies.first(), minDistanceBodies.second(), springConstant, dampingConstant)
                     .setDistance(engine.configuration.attachSpringRestDistance());
         }
-        List<Pair<Body, Body>> sortedBodyPairs = new ArrayList<>(
-                bodyDistances.keySet().stream().sorted(Comparator.comparing(bodyDistances::get).reversed()).toList()
-        );
-        sortedBodyPairs.removeIf(bp -> bp.first() == minDistanceBodies.first() || bp.second() == minDistanceBodies.second());
-        while (!sortedBodyPairs.isEmpty()) {
-            Pair<Body, Body> newMinDistanceBodies = sortedBodyPairs.remove(sortedBodyPairs.size() - 1);
-            if (bodyDistances.get(newMinDistanceBodies) > engine.configuration.maxAttachDistance()) {
-                if (bodyDistances.get(newMinDistanceBodies) > engine.configuration.maxAttractDistance()) {
-                    break;
+        int minDistanceIndex1 = requesterAttachGroup.indexOf(minDistanceBodies.first());
+        int minDistanceIndex2 = bestAnchorBlock.indexOf(minDistanceBodies.second());
+        int nOfAnchors = Math.min(requesterAttachGroup.size(), bestAnchorBlock.size());
+        for (int i = 1; i < nOfAnchors; ++i) {
+            Body requesterBody = requesterAttachGroup.get((minDistanceIndex1 + i) % requesterAttachGroup.size());
+            Body targetBody = bestAnchorBlock.get((minDistanceIndex2 + bestAnchorBlock.size() - i) % bestAnchorBlock.size());
+            Pair<Body, Body> targetPair = new Pair<>(requesterBody, targetBody);
+            if (!requester.attachedBodies().get(requesterBody).contains(targetBody)) {
+                if (bodyDistances.get(targetPair) > engine.configuration.maxAttachDistance()) {
+                    if (bodyDistances.get(targetPair) > engine.configuration.maxAttractDistance()) {
+                        break;
+                    }
+                    Vector3D force = targetBody.position(engine.t())
+                            .vectorDistance(requesterBody.position(engine.t()));
+                    force = force.times(bodyDistances.get(targetPair) / engine.configuration.maxAttractDistance());
+                    requesterBody.dBody().addForce(force.x(), force.y(), force.z());
+                    targetBody.dBody().addForce(-force.x(), -force.y(), -force.z());
+                } else {
+                    engine.addSpringJoint(requesterBody, targetBody, springConstant, dampingConstant)
+                            .setDistance(engine.configuration.attachSpringRestDistance());
+                    requester.attachedBodies().get(requesterBody).add(targetBody);
                 }
-                Vector3D force = newMinDistanceBodies.second().position(engine.t())
-                        .vectorDistance(newMinDistanceBodies.first().position(engine.t()));
-                force = force.times(bodyDistances.get(newMinDistanceBodies) / engine.configuration.maxAttractDistance());
-                newMinDistanceBodies.first().dBody().addForce(force.x(), force.y(), force.z());
-                newMinDistanceBodies.second().dBody().addForce(-force.x(), -force.y(), -force.z());
             }
-            if (!requester.attachedBodies().get(newMinDistanceBodies.first()).contains(newMinDistanceBodies.second())) {
-                engine.addSpringJoint(newMinDistanceBodies.first(), newMinDistanceBodies.second(), springConstant, dampingConstant)
-                        .setDistance(engine.configuration.attachSpringRestDistance());
-                requester.attachedBodies().get(newMinDistanceBodies.first()).add(newMinDistanceBodies.second());
-            }
-            sortedBodyPairs.removeIf(bp -> bp.first() == newMinDistanceBodies.first() || bp.second() == newMinDistanceBodies.second());
         }
     }
 }
