@@ -68,7 +68,7 @@ public class RequestAttachment implements Action {
         Map<List<Body>, Double> possibilitiesDistances = new HashMap<>();
         for (List<Body> attachPossibility : closestAttachable.attachPossibilities()) {
             possibilitiesPositions.put(attachPossibility,
-                    closestAttachable.attachPossibilitiesPositions(engine.t()).get(closestAttachable));
+                    closestAttachable.attachPossibilitiesPositions(engine.t()).get(attachPossibility));
             possibilitiesDistances.put(attachPossibility,
                     possibilitiesPositions.get(attachPossibility).vectorDistance(basePos).norm()
             );

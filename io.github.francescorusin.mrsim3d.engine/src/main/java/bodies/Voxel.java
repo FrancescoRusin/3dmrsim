@@ -410,6 +410,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Map<List<Body>, Vector3D> attachPossibilitiesPositions(double t) {
     if (cacheTime.get(Cache.SIDECPOSITIONS) != t) {
       cacheTime.put(Cache.SIDECPOSITIONS, t);
@@ -419,7 +420,6 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
                 .times(1d / bodies.stream().mapToDouble(Body::mass).sum()));
       }
       cacher.put(Cache.SIDECPOSITIONS, sideCPositions);
-      System.out.println(cacher.get(Cache.SIDECPOSITIONS));
     }
     return (Map<List<Body>, Vector3D>) cacher.get(Cache.SIDECPOSITIONS);
   }
