@@ -58,6 +58,7 @@ import org.lwjgl.Version;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
+import org.lwjgl.system.MemoryStack;
 import org.ode4j.ode.OdeHelper;
 import org.ode4j.ode.internal.Common;
 
