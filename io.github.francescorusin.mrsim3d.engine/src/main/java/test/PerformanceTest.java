@@ -11,11 +11,12 @@ public class PerformanceTest extends VisualTest {
     public void unstaticMain() {
         long startTimeMillis;
         double totalTimeMillis;
-        System.out.println("Hundred voxels test");
+        int commChannels = 0;
+        System.out.printf("Hundred voxels test (%d comm channels)\n", commChannels);
         for (int i = 0; i < 10; ++i) {
             engine = new Ode4jEngine();
             startTimeMillis = System.currentTimeMillis();
-            multiVoxelTest(3);
+            hundredVoxelsTest(0);
             while (engine.t() < 100) {
                 engine.tick();
             }
@@ -27,6 +28,7 @@ public class PerformanceTest extends VisualTest {
                     engine.timeTickSignals / totalTimeMillis,
                     engine.timeTickOther / totalTimeMillis
             );
+            engine.destroy();
         }
     }
 }

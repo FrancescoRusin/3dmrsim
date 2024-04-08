@@ -50,6 +50,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
     public static void main(String[] args) {
         new VisualTest().demo(args);
     }
+
     private static int[] computeIO(String sensorConfig, int nOfVoxels, int commChannels) {
         int[] IO = new int[2];
         for (String s : sensorConfig.split("-")) {
@@ -106,6 +107,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             return outputArray;
                         }), 0);
     }
+
     private static CentralizedGridRobot defaultCentralizedRobot(int commChannels) {
         Voxel[][][] voxelGrid = new Voxel[4][3][3];
         for (int y = 0; y < 3; ++y) {
@@ -158,11 +160,24 @@ public class VisualTest extends DrawStuff.dsFunctions {
         System.out.println();
     }
 
-    public void hundredVoxelsTest() {
+    public void hundredVoxelsTest(int commChannels) {
         for (int x = -4; x < 5; ++x) {
             for (int y = -4; y < 5; ++y) {
-                engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(x, y, 2d));
-                engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(x + 1, y + 1, 4d));
+                engine.addAgent(commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels),
+                        new Vector3D(x, y, 2d));
+                engine.addAgent(commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels),
+                        new Vector3D(x + 1, y + 1, 4d));
+            }
+        }
+    }
+
+    public void nerfedHundredVoxelsTest(int commChannels) {
+        for (int x = -1; x < 2; ++x) {
+            for (int y = -1; y < 2; ++y) {
+                engine.addAgent(commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels),
+                        new Vector3D(x, y, 2d));
+                engine.addAgent(commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels),
+                        new Vector3D(x + 1, y + 1, 4d));
             }
         }
     }
@@ -174,16 +189,18 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        multiVoxelTest(5);
+        nerfedHundredVoxelsTest(0);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();
     }
+
     @Override
     public void start() {
         pause = true;
         dsSetViewpoint(xyz, hpr);
     }
+
     @Override
     public void step(boolean pause) {
         if (!pause) {

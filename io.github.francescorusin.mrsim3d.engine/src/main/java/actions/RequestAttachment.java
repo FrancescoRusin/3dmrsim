@@ -32,6 +32,10 @@ public class RequestAttachment implements Action {
     @Override
     public void execute(Ode4jEngine engine) {
         //TODO FIX BUG
+        if (requesterAttachGroup.stream().map(b -> requester.attachedBodies().get(b))
+                .noneMatch(Set::isEmpty)) {
+            return;
+        }
         Vector3D basePos = requester.attachPossibilitiesPositions(engine.t()).get(requesterAttachGroup);
         Vector3D planeNormal = Vector3D.weirdNormalApproximation(
                 requesterAttachGroup.stream().map(v -> v.position(engine.t()).vectorDistance(basePos)).toList());
@@ -103,7 +107,7 @@ public class RequestAttachment implements Action {
             Body requesterBody = requesterAttachGroup.get((minDistanceIndex1 + i) % requesterAttachGroup.size());
             Body targetBody = bestAnchorBlock.get((minDistanceIndex2 + bestAnchorBlock.size() - i) % bestAnchorBlock.size());
             Pair<Body, Body> targetPair = new Pair<>(requesterBody, targetBody);
-            if (!requester.attachedBodies().get(requesterBody).contains(targetBody)) {
+            if (requester.attachedBodies().get(requesterBody).isEmpty()) {
                 if (bodyDistances.get(targetPair) > engine.configuration.maxAttachDistance()) {
                     if (bodyDistances.get(targetPair) > engine.configuration.maxAttractDistance()) {
                         break;

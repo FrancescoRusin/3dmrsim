@@ -46,4 +46,9 @@ public class UnorderedPair<T> {
   public int hashCode() {
     return set.hashCode();
   }
+
+  @Override
+  public String toString() {
+    return elements().toString();
+  }
 }

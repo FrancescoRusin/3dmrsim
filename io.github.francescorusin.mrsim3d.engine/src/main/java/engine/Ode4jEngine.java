@@ -28,10 +28,12 @@ import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
 import sensors.ContactSensor;
 import sensors.Sensor;
+import utils.Pair;
 import utils.UnorderedPair;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Ode4jEngine {
@@ -64,7 +66,7 @@ public class Ode4jEngine {
   private final double timeStep;
   private final List<EmbodiedAgent> agents;
   private final Map<DGeom, AbstractBody> geometryMapper;
-  private final Map<AbstractBody, EmbodiedAgent> agentMapper;
+  private final Map<Body, EmbodiedAgent> agentMapper;
   private final List<Body> passiveBodies;
   private final Map<DRay, SignalEmitter> signalEmitters;
   private final Map<DGeom, Boolean> signalDetectors;
@@ -195,6 +197,19 @@ public class Ode4jEngine {
   public long timeTickOther;
 
   public Snapshot tick() {
+    if (t() % 4 < 1d / 60d) {
+      System.out.printf("Current time: %.4f\n", t());
+      System.out.printf("Current execution time: %.4f\n", (timeTickEngine + timeTickSignals + timeTickOther) / 1000d);
+      System.out.printf("World number of non-internal springs: %d\n", agents.stream().map(EmbodiedAgent::bodyParts).flatMap(List::stream)
+              .map(Body::dBody).mapToLong(b -> IntStream.range(0, b.getNumJoints()).boxed().map(b::getJoint)
+                      .filter(j -> j instanceof DDoubleBallJoint).count()).sum() / 2 - 216L * agents.size());
+      System.out.println("Unholy groups: ");
+      springJoints.keySet().stream().filter(p -> springJoints.get(p).size() > 16)
+              .map(p -> new Pair<>(agents.indexOf(agentMapper.get(p.elements().get(0))),
+                      agents.indexOf(agentMapper.get(p.elements().get(1)))))
+              .forEach(p -> System.out.printf("[%d, %d] ", p.first(), p.second()));
+      System.out.println();
+    }
     long startTime = System.currentTimeMillis();
     long secondTime;
     world.quickStep(timeStep);
@@ -239,6 +254,7 @@ public class Ode4jEngine {
     agents.add(agent);
     for (AbstractBody aBody : agent.components()) {
       for (Body body : aBody.bodyParts()) {
+        agentMapper.put(body, agent);
         geometryMapper.put(body.collisionGeometry(), aBody);
         signalDetectors.put(body.collisionGeometry(), false);
       }
@@ -247,7 +263,6 @@ public class Ode4jEngine {
           signalDetectors.put(body.collisionGeometry(), true);
         }
       }
-      agentMapper.put(aBody, agent);
     }
   }
 

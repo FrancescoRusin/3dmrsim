@@ -69,7 +69,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, commChannels, DEFAULT_CENTRAL_MASS_RATIO,
             DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
             EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
-                    JointOption.INTERNAL), sensorConfig, controller);
+                    JointOption.SIDES, JointOption.INTERNAL), sensorConfig, controller);
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller) {
@@ -106,7 +106,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       index += 6;
     }
     //TODO REMOVE TEST
-    if (Math.sin(engine.t()) > 0) {
+    if (Math.sin(engine.t() * Math.PI / 20) > 0) {
       outputActions.addAll(Arrays.stream(Side.values()).map(Side::vertices)
               .map(l -> new RequestAttachment(this, l.stream().map(rigidBodies::get).toList()))
               .toList());
