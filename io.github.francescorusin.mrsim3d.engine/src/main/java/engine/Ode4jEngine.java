@@ -205,9 +205,8 @@ public class Ode4jEngine {
                       .filter(j -> j instanceof DDoubleBallJoint).count()).sum() / 2 - 216L * agents.size());
       System.out.println("Unholy groups: ");
       springJoints.keySet().stream().filter(p -> springJoints.get(p).size() > 16)
-              .map(p -> new Pair<>(agents.indexOf(agentMapper.get(p.elements().get(0))),
-                      agents.indexOf(agentMapper.get(p.elements().get(1)))))
-              .forEach(p -> System.out.printf("[%d, %d] ", p.first(), p.second()));
+              .forEach(p -> System.out.printf("%s ", new Pair<>(agents.indexOf(agentMapper.get(p.elements().get(0))),
+                      agents.indexOf(agentMapper.get(p.elements().get(1))))));
       System.out.println();
     }
     long startTime = System.currentTimeMillis();
