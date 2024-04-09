@@ -96,7 +96,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[12];
                             int index = -1;
                             for (int i = 0; i < 12; ++i) {
-                                outputArray[++index] = -1;//Math.sin(4 * (t) + i * Math.PI / 4);
+                                outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
                             }
                             return outputArray;
                         }), 0);
@@ -124,8 +124,11 @@ public class VisualTest extends DrawStuff.dsFunctions {
                             double[] outputArray = new double[IO[1]];
                             int index = -1;
                             for (int v = 0; v < nOfVoxels; ++v) {
-                                for (int i = 0; i < 12; ++i) {
-                                    outputArray[++index] = 0d;//Math.sin(4 * (t) + i * Math.PI / 4);
+                                for (int i = 0; i < 8; ++i) {
+                                    outputArray[++index] = Math.sin(4 * t) * ((i % 4) / 2 - .5) * 2;
+                                }
+                                for (int i = 0; i < 4; ++i) {
+                                    outputArray[++index] = 0f;
                                 }
                                 for (int i = 0; i < 6 * commChannels; ++i) {
                                     outputArray[++index] = Math.sin(4 * (t) + i * Math.PI / 4);
@@ -165,9 +168,9 @@ public class VisualTest extends DrawStuff.dsFunctions {
         }
     }
 
-    public void nerfedHundredVoxelsTest(int commChannels) {
-        for (int x = -1; x < 2; ++x) {
-            for (int y = -1; y < 2; ++y) {
+    public void nerfedHundredVoxelsTest(int halfRows, int commChannels) {
+        for (int x = -halfRows; x < halfRows + 1; ++x) {
+            for (int y = -halfRows; y < halfRows + 1; ++y) {
                 engine.addAgent(commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels),
                         new Vector3D(x, y, 2d));
                 engine.addAgent(commChannels == 0 ? defaultNoCommSingleVoxelAgent() : defaultSingleVoxelAgent(commChannels),
@@ -183,7 +186,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        nerfedHundredVoxelsTest(0);
+        robotTest(0);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();

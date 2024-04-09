@@ -633,8 +633,8 @@ public abstract class LwJGL extends Internal implements DrawStuffApi {
       } else {
         long timeUsed = 5000 + (startTime - System.currentTimeMillis());
         startTime = System.currentTimeMillis() + 5000;
-        //System.out.println(
-        //    fps + " frames in " + (timeUsed / 1000f) + " seconds = " + (fps / (timeUsed / 1000f)));
+        System.out.println(
+            fps + " frames in " + (timeUsed / 1000f) + " seconds = " + (fps / (timeUsed / 1000f)));
         fps = 0;
       }
       //    glFlush();

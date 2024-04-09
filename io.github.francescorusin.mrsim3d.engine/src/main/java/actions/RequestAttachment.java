@@ -85,26 +85,17 @@ public class RequestAttachment implements Action {
             }
         }
         Pair<Body, Body> minDistanceBodies = Collections.min(bodyDistances.keySet(), Comparator.comparingDouble(bodyDistances::get));
-        if (bodyDistances.get(minDistanceBodies) > engine.configuration.maxAttachDistance()) {
-            Vector3D force = possibilitiesPositions.get(bestAnchorBlock).vectorDistance(basePos).normalize()
-                    .times(engine.configuration.attractForceModule());
-            for (Body b1 : requesterAttachGroup) {
-                b1.dBody().addForce(force.x(), force.y(), force.z());
-            }
-            for (Body b2 : bestAnchorBlock) {
-                b2.dBody().addForce(-force.x(), -force.y(), -force.z());
-            }
-            return;
-        }
         Map<Body, Set<Body>> requesterAttachedBodies = requester.attachedBodies();
         Map<Body, Set<Body>> targetAttachedBodies = closestAttachable.attachedBodies();
         int minDistanceIndex1 = requesterAttachGroup.indexOf(minDistanceBodies.first());
         int minDistanceIndex2 = bestAnchorBlock.indexOf(minDistanceBodies.second());
         int nOfAnchors = Math.min(requesterAttachGroup.size(), bestAnchorBlock.size());
+        Body requesterBody, targetBody;
+        Pair<Body, Body> targetPair;
         for (int i = 0; i < nOfAnchors; ++i) {
-            Body requesterBody = requesterAttachGroup.get((minDistanceIndex1 + i) % requesterAttachGroup.size());
-            Body targetBody = bestAnchorBlock.get((minDistanceIndex2 + bestAnchorBlock.size() - i) % bestAnchorBlock.size());
-            Pair<Body, Body> targetPair = new Pair<>(requesterBody, targetBody);
+            requesterBody = requesterAttachGroup.get((minDistanceIndex1 + i) % requesterAttachGroup.size());
+            targetBody = bestAnchorBlock.get((minDistanceIndex2 + bestAnchorBlock.size() - i) % bestAnchorBlock.size());
+            targetPair = new Pair<>(requesterBody, targetBody);
             if (requesterAttachedBodies.get(requesterBody).isEmpty()) {
                 if (bodyDistances.get(targetPair) > engine.configuration.maxAttachDistance()) {
                     if (bodyDistances.get(targetPair) > engine.configuration.maxAttractDistance()) {
@@ -118,8 +109,8 @@ public class RequestAttachment implements Action {
                 } else {
                     engine.addSpringJoint(requesterBody, targetBody, springConstant, dampingConstant)
                             .setDistance(engine.configuration.attachSpringRestDistance());
-                    requesterAttachedBodies.get(requesterBody).add(minDistanceBodies.second());
-                    targetAttachedBodies.get(targetBody).add(minDistanceBodies.first());
+                    requesterAttachedBodies.get(requesterBody).add(targetBody);
+                    targetAttachedBodies.get(targetBody).add(requesterBody);
                 }
             }
         }

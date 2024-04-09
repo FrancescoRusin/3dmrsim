@@ -28,12 +28,10 @@ import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
 import sensors.ContactSensor;
 import sensors.Sensor;
-import utils.Pair;
 import utils.UnorderedPair;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class Ode4jEngine {
@@ -44,17 +42,21 @@ public class Ode4jEngine {
           double maxAttractDistance,
           double attachSpringRestDistance,
           double attractForceModule,
+          double attachSpringConstant,
+          double attachDampingConstant,
           double nfcRange
           ) {
   }
   public final static Configuration DEFAULT_CONFIGURATION = new Configuration(
           new Vector3D(0d, 0d, -9.81),
           dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
-          .5,
-          2d,
-          .21,
+          Voxel.DEFAULT_SIDE_LENGTH * .3,
+          Voxel.DEFAULT_SIDE_LENGTH * 2,
+          Voxel.DEFAULT_RIGID_BODY_LENGTH,
           8d,
-          1.5
+          Voxel.DEFAULT_SPRING_CONSTANT * 100,
+          Voxel.DEFAULT_DAMPING_CONSTANT * 100,
+          Voxel.DEFAULT_SIDE_LENGTH * 1.5
   );
   public final Configuration configuration;
   private static final int initialize = OdeHelper.initODE2(0);
@@ -189,7 +191,7 @@ public class Ode4jEngine {
   public long timeTickOther;
 
   public Snapshot tick() {
-    if (t() % 4 < 1d / 60d) {
+    /*if (t() % 4 < 1d / 60d) {
       System.out.printf("Current time: %.4f\n", t());
       System.out.printf("Current execution time: %.4f\n", (timeTickEngine + timeTickSignals + timeTickOther) / 1000d);
       System.out.printf("World number of non-internal springs: %d\n", agents.stream().map(EmbodiedAgent::bodyParts).flatMap(List::stream)
@@ -200,7 +202,7 @@ public class Ode4jEngine {
               .forEach(p -> System.out.printf("%s ", new Pair<>(agents.indexOf(agentMapper.get(p.elements().get(0))),
                       agents.indexOf(agentMapper.get(p.elements().get(1))))));
       System.out.println();
-    }
+    }*/
     long startTime = System.currentTimeMillis();
     long secondTime;
     world.quickStep(timeStep);
