@@ -186,7 +186,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
 
     public void demo(String[] args) {
         engine = new Ode4jEngine();
-        robotTest(0);
+        nerfedHundredVoxelsTest(1, 0);
         dsSimulationLoop(args, 1080, 720, this);
         engine.destroy();
         OdeHelper.closeODE();

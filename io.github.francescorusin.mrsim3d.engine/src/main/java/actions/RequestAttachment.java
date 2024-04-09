@@ -12,26 +12,16 @@ import java.util.*;
 public class RequestAttachment implements Action {
     private final Attachable requester;
     private final List<Body> requesterAttachGroup;
-    private final double springConstant;
-    private final double dampingConstant;
 
-
-    public RequestAttachment(Attachable requester, List<Body> requesterAttachGroup,
-                             double springConstant, double dampingConstant) {
-        this.requester = requester;
-        this.requesterAttachGroup = requesterAttachGroup;
-        this.springConstant = springConstant;
-        this.dampingConstant = dampingConstant;
-    }
 
     public RequestAttachment(Attachable requester, List<Body> requesterAttachGroup) {
-        this(requester, requesterAttachGroup,
-                Voxel.DEFAULT_SPRING_CONSTANT, Voxel.DEFAULT_DAMPING_CONSTANT);
+        this.requester = requester;
+        this.requesterAttachGroup = requesterAttachGroup;
     }
 
     @Override
     public void execute(Ode4jEngine engine) {
-        //TODO FIX BUG
+        //TODO RECHECK
         if (requesterAttachGroup.stream().map(b -> requester.attachedBodies().get(b))
                 .noneMatch(Set::isEmpty)) {
             return;
@@ -107,7 +97,9 @@ public class RequestAttachment implements Action {
                     requesterBody.dBody().addForce(force.x(), force.y(), force.z());
                     targetBody.dBody().addForce(-force.x(), -force.y(), -force.z());
                 } else {
-                    engine.addSpringJoint(requesterBody, targetBody, springConstant, dampingConstant)
+                    engine.addSpringJoint(requesterBody, targetBody,
+                                    engine.configuration.attachSpringConstant(),
+                                    engine.configuration.attachDampingConstant())
                             .setDistance(engine.configuration.attachSpringRestDistance());
                     requesterAttachedBodies.get(requesterBody).add(targetBody);
                     targetAttachedBodies.get(targetBody).add(requesterBody);

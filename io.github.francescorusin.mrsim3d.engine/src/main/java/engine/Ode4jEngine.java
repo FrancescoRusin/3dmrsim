@@ -52,10 +52,10 @@ public class Ode4jEngine {
           dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
           Voxel.DEFAULT_SIDE_LENGTH * .3,
           Voxel.DEFAULT_SIDE_LENGTH * 2,
-          Voxel.DEFAULT_RIGID_BODY_LENGTH,
+          Voxel.DEFAULT_RIGID_BODY_LENGTH * 1.01,
           8d,
-          Voxel.DEFAULT_SPRING_CONSTANT * 100,
-          Voxel.DEFAULT_DAMPING_CONSTANT * 100,
+          Voxel.DEFAULT_SPRING_CONSTANT * 10,
+          Voxel.DEFAULT_DAMPING_CONSTANT * 10,
           Voxel.DEFAULT_SIDE_LENGTH * 1.5
   );
   public final Configuration configuration;
