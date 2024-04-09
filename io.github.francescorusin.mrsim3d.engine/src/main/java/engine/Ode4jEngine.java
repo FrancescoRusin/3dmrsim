@@ -64,10 +64,10 @@ public class Ode4jEngine {
   private final DJointGroup collisionGroup;
   private double time;
   private final double timeStep;
-  private final List<EmbodiedAgent> agents;
+  public final List<EmbodiedAgent> agents;
   private final Map<DGeom, AbstractBody> geometryMapper;
-  private final Map<Body, EmbodiedAgent> agentMapper;
-  private final List<Body> passiveBodies;
+  public final Map<Body, EmbodiedAgent> agentMapper;
+  public final List<Body> passiveBodies;
   private final Map<DRay, SignalEmitter> signalEmitters;
   private final Map<DGeom, Boolean> signalDetectors;
   private final Map<DGeom, List<DGeom>> collisionExceptions;
@@ -176,14 +176,6 @@ public class Ode4jEngine {
                 new Vector3D(contactPosition.get0(), contactPosition.get1(), contactPosition.get2()));
       }
     }
-  }
-
-  public List<EmbodiedAgent> agents() {
-    return agents;
-  }
-
-  public List<Body> passiveBodies() {
-    return passiveBodies;
   }
   public Stream<SimulationObject> allObjectsStream() {
     return Stream.concat(agents.stream(), passiveBodies.stream());

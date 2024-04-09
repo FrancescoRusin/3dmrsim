@@ -96,18 +96,16 @@ public class RequestAttachment implements Action {
             }
             return;
         }
-        if (!requester.attachedBodies().get(minDistanceBodies.first()).contains(minDistanceBodies.second())) {
-            engine.addSpringJoint(minDistanceBodies.first(), minDistanceBodies.second(), springConstant, dampingConstant)
-                    .setDistance(engine.configuration.attachSpringRestDistance());
-        }
+        Map<Body, Set<Body>> requesterAttachedBodies = requester.attachedBodies();
+        Map<Body, Set<Body>> targetAttachedBodies = closestAttachable.attachedBodies();
         int minDistanceIndex1 = requesterAttachGroup.indexOf(minDistanceBodies.first());
         int minDistanceIndex2 = bestAnchorBlock.indexOf(minDistanceBodies.second());
         int nOfAnchors = Math.min(requesterAttachGroup.size(), bestAnchorBlock.size());
-        for (int i = 1; i < nOfAnchors; ++i) {
+        for (int i = 0; i < nOfAnchors; ++i) {
             Body requesterBody = requesterAttachGroup.get((minDistanceIndex1 + i) % requesterAttachGroup.size());
             Body targetBody = bestAnchorBlock.get((minDistanceIndex2 + bestAnchorBlock.size() - i) % bestAnchorBlock.size());
             Pair<Body, Body> targetPair = new Pair<>(requesterBody, targetBody);
-            if (requester.attachedBodies().get(requesterBody).isEmpty()) {
+            if (requesterAttachedBodies.get(requesterBody).isEmpty()) {
                 if (bodyDistances.get(targetPair) > engine.configuration.maxAttachDistance()) {
                     if (bodyDistances.get(targetPair) > engine.configuration.maxAttractDistance()) {
                         break;
@@ -120,7 +118,8 @@ public class RequestAttachment implements Action {
                 } else {
                     engine.addSpringJoint(requesterBody, targetBody, springConstant, dampingConstant)
                             .setDistance(engine.configuration.attachSpringRestDistance());
-                    requester.attachedBodies().get(requesterBody).add(targetBody);
+                    requesterAttachedBodies.get(requesterBody).add(minDistanceBodies.second());
+                    targetAttachedBodies.get(targetBody).add(minDistanceBodies.first());
                 }
             }
         }

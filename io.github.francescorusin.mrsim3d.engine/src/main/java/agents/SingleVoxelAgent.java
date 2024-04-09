@@ -106,7 +106,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       index += 6;
     }
     //TODO REMOVE TEST
-    if (Math.sin(engine.t() * Math.PI / 20) > 0) {
+    if (Math.sin(engine.t() * Math.PI / 10) > 0) {
       outputActions.addAll(Arrays.stream(Side.values()).map(Side::vertices)
               .map(l -> new RequestAttachment(this, l.stream().map(rigidBodies::get).toList()))
               .toList());

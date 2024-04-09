@@ -18,18 +18,12 @@ package test;/*-
  * =========================LICENSE_END==================================
  */
 
-import ad.Attachable;
 import agents.CentralizedGridRobot;
 import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
-import bodies.AbstractBody;
-import bodies.Body;
-import bodies.Sphere;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
-import engine.SimulationObject;
-import geometry.BoundingBox;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.ode4j.math.DVector3;
@@ -151,10 +145,10 @@ public class VisualTest extends DrawStuff.dsFunctions {
             engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(-number + 2 * i + 1, 0d, 2d));
         }
         for (int i = 0; i < number; ++i) {
-            engine.agents().get(i).rotate(engine, new Vector3D(0d, 0d, .01));
+            engine.agents.get(i).rotate(engine, new Vector3D(0d, 0d, .01));
         }
         System.out.print("Voxels: ");
-        for (EmbodiedAgent agent : engine.agents()) {
+        for (EmbodiedAgent agent : engine.agents) {
             System.out.printf("%s ", agent);
         }
         System.out.println();
@@ -206,15 +200,15 @@ public class VisualTest extends DrawStuff.dsFunctions {
         if (!pause) {
             engine.tick();
         }
-        engine.agents().forEach(agent -> agent.draw(this));
-        engine.passiveBodies().forEach(body -> body.draw(this));
+        engine.agents.forEach(agent -> agent.draw(this));
+        engine.passiveBodies.forEach(body -> body.draw(this));
         dsSetColor(1, 1, 1);
         DVector3 placeholder1 = new DVector3();
         DVector3 placeholder2 = new DVector3();
         for (DFixedJoint joint : engine.fixedJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
             dsDrawLine(joint.getBody(0).getPosition(), joint.getBody(1).getPosition());
         }
-        List<? extends DJoint> agentsInternalJoints = engine.agents().stream().map(EmbodiedAgent::components)
+        List<? extends DJoint> agentsInternalJoints = engine.agents.stream().map(EmbodiedAgent::components)
                 .flatMap(Collection::stream).map(v -> ((Voxel) v).internalJoints()).flatMap(List::stream).toList();
         for (DDoubleBallJoint joint : engine.springJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
             if (agentsInternalJoints.contains(joint)) {
