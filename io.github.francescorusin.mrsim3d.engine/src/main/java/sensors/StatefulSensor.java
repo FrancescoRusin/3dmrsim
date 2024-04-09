@@ -4,7 +4,9 @@ import engine.Ode4jEngine;
 
 import java.util.Arrays;
 
-public abstract class InteractiveSensor implements Sensor {
+public abstract class StatefulSensor implements Sensor {
+    // sensors that do not sense by themselves and instead read some cached value updated by external actions;
+    // as different sensors potentially update differently, no standard state update function is implemented
     protected double[] currentState;
     void resetReadings() {
         Arrays.fill(currentState, 0d);

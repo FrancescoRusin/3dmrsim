@@ -1,6 +1,6 @@
 package sensors;
 
-public class ContactSensor extends InteractiveSensor {
+public class ContactSensor extends StatefulSensor {
     public ContactSensor() {
         this.currentState = new double[1];
     }
