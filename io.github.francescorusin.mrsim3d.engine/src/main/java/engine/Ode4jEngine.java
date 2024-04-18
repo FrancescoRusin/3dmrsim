@@ -67,7 +67,7 @@ public class Ode4jEngine {
   private double time;
   private final double timeStep;
   public final List<EmbodiedAgent> agents;
-  private final Map<DGeom, AbstractBody> geometryMapper;
+  private final Map<DGeom, AbstractBody> agentGeometryMapper;
   public final Map<Body, EmbodiedAgent> agentMapper;
   public final List<Body> passiveBodies;
   private final Map<DRay, SignalEmitter> signalEmitters;
@@ -78,9 +78,6 @@ public class Ode4jEngine {
   private final DGeom terrain;
 
   public Ode4jEngine(Configuration configuration) {
-    if (initialize == 1) {
-      System.out.println("Engine initialized");
-    }
     this.configuration = configuration;
     world = OdeHelper.createWorld();
     bodySpace = OdeHelper.createHashSpace();
@@ -90,7 +87,7 @@ public class Ode4jEngine {
     world.setERP(1d - 1e-5);
     world.setCFM(1e-5);
     agents = new ArrayList<>();
-    geometryMapper = new HashMap<>();
+    agentGeometryMapper = new HashMap<>();
     agentMapper = new HashMap<>();
     passiveBodies = new ArrayList<>();
     signalEmitters = new HashMap<>();
@@ -146,16 +143,16 @@ public class Ode4jEngine {
     if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
       OdeHelper.createContactJoint(world, collisionGroup, contact)
               .attach(o1.getBody(), o2.getBody());
-      if (Objects.isNull(geometryMapper.get(o1)) || Objects.isNull(geometryMapper.get(o2)) ||
-              agentMapper.get(geometryMapper.get(o1)) != agentMapper.get(geometryMapper.get(o2))) {
-        if (geometryMapper.get(o1) instanceof SensingBody sb) {
+      if (Objects.isNull(agentGeometryMapper.get(o1)) || Objects.isNull(agentGeometryMapper.get(o2)) ||
+              agentMapper.get(agentGeometryMapper.get(o1)) != agentMapper.get(agentGeometryMapper.get(o2))) {
+        if (agentGeometryMapper.get(o1) instanceof SensingBody sb) {
           for (Sensor s : sb.sensors()) {
             if (s instanceof ContactSensor cs) {
               cs.detectContact();
             }
           }
         }
-        if (geometryMapper.get(o2) instanceof SensingBody sb) {
+        if (agentGeometryMapper.get(o2) instanceof SensingBody sb) {
           for (Sensor s : sb.sensors()) {
             if (s instanceof ContactSensor cs) {
               cs.detectContact();
@@ -167,8 +164,8 @@ public class Ode4jEngine {
   }
 
   private void signalCollision(Object data, DGeom o1, DGeom o2) {
-    if (geometryMapper.get(o1) instanceof SignalDetector detector && signalDetectors.get(o1) && o2 instanceof DRay ray) {
-      if (signalEmitters.get(ray) == geometryMapper.get(o1)) {
+    if (agentGeometryMapper.get(o1) instanceof SignalDetector detector && signalDetectors.get(o1) && o2 instanceof DRay ray) {
+      if (signalEmitters.get(ray) == agentGeometryMapper.get(o1)) {
         return;
       }
       DContactBuffer contacts = new DContactBuffer(1);
@@ -248,7 +245,7 @@ public class Ode4jEngine {
     for (AbstractBody aBody : agent.components()) {
       for (Body body : aBody.bodyParts()) {
         agentMapper.put(body, agent);
-        geometryMapper.put(body.collisionGeometry(), aBody);
+        agentGeometryMapper.put(body.collisionGeometry(), aBody);
         signalDetectors.put(body.collisionGeometry(), false);
       }
       if (aBody instanceof SignalDetector detector) {

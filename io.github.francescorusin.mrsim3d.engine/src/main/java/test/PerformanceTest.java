@@ -16,7 +16,7 @@ public class PerformanceTest extends VisualTest {
         for (int i = 0; i < 10; ++i) {
             engine = new Ode4jEngine();
             startTimeMillis = System.currentTimeMillis();
-            hundredVoxelsTest(0);
+            hundredVoxelsTest(commChannels);
             while (engine.t() < 100) {
                 engine.tick();
             }

@@ -17,7 +17,6 @@ public class RequestDetachment implements Action {
 
     @Override
     public void execute(Ode4jEngine engine) {
-        //TODO DEBUG
         Map<Body, Set<Body>> requesterAttachedBodies = requester.attachedBodies();
         for (Body requesterBody : requesterAttachGroup) {
             for (Body attachedBody : requesterAttachedBodies.get(requesterBody)) {
