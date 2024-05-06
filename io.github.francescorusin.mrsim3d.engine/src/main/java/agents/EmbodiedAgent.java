@@ -26,7 +26,6 @@ import engine.Ode4jEngine;
 import engine.SimulationObject;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import test.VisualTest;
 
 import java.util.Collection;
 import java.util.List;
@@ -84,6 +83,4 @@ public interface EmbodiedAgent extends SimulationObject {
   }
 
   List<Action> act(Ode4jEngine engine);
-  //TODO REPLACE DRAWER
-  void draw(VisualTest test);
 }

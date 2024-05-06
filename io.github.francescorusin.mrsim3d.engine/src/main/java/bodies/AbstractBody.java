@@ -21,7 +21,6 @@ package bodies;
 
 import engine.SimulationObject;
 import geometry.Vector3D;
-import test.VisualTest;
 
 public interface AbstractBody extends SimulationObject {
   double mass();
@@ -29,6 +28,4 @@ public interface AbstractBody extends SimulationObject {
   double currentVolume(double t);
 
   Vector3D angle(double t);
-  //TODO REPLACE DRAWER
-  void draw(VisualTest test);
 }
