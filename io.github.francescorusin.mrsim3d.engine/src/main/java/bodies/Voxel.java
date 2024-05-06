@@ -31,6 +31,7 @@ import snapshot.ObjectSnapshot;
 import sensors.*;
 import utils.Pair;
 import utils.UnorderedPair;
+import viewer.Viewer;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -172,6 +173,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
 
   private final EnumMap<Cache, Double> cacheTime;
   private final EnumMap<Cache, Object> cacher;
+  private final double[] sensorReadings;
 
   public Voxel(
           double sideLength,
@@ -222,6 +224,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
         commSensors.add(new NearFieldCommunicationSensor(this, Character.getNumericValue(s.charAt(3))));
       }
     }
+    this.sensorReadings = new double[Stream.concat(internalSensors.stream(), commSensors.stream()).mapToInt(Sensor::outputSize).sum()];
   }
 
   public Voxel(EnumSet<JointOption> jointOptions, String sensorConfig) {
@@ -724,29 +727,14 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     cacheTime.put(Cache.SIDECPOSITIONS, -1d);
   }
 
-  /*@Override
-  public void draw(VisualTest test) {
-    dsSetColor(0, 0, 1);
-    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
-    rigidBodies.values().forEach(body -> body.draw(test));
-    dsSetColor(1, 0, 0);
-    ulteriorBodies.values().forEach(body -> body.draw(test));
-    DVector3 anchor1 = new DVector3();
-    DVector3 anchor2 = new DVector3();
-    dsSetColor(0, 0, 0);
-    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
-    for (DJoint joint : internalJoints()) {
-      if (joint instanceof DDoubleBallJoint doubleBallJoint) {
-        doubleBallJoint.getAnchor1(anchor1);
-        doubleBallJoint.getAnchor2(anchor2);
-        dsDrawLine(anchor1, anchor2);
-      }
-    }
-  }*/
-
   @Override
-  public ObjectSnapshot snapshot(Ode4jEngine engine) {
-    return null;
+  public double[] getSensorReadings(Ode4jEngine engine) {
+    int pos = 0;
+    for (Sensor s : sensors()) {
+      System.arraycopy(s.sense(engine), 0, sensorReadings, pos, s.outputSize());
+      pos += s.outputSize();
+    }
+    return sensorReadings;
   }
 
   public void actOnInput(EnumMap<Edge, Double> input) {
@@ -863,5 +851,41 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
       }
     }
     return side;
+  }
+
+  /*@Override
+  public void draw(VisualTest test) {
+    dsSetColor(0, 0, 1);
+    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
+    rigidBodies.values().forEach(body -> body.draw(test));
+    dsSetColor(1, 0, 0);
+    ulteriorBodies.values().forEach(body -> body.draw(test));
+    DVector3 anchor1 = new DVector3();
+    DVector3 anchor2 = new DVector3();
+    dsSetColor(0, 0, 0);
+    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
+    for (DJoint joint : internalJoints()) {
+      if (joint instanceof DDoubleBallJoint doubleBallJoint) {
+        doubleBallJoint.getAnchor1(anchor1);
+        doubleBallJoint.getAnchor2(anchor2);
+        dsDrawLine(anchor1, anchor2);
+      }
+    }
+  }*/
+
+  public record VoxelSnapshot (Vector3D position, EnumMap<Vertex, ObjectSnapshot> vertexSnapshots, double[] sensorReadings) implements ObjectSnapshot {
+    @Override
+    public void draw(Viewer viewer) {
+      //TODO IMPLEMENT
+    }
+  }
+
+  @Override
+  public ObjectSnapshot snapshot(Ode4jEngine engine) {
+    EnumMap<Vertex, ObjectSnapshot> vertexSnapshots = new EnumMap<>(Vertex.class);
+    for (Vertex v : Vertex.values()) {
+      vertexSnapshots.put(v, rigidBodies.get(v).snapshot(engine));
+    }
+    return new VoxelSnapshot(position(engine.t()), vertexSnapshots, Arrays.copyOf(sensorReadings, sensorReadings.length));
   }
 }

@@ -5,6 +5,7 @@ import bodies.Body;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import utils.Pair;
+import viewer.Viewer;
 
 import java.util.*;
 
@@ -104,5 +105,10 @@ public class RequestAttachment implements Action {
                 }
             }
         }
+    }
+
+    @Override
+    public void draw(Viewer viewer) {
+        //TODO IMPLEMENT
     }
 }

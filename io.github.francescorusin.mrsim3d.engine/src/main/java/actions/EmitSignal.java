@@ -3,6 +3,7 @@ package actions;
 import bodies.SignalEmitter;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import viewer.Viewer;
 
 public class EmitSignal implements Action {
     final SignalEmitter emitter;
@@ -20,5 +21,10 @@ public class EmitSignal implements Action {
     @Override
     public void execute(Ode4jEngine engine) {
         engine.emitSignal(emitter, direction, channel, value);
+    }
+
+    @Override
+    public void draw(Viewer viewer) {
+        //TODO IMPLEMENT
     }
 }

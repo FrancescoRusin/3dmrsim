@@ -25,6 +25,7 @@ import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.OdeHelper;
 import snapshot.ObjectSnapshot;
+import viewer.Viewer;
 
 public class Sphere extends Body {
   private final double radius;
@@ -69,7 +70,12 @@ public class Sphere extends Body {
   @Override
   public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {}
 
-  public record SphereSnapshot()
+  public record SphereSnapshot(double radius, Vector3D position) implements ObjectSnapshot {
+    @Override
+    public void draw(Viewer viewer) {
+      //TODO IMPLEMENT
+    }
+  }
 
   @Override
   public ObjectSnapshot snapshot(Ode4jEngine engine) {

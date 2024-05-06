@@ -1,11 +1,14 @@
 package agents;
 
+import actions.Action;
 import bodies.*;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
+import snapshot.AgentSnapshot;
 import snapshot.ObjectSnapshot;
 import utils.UnorderedPair;
+import viewer.Viewer;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -181,8 +184,30 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         }
     }
 
-    @Override
-    public ObjectSnapshot snapshot(Ode4jEngine engine) {
-        return null;
+    public record RobotSnapshot(Voxel.VoxelSnapshot[][][] voxelSnapshots,
+                                List<Action>[][][] lastStepActions) implements AgentSnapshot {
+        public RobotSnapshot(Voxel.VoxelSnapshot[][][] voxelSnapshots) {
+            this(voxelSnapshots, new List[voxelSnapshots.length][voxelSnapshots[0].length][voxelSnapshots[0][0].length]);
+            for (int i = 0; i < voxelSnapshots.length; ++i) {
+                for (int j = 0; j < voxelSnapshots[0].length; ++j) {
+                    for (int k = 0; k < voxelSnapshots[0][0].length; ++k) {
+                        if (Objects.nonNull(voxelSnapshots[i][j][k])) {
+                            this.lastStepActions[i][j][k] = List.of();
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public List<ObjectSnapshot> components() {
+            return Arrays.stream(voxelSnapshots).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream))
+                    .filter(Objects::nonNull).collect(Collectors.toList());
+        }
+
+        @Override
+        public void draw(Viewer viewer) {
+            //TODO IMPLEMENT
+        }
     }
 }

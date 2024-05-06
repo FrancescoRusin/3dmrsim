@@ -3,6 +3,7 @@ package actions;
 import ad.Attachable;
 import bodies.Body;
 import engine.Ode4jEngine;
+import viewer.Viewer;
 
 import java.util.*;
 
@@ -29,5 +30,10 @@ public class RequestDetachment implements Action {
             }
             requesterAttachedBodies.get(requesterBody).clear();
         }
+    }
+
+    @Override
+    public void draw(Viewer viewer) {
+        //TODO IMPLEMENT
     }
 }

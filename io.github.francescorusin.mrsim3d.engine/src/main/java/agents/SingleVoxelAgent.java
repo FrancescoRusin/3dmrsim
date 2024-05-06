@@ -25,15 +25,19 @@ import actions.RequestDetachment;
 import bodies.AbstractBody;
 import bodies.Voxel;
 import engine.Ode4jEngine;
+import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import sensors.Sensor;
+import snapshot.AgentSnapshot;
+import snapshot.ObjectSnapshot;
+import viewer.Viewer;
 
 import java.util.*;
 
 public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
-  private final double[] previousStepSensorOutputs;
   private final NumericalDynamicalSystem<?> controller;
   private final int commChannels;
+  private List<Action> lastStepActions;
 
   public SingleVoxelAgent(
           double sideLength,
@@ -57,12 +61,10 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
             sideLengthStretchRatio,
             jointOptions,
             sensorConfig);
-    this.previousStepSensorOutputs =
-            new double[sensors().stream().mapToInt(Sensor::outputSize).sum()];
-    Arrays.fill(previousStepSensorOutputs, 0d);
-    controller.checkDimension(previousStepSensorOutputs.length, 12 + 6 * commChannels);
+    controller.checkDimension(sensors().stream().mapToInt(Sensor::outputSize).sum(), 12 + 6 * commChannels);
     this.controller = controller;
     this.commChannels = commChannels;
+    this.lastStepActions = new ArrayList<>();
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller, int commChannels) {
@@ -86,12 +88,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
 
   @Override
   public List<Action> act(Ode4jEngine engine) {
-    int pos = 0;
-    for (Sensor s : sensors()) {
-      System.arraycopy(s.sense(engine), 0, previousStepSensorOutputs, pos, s.outputSize());
-      pos += s.outputSize();
-    }
-    double[] controllerOutput = controller.step(engine.t(), previousStepSensorOutputs);
+    double[] controllerOutput = controller.step(engine.t(), getSensorReadings(engine));
     EnumMap<Edge, Double> edgeOutputs = new EnumMap<>(Edge.class);
     int index = -1;
     for (Edge e : Edge.values()) {
@@ -115,6 +112,24 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
               .map(l -> new RequestDetachment(this, l.stream().map(rigidBodies::get).toList()))
               .toList());
     }
+    lastStepActions = new ArrayList<>(outputActions);
     return outputActions;
+  }
+
+  public record SVASnapshot(VoxelSnapshot voxelSnapshot, List<Action> actions) implements AgentSnapshot {
+    @Override
+    public List<ObjectSnapshot> components() {
+      return List.of(voxelSnapshot);
+    }
+
+    @Override
+    public void draw(Viewer viewer) {
+      //TODO IMPLEMENT
+    }
+  }
+
+  @Override
+  public ObjectSnapshot snapshot(Ode4jEngine engine) {
+    return new SVASnapshot((VoxelSnapshot) super.snapshot(engine), lastStepActions);
   }
 }
