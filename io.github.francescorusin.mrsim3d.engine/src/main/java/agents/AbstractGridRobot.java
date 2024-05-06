@@ -4,7 +4,7 @@ import bodies.*;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import test.VisualTest;
+import snapshot.ObjectSnapshot;
 import utils.UnorderedPair;
 
 import java.util.*;
@@ -182,16 +182,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     }
 
     @Override
-    public void draw(VisualTest test) {
-        //TODO DRAW RIGID JOINTS
-        for (Voxel[][] voxelX : grid) {
-            for (Voxel[] voxelY : voxelX) {
-                for (Voxel voxel : voxelY) {
-                    if (Objects.nonNull(voxel)) {
-                        voxel.draw(test);
-                    }
-                }
-            }
-        }
+    public ObjectSnapshot snapshot(Ode4jEngine engine) {
+        return null;
     }
 }

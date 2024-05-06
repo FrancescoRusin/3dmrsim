@@ -203,8 +203,6 @@ public class VisualTest extends DrawStuff.dsFunctions {
         if (!pause) {
             engine.tick();
         }
-        engine.agents.forEach(agent -> agent.draw(this));
-        engine.passiveBodies.forEach(body -> body.draw(this));
         dsSetColor(1, 1, 1);
         DVector3 placeholder1 = new DVector3();
         DVector3 placeholder2 = new DVector3();

@@ -1,8 +1,7 @@
 package ad;
 
 import bodies.Body;
-import engine.Ode4jEngine;
-import engine.SimulationObject;
+import bodies.SimulationObject;
 import geometry.Vector3D;
 
 import java.util.List;

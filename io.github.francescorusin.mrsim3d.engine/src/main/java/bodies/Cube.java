@@ -5,16 +5,14 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
-import org.ode4j.math.DVector3;
 import org.ode4j.ode.OdeHelper;
-import test.VisualTest;
+import snapshot.ObjectSnapshot;
+import viewer.Viewer;
 
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.stream.Stream;
-
-import static drawstuff.DrawStuff.*;
 
 public class Cube extends Body {
     private final double sideLength;
@@ -127,9 +125,15 @@ public class Cube extends Body {
         body.setRotation(new DMatrix3().eqMul(rotationMatrix, body.getRotation()));
     }
 
+    public record CubeSnapshot(double sideLength, Vector3D position, Vector3D rotation) implements ObjectSnapshot {
+        @Override
+        public void draw(Viewer viewer) {
+            //TODO IMPLEMENT
+        }
+    }
+
     @Override
-    public void draw(VisualTest test) {
-        dsDrawBox(body.getPosition(), body.getRotation(),
-                new DVector3(sideLength, sideLength, sideLength));
+    public ObjectSnapshot snapshot(Ode4jEngine engine) {
+        return new CubeSnapshot(this.sideLength, this.position(engine.t()), this.angle(engine.t()));
     }
 }

@@ -23,11 +23,8 @@ import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
-import org.ode4j.ode.DSpace;
 import org.ode4j.ode.OdeHelper;
-import test.VisualTest;
-
-import static drawstuff.DrawStuff.*;
+import snapshot.ObjectSnapshot;
 
 public class Sphere extends Body {
   private final double radius;
@@ -72,10 +69,10 @@ public class Sphere extends Body {
   @Override
   public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {}
 
+  public record SphereSnapshot()
+
   @Override
-  public void draw(VisualTest test) {
-    dsSetColor(0, 1, 0);
-    dsSetTexture(DS_TEXTURE_NUMBER.DS_CHECKERED);
-    dsDrawSphere(body.getPosition(), body.getRotation(), radius);
+  public ObjectSnapshot snapshot(Ode4jEngine engine) {
+    return null;
   }
 }

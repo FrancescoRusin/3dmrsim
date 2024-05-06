@@ -24,19 +24,16 @@ import ad.Attachable;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import org.ode4j.math.DVector3;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
 import org.ode4j.ode.DRay;
+import snapshot.ObjectSnapshot;
 import sensors.*;
-import test.VisualTest;
 import utils.Pair;
 import utils.UnorderedPair;
 
 import java.util.*;
 import java.util.stream.Stream;
-
-import static drawstuff.DrawStuff.*;
 
 public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmitter, SignalDetector, Attachable {
   public static final double DEFAULT_SIDE_LENGTH = 1d;
@@ -727,7 +724,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     cacheTime.put(Cache.SIDECPOSITIONS, -1d);
   }
 
-  @Override
+  /*@Override
   public void draw(VisualTest test) {
     dsSetColor(0, 0, 1);
     dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
@@ -745,6 +742,11 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
         dsDrawLine(anchor1, anchor2);
       }
     }
+  }*/
+
+  @Override
+  public ObjectSnapshot snapshot(Ode4jEngine engine) {
+    return null;
   }
 
   public void actOnInput(EnumMap<Edge, Double> input) {

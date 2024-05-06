@@ -23,7 +23,7 @@ import actions.Action;
 import bodies.AbstractBody;
 import bodies.Body;
 import engine.Ode4jEngine;
-import engine.SimulationObject;
+import bodies.SimulationObject;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 

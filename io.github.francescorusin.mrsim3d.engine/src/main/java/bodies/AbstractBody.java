@@ -19,7 +19,6 @@
  */
 package bodies;
 
-import engine.SimulationObject;
 import geometry.Vector3D;
 
 public interface AbstractBody extends SimulationObject {

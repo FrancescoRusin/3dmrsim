@@ -26,6 +26,7 @@ import geometry.Vector3D;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
+import snapshot.InstantSnapshot;
 import sensors.ContactSensor;
 import sensors.Sensor;
 import utils.UnorderedPair;
@@ -187,7 +188,7 @@ public class Ode4jEngine {
   public long timeTickSignals;
   public long timeTickOther;
 
-  public Snapshot tick() {
+  public InstantSnapshot tick() {
     /*if (t() % 4 < 1d / 60d) {
       System.out.printf("Current time: %.4f\n", t());
       System.out.printf("Current execution time: %.4f\n", (timeTickEngine + timeTickSignals + timeTickOther) / 1000d);

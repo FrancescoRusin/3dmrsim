@@ -1,4 +1,4 @@
-package engine; /*-
+package snapshot; /*-
                  * ========================LICENSE_START=================================
                  * core
                  * %%
@@ -20,12 +20,11 @@ package engine; /*-
 
 import agents.EmbodiedAgent;
 import bodies.Body;
-import java.util.Collection;
 
-public interface Snapshot {
-  Collection<EmbodiedAgent> agents();
+import java.util.Map;
 
-  Collection<Body> passiveBodies();
+public interface InstantSnapshot {
+  Map<Integer, ObjectSnapshot> objects();
 
   double t();
 }

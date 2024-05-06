@@ -1,9 +1,9 @@
-package engine;
+package bodies;
 
-import bodies.Body;
+import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import test.VisualTest;
+import snapshot.ObjectSnapshot;
 
 import java.util.List;
 
@@ -20,6 +20,6 @@ public interface SimulationObject {
     void translate(Ode4jEngine engine, Vector3D translation);
 
     void assemble(Ode4jEngine engine, Vector3D position);
-    //TODO REPLACE DRAWER
-    void draw(VisualTest test);
+    //TODO IMPLEMENT
+    ObjectSnapshot snapshot(Ode4jEngine engine);
 }
