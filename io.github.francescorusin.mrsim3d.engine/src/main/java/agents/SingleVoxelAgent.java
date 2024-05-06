@@ -25,7 +25,6 @@ import actions.RequestDetachment;
 import bodies.AbstractBody;
 import bodies.Voxel;
 import engine.Ode4jEngine;
-import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import sensors.Sensor;
 import snapshot.AgentSnapshot;
