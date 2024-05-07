@@ -24,7 +24,7 @@ public class RequestDetachment implements Action {
                 engine.removeSpringJoints(requesterBody, attachedBody);
                 if (attachedBody instanceof Attachable attachableBody) {
                     attachableBody.attachedBodies().get(attachedBody).remove(requesterBody);
-                } else if (engine.agentMapper.get(attachedBody) instanceof Attachable attachableAgent) {
+                } else if (engine.componentToAgentMapper.get(attachedBody) instanceof Attachable attachableAgent) {
                     attachableAgent.attachedBodies().get(attachedBody).remove(requesterBody);
                 }
             }

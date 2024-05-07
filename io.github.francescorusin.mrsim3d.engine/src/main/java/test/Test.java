@@ -19,14 +19,12 @@ package test;/*-
  */
 
 import agents.CentralizedGridRobot;
-import agents.EmbodiedAgent;
 import agents.SingleVoxelAgent;
 import bodies.Voxel;
 import drawstuff.DrawStuff;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
-import org.ode4j.math.DVector3;
 import org.ode4j.ode.*;
 
 import java.util.*;
@@ -34,7 +32,7 @@ import java.util.*;
 import static drawstuff.DrawStuff.*;
 import static drawstuff.internal.LwJGL.pause;
 
-public class VisualTest extends DrawStuff.dsFunctions {
+public class Test extends DrawStuff.dsFunctions {
     protected static final float[] xyz = {0f, -6f, 4.2600f};
     protected static final float[] hpr = {90f, -10f, 0f};
     private static final String defaultSensors = "ang-vlm-vlc-scr-cnt-nfc0";
@@ -42,7 +40,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
     protected CentralizedGridRobot robot;
 
     public static void main(String[] args) {
-        new VisualTest().demo(args);
+        new Test().demo(args);
     }
 
     private static int[] computeIO(String sensorConfig, int nOfVoxels, int commChannels) {
@@ -148,11 +146,7 @@ public class VisualTest extends DrawStuff.dsFunctions {
             engine.addAgent(defaultSingleVoxelAgent(1), new Vector3D(-number + 2 * i + 1, 0d, 2d));
         }
         for (int i = 0; i < number; ++i) {
-            engine.agents.get(i).rotate(engine, new Vector3D(0d, 0d, .01));
-        }
-        System.out.print("Voxels: ");
-        for (EmbodiedAgent agent : engine.agents) {
-            System.out.printf("%s ", agent);
+            engine.allObjectsStream().forEach(o -> o.rotate(engine, new Vector3D(0d, 0d, .01)));
         }
         System.out.println();
     }
@@ -202,31 +196,6 @@ public class VisualTest extends DrawStuff.dsFunctions {
     public void step(boolean pause) {
         if (!pause) {
             engine.tick();
-        }
-        dsSetColor(1, 1, 1);
-        DVector3 placeholder1 = new DVector3();
-        DVector3 placeholder2 = new DVector3();
-        for (DFixedJoint joint : engine.fixedJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
-            dsDrawLine(joint.getBody(0).getPosition(), joint.getBody(1).getPosition());
-        }
-        List<? extends DJoint> agentsInternalJoints = engine.agents.stream().map(EmbodiedAgent::components)
-                .flatMap(Collection::stream).map(v -> ((Voxel) v).internalJoints()).flatMap(List::stream).toList();
-        for (DDoubleBallJoint joint : engine.springJoints.values().stream().filter(Objects::nonNull).flatMap(List::stream).toList()) {
-            if (agentsInternalJoints.contains(joint)) {
-                continue;
-            }
-            joint.getAnchor1(placeholder1);
-            joint.getAnchor2(placeholder2);
-            dsDrawLine(placeholder1, placeholder2);
-        }
-        dsSetColor(0, 1, 0);
-        for (DGeom geom : engine.signalSpace().getGeoms()) {
-            if (geom instanceof DRay ray) {
-                ray.get(placeholder1, placeholder2);
-                placeholder2.scale(ray.getLength());
-                placeholder2.add(placeholder1);
-                dsDrawLine(placeholder1, placeholder2);
-            }
         }
     }
 

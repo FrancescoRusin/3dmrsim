@@ -27,8 +27,8 @@ import bodies.Voxel;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import sensors.Sensor;
-import snapshot.AgentSnapshot;
-import snapshot.ObjectSnapshot;
+import outcome.AgentSnapshot;
+import outcome.ObjectSnapshot;
 import viewer.Viewer;
 
 import java.util.*;
@@ -128,7 +128,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   }
 
   @Override
-  public ObjectSnapshot snapshot(Ode4jEngine engine) {
+  public AgentSnapshot snapshot(Ode4jEngine engine) {
     return new SVASnapshot((VoxelSnapshot) super.snapshot(engine), lastStepActions);
   }
 }

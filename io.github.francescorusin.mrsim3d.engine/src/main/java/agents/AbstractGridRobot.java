@@ -5,8 +5,8 @@ import bodies.*;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import snapshot.AgentSnapshot;
-import snapshot.ObjectSnapshot;
+import outcome.AgentSnapshot;
+import outcome.ObjectSnapshot;
 import utils.UnorderedPair;
 import viewer.Viewer;
 
@@ -209,5 +209,18 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         public void draw(Viewer viewer) {
             //TODO IMPLEMENT
         }
+    }
+
+    @Override
+    public AgentSnapshot snapshot(Ode4jEngine engine) {
+        Voxel.VoxelSnapshot[][][] snapshotGrid = new Voxel.VoxelSnapshot[grid.length][grid[0].length][grid[0][0].length];
+        for (int i = 0; i < grid.length; ++i) {
+            for (int j = 0; j < grid[0].length; ++j) {
+                for (int k = 0; k < grid[0][0].length; ++k) {
+                    snapshotGrid[i][j][k] = (Voxel.VoxelSnapshot) grid[i][j][k].snapshot(engine);
+                }
+            }
+        }
+        return new RobotSnapshot(snapshotGrid);
     }
 }

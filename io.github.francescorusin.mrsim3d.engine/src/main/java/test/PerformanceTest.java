@@ -2,7 +2,7 @@ package test;
 
 import engine.Ode4jEngine;
 
-public class PerformanceTest extends VisualTest {
+public class PerformanceTest extends Test {
 
     public static void main(String[] args) {
             new PerformanceTest().unstaticMain();

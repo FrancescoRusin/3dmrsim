@@ -24,7 +24,7 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.OdeHelper;
-import snapshot.ObjectSnapshot;
+import outcome.ObjectSnapshot;
 import viewer.Viewer;
 
 public class Sphere extends Body {
@@ -79,6 +79,6 @@ public class Sphere extends Body {
 
   @Override
   public ObjectSnapshot snapshot(Ode4jEngine engine) {
-    return null;
+    return new SphereSnapshot(this.radius, this.position(engine.t()));
   }
 }

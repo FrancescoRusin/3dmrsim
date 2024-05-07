@@ -6,7 +6,7 @@ import geometry.Vector3D;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.ode.OdeHelper;
-import snapshot.ObjectSnapshot;
+import outcome.ObjectSnapshot;
 import viewer.Viewer;
 
 import java.util.Arrays;

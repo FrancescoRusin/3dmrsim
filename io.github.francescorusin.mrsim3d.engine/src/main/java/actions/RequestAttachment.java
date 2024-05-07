@@ -30,25 +30,7 @@ public class RequestAttachment implements Action {
                 requesterAttachGroup.stream().map(v -> v.position(engine.t()).vectorDistance(basePos)).toList());
         double planeC = basePos.scalarProduct(planeNormal);
         double correctSign = -Math.signum(requester.position(engine.t()).scalarProduct(planeNormal) - planeC);
-        /*Vector3D maxBasePos = basePos.sum(new Vector3D(
-                engine.configuration.maxAttractDistance(),
-                engine.configuration.maxAttractDistance(),
-                engine.configuration.maxAttractDistance())
-        );
-        Vector3D minBasePos = basePos.sum(new Vector3D(
-                -engine.configuration.maxAttractDistance(),
-                -engine.configuration.maxAttractDistance(),
-                -engine.configuration.maxAttractDistance())
-        );*/
         Attachable closestAttachable = engine.allObjectsStream()
-                // cull attachment possibilities by filtering out anything that is not in range by using cached bounding box
-                /*.filter(sb -> sb.boundingBox(engine.t()).min().x() < maxBasePos.x() &&
-                        sb.boundingBox(engine.t()).max().x() > minBasePos.x() &&
-                        sb.boundingBox(engine.t()).min().y() < maxBasePos.y() &&
-                        sb.boundingBox(engine.t()).max().y() > minBasePos.y() &&
-                        sb.boundingBox(engine.t()).min().z() < maxBasePos.z() &&
-                        sb.boundingBox(engine.t()).max().z() > minBasePos.z()
-                )*/
                 .filter(sb -> sb instanceof Attachable && sb != requester &&
                         correctSign * (sb.position(engine.t()).scalarProduct(planeNormal) - planeC) > 0)
                 .map(sb -> (Attachable) sb).min(Comparator.comparingDouble(v -> v.position(engine.t()).vectorDistance(basePos).norm()))

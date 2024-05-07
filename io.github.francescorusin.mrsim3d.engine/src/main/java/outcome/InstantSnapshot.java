@@ -1,4 +1,4 @@
-package snapshot; /*-
+package outcome; /*-
                  * ========================LICENSE_START=================================
                  * core
                  * %%
@@ -18,13 +18,19 @@ package snapshot; /*-
                  * =========================LICENSE_END==================================
                  */
 
-import agents.EmbodiedAgent;
+import actions.Action;
 import bodies.Body;
+import geometry.Vector3D;
+import utils.Pair;
+import utils.UnorderedPair;
 
+import java.util.List;
 import java.util.Map;
 
-public interface InstantSnapshot {
-  Map<Integer, ObjectSnapshot> objects();
-
-  double t();
-}
+public record InstantSnapshot(
+        Map<Integer, AgentSnapshot> agents,
+        Map<Integer, ObjectSnapshot> passiveBodies,
+        List<Action> actions,
+        Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> springJoints,
+        Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> fixedJoints,
+        double t) {}

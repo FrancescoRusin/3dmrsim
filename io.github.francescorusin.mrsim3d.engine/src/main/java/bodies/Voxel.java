@@ -27,7 +27,7 @@ import geometry.Vector3D;
 import org.ode4j.ode.DDoubleBallJoint;
 import org.ode4j.ode.DJoint;
 import org.ode4j.ode.DRay;
-import snapshot.ObjectSnapshot;
+import outcome.ObjectSnapshot;
 import sensors.*;
 import utils.Pair;
 import utils.UnorderedPair;

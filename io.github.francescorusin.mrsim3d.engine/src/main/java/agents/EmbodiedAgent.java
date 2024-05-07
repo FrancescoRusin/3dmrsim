@@ -26,6 +26,7 @@ import engine.Ode4jEngine;
 import bodies.SimulationObject;
 import geometry.BoundingBox;
 import geometry.Vector3D;
+import outcome.AgentSnapshot;
 
 import java.util.Collection;
 import java.util.List;
@@ -83,4 +84,6 @@ public interface EmbodiedAgent extends SimulationObject {
   }
 
   List<Action> act(Ode4jEngine engine);
+
+  AgentSnapshot snapshot(Ode4jEngine engine);
 }

@@ -1,4 +1,4 @@
-package snapshot;
+package outcome;
 
 import geometry.Vector3D;
 import viewer.Viewer;
