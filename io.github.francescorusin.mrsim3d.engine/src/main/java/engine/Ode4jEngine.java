@@ -81,8 +81,8 @@ public class Ode4jEngine {
   private final Map<DRay, SignalEmitter> signalEmitters;
   private final Map<DGeom, Boolean> signalDetectors;
   private final Map<DGeom, List<DGeom>> collisionExceptions;
-  public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
-  public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
+  public Map<UnorderedPair<Body>, Collection<DDoubleBallJoint>> springJoints;
+  public Map<UnorderedPair<Body>, Collection<DFixedJoint>> fixedJoints;
   private final DGeom terrain;
 
   public Ode4jEngine(Configuration configuration) {
@@ -94,12 +94,12 @@ public class Ode4jEngine {
     world.setGravity(configuration.gravity.x(), configuration.gravity.y(), configuration.gravity.z());
     world.setERP(1d - 1e-5);
     world.setCFM(1e-5);
-    agents = new HashMap<>();
+    agents = new TreeMap<>();
     agentCounter = 0;
     geometryToBodyMapper = new HashMap<>();
     bodyToComponentMapper = new HashMap<>();
     componentToAgentMapper = new HashMap<>();
-    passiveBodies = new HashMap<>();
+    passiveBodies = new TreeMap<>();
     passiveBodyCounter = 0;
     signalEmitters = new HashMap<>();
     signalDetectors = new HashMap<>();
@@ -119,15 +119,15 @@ public class Ode4jEngine {
     this(DEFAULT_CONFIGURATION);
   }
 
-  public double ERP(double springConstant, double dampingConstant) {
+  private double ERP(double springConstant, double dampingConstant) {
     return timeStep * springConstant / (timeStep * springConstant + dampingConstant);
   }
 
-  public double CFM(double springConstant, double dampingConstant) {
+  private double CFM(double springConstant, double dampingConstant) {
     return 1d / (timeStep * springConstant + dampingConstant);
   }
 
-  public void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
+  private void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
     DVector3 anchor1Position = new DVector3();
     DVector3 anchor2Position = new DVector3();
     joint.getAnchor1(anchor1Position);
@@ -249,7 +249,7 @@ public class Ode4jEngine {
       ).toList());
     }
     return new InstantSnapshot(
-            agentSnapshotMap, passiveBodySnapshotMap, List.copyOf(actions), springJointsMap, fixedJointsMap, t()
+            agentSnapshotMap, passiveBodySnapshotMap, List.copyOf(actions), springJointsMap, fixedJointsMap
     );
   }
 

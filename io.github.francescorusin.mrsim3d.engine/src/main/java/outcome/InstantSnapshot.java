@@ -32,5 +32,5 @@ public record InstantSnapshot(
         Map<Integer, ObjectSnapshot> passiveBodies,
         List<Action> actions,
         Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> springJoints,
-        Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> fixedJoints,
-        double t) {}
+        Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> fixedJoints
+        ) {}

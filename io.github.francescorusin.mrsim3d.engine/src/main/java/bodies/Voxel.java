@@ -297,7 +297,7 @@ public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmi
     if (cacheTime.get(Cache.VOLUME) != t) {
       cacheTime.put(Cache.VOLUME, t);
       double volume = 0d;
-      Map<Vertex, Vector3D> currentVectorsFromV000 = new EnumMap<>(Vertex.class);
+      EnumMap<Vertex, Vector3D> currentVectorsFromV000 = new EnumMap<>(Vertex.class);
       for (Vertex v :
               List.of(
                       Vertex.V001,
