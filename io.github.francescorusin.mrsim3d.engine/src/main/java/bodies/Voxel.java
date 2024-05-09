@@ -36,7 +36,7 @@ import viewer.Viewer;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class Voxel extends MultiBody implements SoftBody, SensingBody, SignalEmitter, SignalDetector, Attachable {
+public class Voxel extends MultiBody implements SoftBody, RobotComponent, SensingBody, SignalEmitter, SignalDetector, Attachable {
   public static final double DEFAULT_SIDE_LENGTH = 1d;
   public static final double DEFAULT_RIGID_BODY_LENGTH = .2;
   public static final double DEFAULT_MASS = 1d;

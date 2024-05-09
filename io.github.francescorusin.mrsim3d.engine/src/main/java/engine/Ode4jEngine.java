@@ -74,8 +74,8 @@ public class Ode4jEngine {
   public final Map<Integer, EmbodiedAgent> agents;
   private int agentCounter;
   private final Map<DGeom, Body> geometryToBodyMapper;
-  private final Map<Body, AbstractBody> bodyToComponentMapper;
-  public final Map<AbstractBody, EmbodiedAgent> componentToAgentMapper;
+  private final Map<Body, RobotComponent> bodyToComponentMapper;
+  public final Map<RobotComponent, EmbodiedAgent> componentToAgentMapper;
   public final Map<Integer, Body> passiveBodies;
   private int passiveBodyCounter;
   private final Map<DRay, SignalEmitter> signalEmitters;
@@ -106,7 +106,7 @@ public class Ode4jEngine {
     springJoints = new HashMap<>();
     fixedJoints = new HashMap<>();
     collisionExceptions = new HashMap<>();
-    // TODO ADD TERRAINS
+    //TODO FULL TERRAIN REFACTORING
     terrain = configuration.terrainSupplier.apply(bodySpace);
     time = 0d;
     timeStep = 1d / 60d;
@@ -268,14 +268,14 @@ public class Ode4jEngine {
   public void addAgent(EmbodiedAgent agent, Vector3D position) {
     agent.assemble(this, position);
     agents.put(agentCounter++, agent);
-    for (AbstractBody aBody : agent.components()) {
-      componentToAgentMapper.put(aBody, agent);
-      for (Body body : aBody.bodyParts()) {
+    for (RobotComponent component : agent.components()) {
+      componentToAgentMapper.put(component, agent);
+      for (Body body : component.bodyParts()) {
         geometryToBodyMapper.put(body.collisionGeometry(), body);
-        bodyToComponentMapper.put(body, aBody);
+        bodyToComponentMapper.put(body, component);
         signalDetectors.put(body.collisionGeometry(), false);
       }
-      if (aBody instanceof SignalDetector detector) {
+      if (component instanceof SignalDetector detector) {
         for (Body body : detector.detectorBodies()) {
           signalDetectors.put(body.collisionGeometry(), true);
         }

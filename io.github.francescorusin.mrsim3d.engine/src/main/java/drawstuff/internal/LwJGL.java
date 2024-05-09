@@ -57,7 +57,6 @@ import java.nio.IntBuffer;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
-import org.lwjgl.system.*;
 import org.lwjgl.system.MemoryStack;
 import org.ode4j.ode.OdeHelper;
 import org.ode4j.ode.internal.Common;
@@ -604,20 +603,6 @@ public abstract class LwJGL extends Internal implements DrawStuffApi {
     long fps = 0;
     while (run && !glfwWindowShouldClose(window)) {
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
-
-      //  while (run) {
-      // read in and process all pending events for the main window
-      //    XEvent event;
-      //    while (run && XPending (display)) {
-      //      XNextEvent (display,event);
-      //      handleEvent (event,fn);
-      //    }
-      // handleKeyboard(fn);
-      // handleMouse();
-
-      // processDrawFrame: This was not move into separate method for convenience
-
-      // GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 
       dsDrawFrame(width, height, fn, pause && !singlestep);
       singlestep = false;

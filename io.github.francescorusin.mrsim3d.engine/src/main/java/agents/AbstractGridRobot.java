@@ -36,7 +36,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     }
 
     @Override
-    public List<AbstractBody> components() {
+    public List<RobotComponent> components() {
         return Arrays.stream(grid).flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream))
                 .filter(Objects::nonNull).collect(Collectors.toList());
     }

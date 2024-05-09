@@ -22,6 +22,7 @@ package agents;
 import actions.Action;
 import bodies.AbstractBody;
 import bodies.Body;
+import bodies.RobotComponent;
 import engine.Ode4jEngine;
 import bodies.SimulationObject;
 import geometry.BoundingBox;
@@ -32,7 +33,7 @@ import java.util.Collection;
 import java.util.List;
 
 public interface EmbodiedAgent extends SimulationObject {
-  List<AbstractBody> components();
+  List<RobotComponent> components();
 
   @Override
   default List<Body> bodyParts() {
@@ -41,7 +42,7 @@ public interface EmbodiedAgent extends SimulationObject {
 
   @Override
   default BoundingBox boundingBox(double t) {
-    List<AbstractBody> components = components();
+    List<RobotComponent> components = components();
     return components.stream()
             .map(b -> b.boundingBox(t))
             .reduce(BoundingBox::enclosing)
@@ -50,7 +51,7 @@ public interface EmbodiedAgent extends SimulationObject {
 
   @Override
   default Vector3D position(double t) {
-    List<AbstractBody> components = components();
+    List<RobotComponent> components = components();
     return components.stream()
             .map(b -> b.position(t))
             .reduce(Vector3D::sum)
@@ -59,7 +60,7 @@ public interface EmbodiedAgent extends SimulationObject {
 
   @Override
   default Vector3D velocity(double t) {
-    List<AbstractBody> components = components();
+    List<RobotComponent> components = components();
     return components.stream()
             .map(b -> b.velocity(t))
             .reduce(Vector3D::sum)

@@ -22,7 +22,7 @@ package agents;
 import actions.Action;
 import actions.RequestAttachment;
 import actions.RequestDetachment;
-import bodies.AbstractBody;
+import bodies.RobotComponent;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
@@ -81,7 +81,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   }
 
   @Override
-  public List<AbstractBody> components() {
+  public List<RobotComponent> components() {
     return List.of(this);
   }
 
