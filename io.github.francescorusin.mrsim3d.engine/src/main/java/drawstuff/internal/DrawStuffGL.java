@@ -44,6 +44,7 @@
 package drawstuff.internal;
 
 import static drawstuff.DrawStuff.*;
+import static org.lwjgl.opengl.GL11.*;
 
 import drawstuff.DrawStuff.dsFunctions;
 import java.io.*;
@@ -1123,18 +1124,6 @@ public class DrawStuffGL extends LwJGL implements DrawStuffApi {
       GL11.glColor3f(GROUND_R, GROUND_G, GROUND_B);
     }
 
-    // ground fog seems to cause problems with TNT2 under windows
-    /*
-    GLfloat fogColor[4] = {0.5, 0.5, 0.5, 1};
-    GL11.glEnable (GL_FOG);
-    GL11.glFogi (GL_FOG_MODE, GL_EXP2);
-    GL11.glFogfv (GL_FOG_COLOR, fogColor);
-    GL11.glFogf (GL_FOG_DENSITY, 0.05f);
-    GL11.glHint (GL_FOG_HINT, GL_NICEST); // GL_DONT_CARE);
-    GL11.glFogf (GL_FOG_START, 1.0);
-    GL11.glFogf (GL_FOG_END, 5.0);
-     */
-
     final float gsize = 100.0f;
     final float offset = 0; // -0.001f; ... polygon offsetting doesn't work well
 
@@ -1150,7 +1139,7 @@ public class DrawStuffGL extends LwJGL implements DrawStuffApi {
     GL11.glVertex3f(-gsize, gsize, offset);
     GL11.glEnd();
 
-    GL11.glDisable(GL11.GL_FOG);
+    GL11.glDisable(GL_FOG);
   }
 
   private void drawPyramidGrid() {
