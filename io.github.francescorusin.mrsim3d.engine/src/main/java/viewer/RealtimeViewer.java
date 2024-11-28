@@ -164,6 +164,8 @@ public class RealtimeViewer implements Viewer {
             extractShader(
                 "io.github.francescorusin.mrsim3d.engine/src/main/java/viewer/shader.txt"));
     glUseProgram(shader);
+    final int loc = glGetUniformLocation(shader, "uColor");
+    checkErrors();
 
     final float[] vertices = new float[] {-.5f, -.5f, -.5f, .5f, .5f, -.5f, .5f, .5f};
     final int vertexBuffer = glGenBuffers();
@@ -172,14 +174,15 @@ public class RealtimeViewer implements Viewer {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, false, 8, BufferUtils.createFloatBuffer(8).put(vertices));
 
-    int glError;
-
+    int t = 0;
     while (!glfwWindowShouldClose(windowID)) {
-      glError = glGetError();
-      while (glError != GL_NO_ERROR) {
-        glError = glGetError();
-        System.out.printf("OpenGL error %d\n", glError);
-      }
+      glUniform4f(
+          loc,
+          (float) Math.cos(++t / 360d * Math.PI) / 2 + .5f,
+          0f,
+          (float) Math.sin(++t / 360d * Math.PI) / 2 + .5f,
+          1f);
+      checkErrors();
       glClearColor(0f, 0f, 0f, 1f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -189,6 +192,14 @@ public class RealtimeViewer implements Viewer {
       glfwPollEvents();
     }
     // glDeleteTextures(texture);
+  }
+
+  private static void checkErrors() {
+    int glError = glGetError();
+    while (glError != GL_NO_ERROR) {
+      glError = glGetError();
+      System.out.printf("OpenGL error %d\n", glError);
+    }
   }
 
   public static void main(String[] args) throws Exception {
