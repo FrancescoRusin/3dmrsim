@@ -24,5 +24,6 @@ import viewer.Viewer;
 
 public interface Action {
   void execute(Ode4jEngine engine);
+
   void draw(Viewer viewer);
 }

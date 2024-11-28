@@ -26,12 +26,11 @@ import bodies.RobotComponent;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
-import sensors.Sensor;
+import java.util.*;
 import outcome.AgentSnapshot;
 import outcome.ObjectSnapshot;
+import sensors.Sensor;
 import viewer.Viewer;
-
-import java.util.*;
 
 public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final NumericalDynamicalSystem<?> controller;
@@ -39,45 +38,72 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private List<Action> lastStepActions;
 
   public SingleVoxelAgent(
-          double sideLength,
-          double rigidBodyLength,
-          double mass,
-          int commChannels,
-          double centralMassRatio,
-          double springConstant,
-          double dampingConstant,
-          double sideLengthStretchRatio,
-          EnumSet<JointOption> jointOptions,
-          String sensorConfig,
-          NumericalDynamicalSystem<?> controller) {
+      double sideLength,
+      double rigidBodyLength,
+      double mass,
+      int commChannels,
+      double centralMassRatio,
+      double springConstant,
+      double dampingConstant,
+      double sideLengthStretchRatio,
+      EnumSet<JointOption> jointOptions,
+      String sensorConfig,
+      NumericalDynamicalSystem<?> controller) {
     super(
-            sideLength,
-            rigidBodyLength,
-            mass,
-            centralMassRatio,
-            springConstant,
-            dampingConstant,
-            sideLengthStretchRatio,
-            jointOptions,
-            sensorConfig);
-    controller.checkDimension(sensors().stream().mapToInt(Sensor::outputSize).sum(), 12 + 6 * commChannels);
+        sideLength,
+        rigidBodyLength,
+        mass,
+        centralMassRatio,
+        springConstant,
+        dampingConstant,
+        sideLengthStretchRatio,
+        jointOptions,
+        sensorConfig);
+    controller.checkDimension(
+        sensors().stream().mapToInt(Sensor::outputSize).sum(), 12 + 6 * commChannels);
     this.controller = controller;
     this.commChannels = commChannels;
     this.lastStepActions = new ArrayList<>();
   }
 
-  public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller, int commChannels) {
-    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, commChannels, DEFAULT_CENTRAL_MASS_RATIO,
-            DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
-            EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
-                    JointOption.SIDES, JointOption.INTERNAL), sensorConfig, controller);
+  public SingleVoxelAgent(
+      String sensorConfig, NumericalDynamicalSystem<?> controller, int commChannels) {
+    this(
+        DEFAULT_SIDE_LENGTH,
+        DEFAULT_RIGID_BODY_LENGTH,
+        DEFAULT_MASS,
+        commChannels,
+        DEFAULT_CENTRAL_MASS_RATIO,
+        DEFAULT_SPRING_CONSTANT,
+        DEFAULT_DAMPING_CONSTANT,
+        DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
+        EnumSet.of(
+            JointOption.EDGES_PARALLEL,
+            JointOption.EDGES_CROSSES,
+            JointOption.EDGES_DIAGONALS,
+            JointOption.SIDES,
+            JointOption.INTERNAL),
+        sensorConfig,
+        controller);
   }
 
   public SingleVoxelAgent(String sensorConfig, NumericalDynamicalSystem<?> controller) {
-    this(DEFAULT_SIDE_LENGTH, DEFAULT_RIGID_BODY_LENGTH, DEFAULT_MASS, 0, DEFAULT_CENTRAL_MASS_RATIO,
-            DEFAULT_SPRING_CONSTANT, DEFAULT_DAMPING_CONSTANT, DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
-            EnumSet.of(JointOption.EDGES_PARALLEL, JointOption.EDGES_CROSSES, JointOption.EDGES_DIAGONALS,
-                    JointOption.INTERNAL), sensorConfig, controller);
+    this(
+        DEFAULT_SIDE_LENGTH,
+        DEFAULT_RIGID_BODY_LENGTH,
+        DEFAULT_MASS,
+        0,
+        DEFAULT_CENTRAL_MASS_RATIO,
+        DEFAULT_SPRING_CONSTANT,
+        DEFAULT_DAMPING_CONSTANT,
+        DEFAULT_SIDE_LENGTH_STRETCH_RATIO,
+        EnumSet.of(
+            JointOption.EDGES_PARALLEL,
+            JointOption.EDGES_CROSSES,
+            JointOption.EDGES_DIAGONALS,
+            JointOption.INTERNAL),
+        sensorConfig,
+        controller);
   }
 
   @Override
@@ -97,17 +123,22 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     ++index;
     List<Action> outputActions = new ArrayList<>();
     for (int channel = 0; channel < commChannels; ++channel) {
-      outputActions.addAll(super.emitSignals(engine, channel,
-              Arrays.copyOfRange(controllerOutput, index, index + 6)));
+      outputActions.addAll(
+          super.emitSignals(
+              engine, channel, Arrays.copyOfRange(controllerOutput, index, index + 6)));
       index += 6;
     }
-    //TODO REMOVE TEST
+    // TODO REMOVE TEST
     if (Math.sin(engine.t() * Math.PI / 10) > 0) {
-      outputActions.addAll(Arrays.stream(Side.values()).map(Side::vertices)
+      outputActions.addAll(
+          Arrays.stream(Side.values())
+              .map(Side::vertices)
               .map(l -> new RequestAttachment(this, l.stream().map(rigidBodies::get).toList()))
               .toList());
     } else {
-      outputActions.addAll(Arrays.stream(Side.values()).map(Side::vertices)
+      outputActions.addAll(
+          Arrays.stream(Side.values())
+              .map(Side::vertices)
               .map(l -> new RequestDetachment(this, l.stream().map(rigidBodies::get).toList()))
               .toList());
     }
@@ -115,7 +146,8 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
     return outputActions;
   }
 
-  public record SVASnapshot(VoxelSnapshot voxelSnapshot, List<Action> actions) implements AgentSnapshot {
+  public record SVASnapshot(VoxelSnapshot voxelSnapshot, List<Action> actions)
+      implements AgentSnapshot {
     @Override
     public List<ObjectSnapshot> components() {
       return List.of(voxelSnapshot);
@@ -123,7 +155,7 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
 
     @Override
     public void draw(Viewer viewer) {
-      //TODO IMPLEMENT
+      // TODO IMPLEMENT
     }
   }
 

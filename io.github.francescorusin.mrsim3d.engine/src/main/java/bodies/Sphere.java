@@ -73,7 +73,7 @@ public class Sphere extends Body {
   public record SphereSnapshot(double radius, Vector3D position) implements ObjectSnapshot {
     @Override
     public void draw(Viewer viewer) {
-      //TODO IMPLEMENT
+      // TODO IMPLEMENT
     }
   }
 

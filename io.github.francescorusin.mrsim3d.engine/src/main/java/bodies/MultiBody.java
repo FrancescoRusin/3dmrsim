@@ -21,14 +21,16 @@ package bodies; /*-
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import org.ode4j.ode.DJoint;
-
 import java.util.List;
+import org.ode4j.ode.DJoint;
 
 public abstract class MultiBody implements AbstractBody {
   @Override
   public BoundingBox boundingBox(double t) {
-    return bodyParts().stream().map(b -> b.boundingBox(t)).reduce(BoundingBox::enclosing).orElseThrow();
+    return bodyParts().stream()
+        .map(b -> b.boundingBox(t))
+        .reduce(BoundingBox::enclosing)
+        .orElseThrow();
   }
 
   @Override
@@ -46,7 +48,8 @@ public abstract class MultiBody implements AbstractBody {
     return bodyParts().stream()
         .map(b -> b.position(t).times(b.mass()))
         .reduce(Vector3D::sum)
-        .orElseThrow().times(1d / mass());
+        .orElseThrow()
+        .times(1d / mass());
   }
 
   @Override
@@ -54,7 +57,8 @@ public abstract class MultiBody implements AbstractBody {
     Vector3D center = position(engine.t());
     for (Body bodyPart : bodyParts()) {
       Vector3D relativePosition = bodyPart.position(engine.t()).vectorDistance(center);
-      bodyPart.translate(engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
+      bodyPart.translate(
+          engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
       bodyPart.rotate(engine, eulerAngles);
     }
   }

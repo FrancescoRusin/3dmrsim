@@ -23,14 +23,13 @@ import actions.Action;
 import bodies.AbstractBody;
 import bodies.Body;
 import bodies.RobotComponent;
-import engine.Ode4jEngine;
 import bodies.SimulationObject;
+import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import outcome.AgentSnapshot;
-
 import java.util.Collection;
 import java.util.List;
+import outcome.AgentSnapshot;
 
 public interface EmbodiedAgent extends SimulationObject {
   List<RobotComponent> components();
@@ -44,27 +43,29 @@ public interface EmbodiedAgent extends SimulationObject {
   default BoundingBox boundingBox(double t) {
     List<RobotComponent> components = components();
     return components.stream()
-            .map(b -> b.boundingBox(t))
-            .reduce(BoundingBox::enclosing)
-            .orElseThrow();
+        .map(b -> b.boundingBox(t))
+        .reduce(BoundingBox::enclosing)
+        .orElseThrow();
   }
 
   @Override
   default Vector3D position(double t) {
     List<RobotComponent> components = components();
     return components.stream()
-            .map(b -> b.position(t))
-            .reduce(Vector3D::sum)
-            .orElseThrow().times(1d / components.size());
+        .map(b -> b.position(t))
+        .reduce(Vector3D::sum)
+        .orElseThrow()
+        .times(1d / components.size());
   }
 
   @Override
   default Vector3D velocity(double t) {
     List<RobotComponent> components = components();
     return components.stream()
-            .map(b -> b.velocity(t))
-            .reduce(Vector3D::sum)
-            .orElseThrow().times(1d / components.size());
+        .map(b -> b.velocity(t))
+        .reduce(Vector3D::sum)
+        .orElseThrow()
+        .times(1d / components.size());
   }
 
   @Override
@@ -72,7 +73,8 @@ public interface EmbodiedAgent extends SimulationObject {
     Vector3D center = position(engine.t());
     for (AbstractBody component : components()) {
       Vector3D relativePosition = component.position(engine.t()).vectorDistance(center);
-      component.translate(engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
+      component.translate(
+          engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
       component.rotate(engine, eulerAngles);
     }
   }

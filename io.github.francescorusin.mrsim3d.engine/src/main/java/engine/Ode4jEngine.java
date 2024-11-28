@@ -22,6 +22,10 @@ import actions.Action;
 import agents.EmbodiedAgent;
 import bodies.*;
 import geometry.Vector3D;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
@@ -33,26 +37,20 @@ import sensors.Sensor;
 import utils.Pair;
 import utils.UnorderedPair;
 
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 public class Ode4jEngine {
   public record Configuration(
-          Vector3D gravity,
-          Function<DSpace, DGeom> terrainSupplier,
-          double maxAttachDistance,
-          double maxAttractDistance,
-          double attachSpringRestDistance,
-          double attractForceModule,
-          double attachSpringConstant,
-          double attachDampingConstant,
-          double nfcRange
-  ) {
-  }
+      Vector3D gravity,
+      Function<DSpace, DGeom> terrainSupplier,
+      double maxAttachDistance,
+      double maxAttractDistance,
+      double attachSpringRestDistance,
+      double attractForceModule,
+      double attachSpringConstant,
+      double attachDampingConstant,
+      double nfcRange) {}
 
-  public final static Configuration DEFAULT_CONFIGURATION = new Configuration(
+  public static final Configuration DEFAULT_CONFIGURATION =
+      new Configuration(
           new Vector3D(0d, 0d, -9.81),
           dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
           Voxel.DEFAULT_SIDE_LENGTH * .3,
@@ -61,8 +59,7 @@ public class Ode4jEngine {
           8d,
           Voxel.DEFAULT_SPRING_CONSTANT * 10,
           Voxel.DEFAULT_DAMPING_CONSTANT * 10,
-          Voxel.DEFAULT_SIDE_LENGTH * 1.5
-  );
+          Voxel.DEFAULT_SIDE_LENGTH * 1.5);
   public final Configuration configuration;
   private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
@@ -91,7 +88,8 @@ public class Ode4jEngine {
     bodySpace = OdeHelper.createHashSpace();
     signalSpace = OdeHelper.createHashSpace();
     collisionGroup = OdeHelper.createJointGroup();
-    world.setGravity(configuration.gravity.x(), configuration.gravity.y(), configuration.gravity.z());
+    world.setGravity(
+        configuration.gravity.x(), configuration.gravity.y(), configuration.gravity.z());
     world.setERP(1d - 1e-5);
     world.setCFM(1e-5);
     agents = new TreeMap<>();
@@ -106,7 +104,7 @@ public class Ode4jEngine {
     springJoints = new HashMap<>();
     fixedJoints = new HashMap<>();
     collisionExceptions = new HashMap<>();
-    //TODO FULL TERRAIN REFACTORING
+    // TODO FULL TERRAIN REFACTORING
     terrain = configuration.terrainSupplier.apply(bodySpace);
     time = 0d;
     timeStep = 1d / 60d;
@@ -133,15 +131,13 @@ public class Ode4jEngine {
     joint.getAnchor1(anchor1Position);
     joint.getAnchor2(anchor2Position);
     joint.setAnchor1(
-            anchor1Position.get0() + position1.x(),
-            anchor1Position.get1() + position1.y(),
-            anchor1Position.get2() + position1.z()
-    );
+        anchor1Position.get0() + position1.x(),
+        anchor1Position.get1() + position1.y(),
+        anchor1Position.get2() + position1.z());
     joint.setAnchor2(
-            anchor2Position.get0() + position2.x(),
-            anchor2Position.get1() + position2.y(),
-            anchor2Position.get2() + position2.z()
-    );
+        anchor2Position.get0() + position2.x(),
+        anchor2Position.get1() + position2.y(),
+        anchor2Position.get2() + position2.z());
   }
 
   private void bodyCollision(Object data, DGeom o1, DGeom o2) {
@@ -154,10 +150,12 @@ public class Ode4jEngine {
     contact.surface.mu = OdeConstants.dInfinity;
     if (0 != OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer())) {
       OdeHelper.createContactJoint(world, collisionGroup, contact)
-              .attach(o1.getBody(), o2.getBody());
+          .attach(o1.getBody(), o2.getBody());
       Body b1 = geometryToBodyMapper.get(o1);
       Body b2 = geometryToBodyMapper.get(o2);
-      if (Objects.isNull(b1) || Objects.isNull(b2) || bodyToComponentMapper.get(b1) != bodyToComponentMapper.get(b2)) {
+      if (Objects.isNull(b1)
+          || Objects.isNull(b2)
+          || bodyToComponentMapper.get(b1) != bodyToComponentMapper.get(b2)) {
         if (b1 instanceof SensingBody sb) {
           for (Sensor s : sb.sensors()) {
             if (s instanceof ContactSensor cs) {
@@ -177,16 +175,20 @@ public class Ode4jEngine {
   }
 
   private void signalCollision(Object data, DGeom o1, DGeom o2) {
-    if (geometryToBodyMapper.get(o1) instanceof SignalDetector detector && signalDetectors.get(o1) && o2 instanceof DRay ray) {
-      if (Objects.isNull(geometryToBodyMapper.get(o1)) ||
-              signalEmitters.get(ray) == bodyToComponentMapper.get(geometryToBodyMapper.get(o1))) {
+    if (geometryToBodyMapper.get(o1) instanceof SignalDetector detector
+        && signalDetectors.get(o1)
+        && o2 instanceof DRay ray) {
+      if (Objects.isNull(geometryToBodyMapper.get(o1))
+          || signalEmitters.get(ray) == bodyToComponentMapper.get(geometryToBodyMapper.get(o1))) {
         return;
       }
       DContactBuffer contacts = new DContactBuffer(1);
       if (OdeHelper.collide(o1, o2, 1, contacts.getGeomBuffer()) != 0) {
         DVector3C contactPosition = contacts.get(0).geom.pos;
-        detector.readSignal(this, ray,
-                new Vector3D(contactPosition.get0(), contactPosition.get1(), contactPosition.get2()));
+        detector.readSignal(
+            this,
+            ray,
+            new Vector3D(contactPosition.get0(), contactPosition.get1(), contactPosition.get2()));
       }
     }
   }
@@ -228,29 +230,42 @@ public class Ode4jEngine {
       action.execute(this);
     }
     timeTickOther += System.currentTimeMillis() - secondTime;
-    Map<Integer, AgentSnapshot> agentSnapshotMap = agents.entrySet().stream()
+    Map<Integer, AgentSnapshot> agentSnapshotMap =
+        agents.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().snapshot(this)));
-    Map<Integer, ObjectSnapshot> passiveBodySnapshotMap = passiveBodies.entrySet().stream()
+    Map<Integer, ObjectSnapshot> passiveBodySnapshotMap =
+        passiveBodies.entrySet().stream()
             .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().snapshot(this)));
     Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> springJointsMap = new HashMap<>();
     for (UnorderedPair<Body> p : springJoints.keySet()) {
-      springJointsMap.put(p, springJoints.get(p).stream().map(j -> new Pair<>(
-                      new Vector3D(j.getBody(0).getPosition().toDoubleArray()),
-                      new Vector3D(j.getBody(1).getPosition().toDoubleArray())
-              )
-      ).toList());
+      springJointsMap.put(
+          p,
+          springJoints.get(p).stream()
+              .map(
+                  j ->
+                      new Pair<>(
+                          new Vector3D(j.getBody(0).getPosition().toDoubleArray()),
+                          new Vector3D(j.getBody(1).getPosition().toDoubleArray())))
+              .toList());
     }
     Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> fixedJointsMap = new HashMap<>();
     for (UnorderedPair<Body> p : fixedJoints.keySet()) {
-      fixedJointsMap.put(p, fixedJoints.get(p).stream().map(j -> new Pair<>(
-                      new Vector3D(j.getBody(0).getPosition().toDoubleArray()),
-                      new Vector3D(j.getBody(1).getPosition().toDoubleArray())
-              )
-      ).toList());
+      fixedJointsMap.put(
+          p,
+          fixedJoints.get(p).stream()
+              .map(
+                  j ->
+                      new Pair<>(
+                          new Vector3D(j.getBody(0).getPosition().toDoubleArray()),
+                          new Vector3D(j.getBody(1).getPosition().toDoubleArray())))
+              .toList());
     }
     return new InstantSnapshot(
-            agentSnapshotMap, passiveBodySnapshotMap, List.copyOf(actions), springJointsMap, fixedJointsMap
-    );
+        agentSnapshotMap,
+        passiveBodySnapshotMap,
+        List.copyOf(actions),
+        springJointsMap,
+        fixedJointsMap);
   }
 
   public DWorld world() {
@@ -289,7 +304,12 @@ public class Ode4jEngine {
   }
 
   public DDoubleBallJoint addSpringJoint(
-          Body body1, Body body2, double springConstant, double dampingConstant, Vector3D position1, Vector3D position2) {
+      Body body1,
+      Body body2,
+      double springConstant,
+      double dampingConstant,
+      Vector3D position1,
+      Vector3D position2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     DDoubleBallJoint joint = OdeHelper.createDBallJoint(world);
     joint.attach(body1.dBody(), body2.dBody());
@@ -304,8 +324,9 @@ public class Ode4jEngine {
   }
 
   public DDoubleBallJoint addSpringJoint(
-          Body body1, Body body2, double springConstant, double dampingConstant) {
-    return addSpringJoint(body1, body2, springConstant, dampingConstant, new Vector3D(), new Vector3D());
+      Body body1, Body body2, double springConstant, double dampingConstant) {
+    return addSpringJoint(
+        body1, body2, springConstant, dampingConstant, new Vector3D(), new Vector3D());
   }
 
   public DFixedJoint addFixedJoint(Body body1, Body body2) {
@@ -344,8 +365,13 @@ public class Ode4jEngine {
 
   public void emitSignal(SignalEmitter emitter, Vector3D direction, int channel, double value) {
     DRay ray = OdeHelper.createRay(signalSpace, configuration.nfcRange);
-    ray.set(emitter.position(t()).x(), emitter.position(t()).y(), emitter.position(t()).z(),
-            direction.x(), direction.y(), direction.z());
+    ray.set(
+        emitter.position(t()).x(),
+        emitter.position(t()).y(),
+        emitter.position(t()).z(),
+        direction.x(),
+        direction.y(),
+        direction.z());
     // categoryBits stores the signal value as a long
     ray.setCategoryBits(Double.doubleToLongBits(value));
     // collideBits last 4 bits store the signal channel with inverted bits, while all the rest are 1
@@ -365,7 +391,8 @@ public class Ode4jEngine {
   }
 
   public void removeCollisionException(DGeom geom1, DGeom geom2) {
-    if (Objects.isNull(collisionExceptions.get(geom1)) || !collisionExceptions.get(geom1).contains(geom2)) {
+    if (Objects.isNull(collisionExceptions.get(geom1))
+        || !collisionExceptions.get(geom1).contains(geom2)) {
       return;
     }
     collisionExceptions.get(geom1).remove(geom2);

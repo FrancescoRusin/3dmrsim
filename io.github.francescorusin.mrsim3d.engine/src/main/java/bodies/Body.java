@@ -20,11 +20,10 @@ package bodies; /*-
 
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import java.util.List;
 import org.ode4j.ode.DBody;
 import org.ode4j.ode.DGeom;
 import org.ode4j.ode.DMass;
-
-import java.util.List;
 
 public abstract class Body implements AbstractBody {
   protected DBody body;
@@ -47,21 +46,22 @@ public abstract class Body implements AbstractBody {
 
   @Override
   public Vector3D position(double t) {
-    return new Vector3D(body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
+    return new Vector3D(
+        body.getPosition().get0(), body.getPosition().get1(), body.getPosition().get2());
   }
 
   @Override
   public void translate(Ode4jEngine engine, Vector3D translation) {
     body.setPosition(
-            body.getPosition().get0() + translation.x(),
-            body.getPosition().get1() + translation.y(),
-            body.getPosition().get2() + translation.z()
-    );
+        body.getPosition().get0() + translation.x(),
+        body.getPosition().get1() + translation.y(),
+        body.getPosition().get2() + translation.z());
   }
 
   @Override
   public Vector3D velocity(double t) {
-    return new Vector3D(body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
+    return new Vector3D(
+        body.getLinearVel().get0(), body.getLinearVel().get1(), body.getLinearVel().get2());
   }
 
   public DBody dBody() {
