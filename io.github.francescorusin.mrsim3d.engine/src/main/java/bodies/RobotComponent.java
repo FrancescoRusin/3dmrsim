@@ -19,4 +19,5 @@
  */
 package bodies;
 
-public interface RobotComponent extends AbstractBody {}
+public interface RobotComponent extends AbstractBody {
+}

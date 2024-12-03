@@ -23,7 +23,7 @@ import geometry.Vector3D;
 import viewer.Viewer;
 
 public interface ObjectSnapshot {
-  Vector3D position();
+    Vector3D position();
 
-  void draw(Viewer viewer);
+    void draw(Viewer viewer);
 }

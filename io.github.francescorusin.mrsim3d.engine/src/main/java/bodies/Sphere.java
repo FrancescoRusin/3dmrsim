@@ -28,57 +28,58 @@ import outcome.ObjectSnapshot;
 import viewer.Viewer;
 
 public class Sphere extends Body {
-  private final double radius;
+    private final double radius;
 
-  public Sphere(double radius, double mass) {
-    this.radius = radius;
-    this.mass = OdeHelper.createMass();
-    this.mass.setSphereTotal(mass, radius);
-  }
-
-  @Override
-  public BoundingBox boundingBox(double t) {
-    DVector3C center = body.getPosition();
-    return new BoundingBox(
-        new Vector3D(center.get0() - radius, center.get1() - radius, center.get2() - radius),
-        new Vector3D(center.get0() + radius, center.get1() + radius, center.get2() + radius));
-  }
-
-  public double radius() {
-    return radius;
-  }
-
-  @Override
-  public double currentVolume(double t) {
-    return (double) 4 / 3 * Math.PI * Math.pow(radius, 3);
-  }
-
-  @Override
-  public Vector3D angle(double t) {
-    return new Vector3D();
-  }
-
-  @Override
-  public void assemble(Ode4jEngine engine, Vector3D position) {
-    body = OdeHelper.createBody(engine.world());
-    collisionGeometry = OdeHelper.createSphere(engine.bodySpace(), radius);
-    collisionGeometry.setBody(body);
-    body.setPosition(position.x(), position.y(), position.z());
-    body.setMass(mass);
-  }
-
-  @Override
-  public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {}
-
-  public record SphereSnapshot(double radius, Vector3D position) implements ObjectSnapshot {
-    @Override
-    public void draw(Viewer viewer) {
-      // TODO IMPLEMENT
+    public Sphere(double radius, double mass) {
+        this.radius = radius;
+        this.mass = OdeHelper.createMass();
+        this.mass.setSphereTotal(mass, radius);
     }
-  }
 
-  @Override
-  public ObjectSnapshot snapshot(Ode4jEngine engine) {
-    return new SphereSnapshot(this.radius, this.position(engine.t()));
-  }
+    @Override
+    public BoundingBox boundingBox(double t) {
+        DVector3C center = body.getPosition();
+        return new BoundingBox(
+                new Vector3D(center.get0() - radius, center.get1() - radius, center.get2() - radius),
+                new Vector3D(center.get0() + radius, center.get1() + radius, center.get2() + radius));
+    }
+
+    public double radius() {
+        return radius;
+    }
+
+    @Override
+    public double currentVolume(double t) {
+        return (double) 4 / 3 * Math.PI * Math.pow(radius, 3);
+    }
+
+    @Override
+    public Vector3D angle(double t) {
+        return new Vector3D();
+    }
+
+    @Override
+    public void assemble(Ode4jEngine engine, Vector3D position) {
+        body = OdeHelper.createBody(engine.world());
+        collisionGeometry = OdeHelper.createSphere(engine.bodySpace(), radius);
+        collisionGeometry.setBody(body);
+        body.setPosition(position.x(), position.y(), position.z());
+        body.setMass(mass);
+    }
+
+    @Override
+    public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
+    }
+
+    public record SphereSnapshot(double radius, Vector3D position) implements ObjectSnapshot {
+        @Override
+        public void draw(Viewer viewer) {
+            // TODO IMPLEMENT
+        }
+    }
+
+    @Override
+    public ObjectSnapshot snapshot(Ode4jEngine engine) {
+        return new SphereSnapshot(this.radius, this.position(engine.t()));
+    }
 }

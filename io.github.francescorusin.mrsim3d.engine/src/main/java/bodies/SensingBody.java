@@ -20,11 +20,12 @@
 package bodies;
 
 import engine.Ode4jEngine;
-import java.util.List;
 import sensors.Sensor;
 
-public interface SensingBody extends AbstractBody {
-  List<Sensor> sensors();
+import java.util.List;
 
-  double[] getSensorReadings(Ode4jEngine engine);
+public interface SensingBody extends AbstractBody {
+    List<Sensor> sensors();
+
+    double[] getSensorReadings(Ode4jEngine engine);
 }

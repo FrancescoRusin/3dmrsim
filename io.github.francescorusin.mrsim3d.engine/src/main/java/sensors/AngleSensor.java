@@ -24,24 +24,24 @@ import engine.Ode4jEngine;
 import geometry.Vector3D;
 
 public class AngleSensor implements Sensor {
-  private final AbstractBody body;
+    private final AbstractBody body;
 
-  public AngleSensor(AbstractBody body) {
-    this.body = body;
-  }
+    public AngleSensor(AbstractBody body) {
+        this.body = body;
+    }
 
-  @Override
-  public double[] sense(Ode4jEngine engine) {
-    Vector3D vectorAngle = body.angle(engine.t());
-    double[] arrayAngle = new double[3];
-    arrayAngle[0] = vectorAngle.x() / Math.PI;
-    arrayAngle[1] = vectorAngle.y() / Math.PI;
-    arrayAngle[2] = vectorAngle.z() / Math.PI;
-    return arrayAngle;
-  }
+    @Override
+    public double[] sense(Ode4jEngine engine) {
+        Vector3D vectorAngle = body.angle(engine.t());
+        double[] arrayAngle = new double[3];
+        arrayAngle[0] = vectorAngle.x() / Math.PI;
+        arrayAngle[1] = vectorAngle.y() / Math.PI;
+        arrayAngle[2] = vectorAngle.z() / Math.PI;
+        return arrayAngle;
+    }
 
-  @Override
-  public int outputSize() {
-    return 3;
-  }
+    @Override
+    public int outputSize() {
+        return 3;
+    }
 }

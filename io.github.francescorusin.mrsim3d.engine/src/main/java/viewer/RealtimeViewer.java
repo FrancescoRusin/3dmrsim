@@ -19,20 +19,21 @@
  */
 package viewer;
 
-import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.glfwShowWindow;
-import static org.lwjgl.opengl.GL46.*;
-
 import geometry.Vector3D;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.util.Objects;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLUtil;
+import org.lwjgl.system.Callback;
 import outcome.InstantSnapshot;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Objects;
+
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL46.*;
 
 public class RealtimeViewer implements Viewer {
 
@@ -123,6 +124,7 @@ public class RealtimeViewer implements Viewer {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE); // Sets window to be visible
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // Sets whether the window is resizable
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
         long windowID =
                 glfwCreateWindow(m_width, m_height, title, 0, 0); // Does the actual window creation
@@ -135,14 +137,11 @@ public class RealtimeViewer implements Viewer {
                         glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
                 });
 
-        glfwMakeContextCurrent(
-                windowID); // glfwSwapInterval needs a context on the calling thread, otherwise will cause
-        // NO_CURRENT_CONTEXT error
-        GL.createCapabilities(); // Will let lwjgl know we want to use this context as the context to
-        // draw with
-
-        glfwSwapInterval(1); // How many draws to swap the buffer
-        glfwShowWindow(windowID); // Shows the window
+        glfwMakeContextCurrent(windowID);
+        glfwSwapInterval(1);
+        glfwShowWindow(windowID);
+        GL.createCapabilities();
+        Callback debugProc = GLUtil.setupDebugMessageCallback();
 
         final float[] chessboard_pixels = new float[64 * 64 * 4];
         int index = -1;
@@ -152,7 +151,7 @@ public class RealtimeViewer implements Viewer {
                 if ((i / 8) % 2 != (j / 8) % 2) {
                     checker = 1f;
                 } else {
-                    checker = -1f;
+                    checker = 1f;
                 }
                 chessboard_pixels[++index] = checker;
                 chessboard_pixels[++index] = checker;
@@ -168,7 +167,15 @@ public class RealtimeViewer implements Viewer {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 64, 64, 0, GL_RGBA, GL_FLOAT,
+        glTexImage2D(
+                GL_TEXTURE_2D,
+                0,
+                GL_RGBA8,
+                64,
+                64,
+                0,
+                GL_RGBA,
+                GL_FLOAT,
                 BufferUtils.createFloatBuffer(64 * 64 * 4).put(chessboard_pixels).flip());
 
         final int shader =
@@ -183,12 +190,13 @@ public class RealtimeViewer implements Viewer {
         int vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
-        final float[] vertexData = new float[] {
-                -.5f, -.5f, 0.0f, 0.0f,
-                -.5f,  .5f, 0.0f, 1.0f,
-                .5f, -.5f, 1.0f, 0.0f,
-                .5f,  .5f, 1.0f, 1.0f
-        };
+        final float[] vertexData =
+                new float[]{
+                        -.5f, -.5f, 0.0f, 0.0f,
+                        -.5f, .5f, 0.0f, 1.0f,
+                        .5f, -.5f, 1.0f, 0.0f,
+                        .5f, .5f, 1.0f, 1.0f
+                };
         final int vertexBuffer = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
@@ -205,7 +213,7 @@ public class RealtimeViewer implements Viewer {
             glfwSwapBuffers(windowID);
             glfwPollEvents();
         }
-        //glDeleteTextures(texture);
+        // glDeleteTextures(texture);
     }
 
     private static void checkErrors() {

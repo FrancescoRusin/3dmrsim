@@ -21,13 +21,14 @@ package bodies;
 
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import java.util.List;
 import org.ode4j.ode.DRay;
 
+import java.util.List;
+
 public interface SignalDetector extends SensingBody {
-  List<Body> detectorBodies();
+    List<Body> detectorBodies();
 
-  int nOfSides();
+    int nOfSides();
 
-  void readSignal(Ode4jEngine engine, DRay signal, Vector3D contactPosition);
+    void readSignal(Ode4jEngine engine, DRay signal, Vector3D contactPosition);
 }

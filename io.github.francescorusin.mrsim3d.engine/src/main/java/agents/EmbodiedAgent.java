@@ -27,66 +27,67 @@ import bodies.SimulationObject;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import java.util.Collection;
-import java.util.List;
 import outcome.AgentSnapshot;
 
+import java.util.Collection;
+import java.util.List;
+
 public interface EmbodiedAgent extends SimulationObject {
-  List<RobotComponent> components();
+    List<RobotComponent> components();
 
-  @Override
-  default List<Body> bodyParts() {
-    return components().stream().map(AbstractBody::bodyParts).flatMap(Collection::stream).toList();
-  }
-
-  @Override
-  default BoundingBox boundingBox(double t) {
-    List<RobotComponent> components = components();
-    return components.stream()
-        .map(b -> b.boundingBox(t))
-        .reduce(BoundingBox::enclosing)
-        .orElseThrow();
-  }
-
-  @Override
-  default Vector3D position(double t) {
-    List<RobotComponent> components = components();
-    return components.stream()
-        .map(b -> b.position(t))
-        .reduce(Vector3D::sum)
-        .orElseThrow()
-        .times(1d / components.size());
-  }
-
-  @Override
-  default Vector3D velocity(double t) {
-    List<RobotComponent> components = components();
-    return components.stream()
-        .map(b -> b.velocity(t))
-        .reduce(Vector3D::sum)
-        .orElseThrow()
-        .times(1d / components.size());
-  }
-
-  @Override
-  default void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
-    Vector3D center = position(engine.t());
-    for (AbstractBody component : components()) {
-      Vector3D relativePosition = component.position(engine.t()).vectorDistance(center);
-      component.translate(
-          engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
-      component.rotate(engine, eulerAngles);
+    @Override
+    default List<Body> bodyParts() {
+        return components().stream().map(AbstractBody::bodyParts).flatMap(Collection::stream).toList();
     }
-  }
 
-  @Override
-  default void translate(Ode4jEngine engine, Vector3D translation) {
-    for (AbstractBody component : components()) {
-      component.translate(engine, translation);
+    @Override
+    default BoundingBox boundingBox(double t) {
+        List<RobotComponent> components = components();
+        return components.stream()
+                .map(b -> b.boundingBox(t))
+                .reduce(BoundingBox::enclosing)
+                .orElseThrow();
     }
-  }
 
-  List<Action> act(Ode4jEngine engine);
+    @Override
+    default Vector3D position(double t) {
+        List<RobotComponent> components = components();
+        return components.stream()
+                .map(b -> b.position(t))
+                .reduce(Vector3D::sum)
+                .orElseThrow()
+                .times(1d / components.size());
+    }
 
-  AgentSnapshot snapshot(Ode4jEngine engine);
+    @Override
+    default Vector3D velocity(double t) {
+        List<RobotComponent> components = components();
+        return components.stream()
+                .map(b -> b.velocity(t))
+                .reduce(Vector3D::sum)
+                .orElseThrow()
+                .times(1d / components.size());
+    }
+
+    @Override
+    default void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
+        Vector3D center = position(engine.t());
+        for (AbstractBody component : components()) {
+            Vector3D relativePosition = component.position(engine.t()).vectorDistance(center);
+            component.translate(
+                    engine, relativePosition.rotate(eulerAngles).vectorDistance(relativePosition));
+            component.rotate(engine, eulerAngles);
+        }
+    }
+
+    @Override
+    default void translate(Ode4jEngine engine, Vector3D translation) {
+        for (AbstractBody component : components()) {
+            component.translate(engine, translation);
+        }
+    }
+
+    List<Action> act(Ode4jEngine engine);
+
+    AgentSnapshot snapshot(Ode4jEngine engine);
 }

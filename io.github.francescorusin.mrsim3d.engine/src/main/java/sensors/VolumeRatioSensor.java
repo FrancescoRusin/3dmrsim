@@ -23,24 +23,24 @@ import bodies.SoftBody;
 import engine.Ode4jEngine;
 
 public class VolumeRatioSensor implements Sensor {
-  private final SoftBody body;
+    private final SoftBody body;
 
-  public VolumeRatioSensor(SoftBody body) {
-    this.body = body;
-  }
+    public VolumeRatioSensor(SoftBody body) {
+        this.body = body;
+    }
 
-  @Override
-  public double[] sense(Ode4jEngine engine) {
-    return new double[] {
-      2
-              * (body.currentVolume(engine.t()) - body.minVolume())
-              / (body.maxVolume() - body.minVolume())
-          - 1d
-    };
-  }
+    @Override
+    public double[] sense(Ode4jEngine engine) {
+        return new double[]{
+                2
+                        * (body.currentVolume(engine.t()) - body.minVolume())
+                        / (body.maxVolume() - body.minVolume())
+                        - 1d
+        };
+    }
 
-  @Override
-  public int outputSize() {
-    return 1;
-  }
+    @Override
+    public int outputSize() {
+        return 1;
+    }
 }

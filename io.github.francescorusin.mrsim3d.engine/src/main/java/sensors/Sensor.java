@@ -22,7 +22,7 @@ package sensors;
 import engine.Ode4jEngine;
 
 public interface Sensor {
-  double[] sense(Ode4jEngine engine);
+    double[] sense(Ode4jEngine engine);
 
-  int outputSize();
+    int outputSize();
 }

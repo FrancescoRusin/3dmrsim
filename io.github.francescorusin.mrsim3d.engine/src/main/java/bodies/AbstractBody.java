@@ -24,11 +24,11 @@ import geometry.Vector3D;
 import outcome.ObjectSnapshot;
 
 public interface AbstractBody extends SimulationObject {
-  double mass();
+    double mass();
 
-  double currentVolume(double t);
+    double currentVolume(double t);
 
-  Vector3D angle(double t);
+    Vector3D angle(double t);
 
-  ObjectSnapshot snapshot(Ode4jEngine engine);
+    ObjectSnapshot snapshot(Ode4jEngine engine);
 }
