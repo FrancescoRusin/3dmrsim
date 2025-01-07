@@ -27,18 +27,13 @@ import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
 import outcome.InstantSnapshot;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL33.*;
+import static org.lwjgl.opengl.GL46C.*;
 
 public class RealtimeViewer implements Viewer {
 
