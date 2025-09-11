@@ -24,7 +24,8 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.OdeHelper;
-import snapshot.ObjectSnapshot;
+import snapshot.BodySnapshot;
+import viewer.Viewer;
 
 public class Sphere extends Body {
   private final double radius;
@@ -69,10 +70,17 @@ public class Sphere extends Body {
   @Override
   public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {}
 
-  public record SphereSnapshot()
+  public record SphereSnapshot(double radius, double mass, Vector3D position, Vector3D velocity)
+      implements BodySnapshot {
+    @Override
+    public void draw(Viewer viewer) {
+      // TODO IMPLEMENT
+    }
+  }
 
   @Override
-  public ObjectSnapshot snapshot(Ode4jEngine engine) {
-    return null;
+  public BodySnapshot snapshot(Ode4jEngine engine) {
+    return new SphereSnapshot(
+        this.radius, this.mass(), this.position(engine.t()), this.velocity(engine.t()));
   }
 }

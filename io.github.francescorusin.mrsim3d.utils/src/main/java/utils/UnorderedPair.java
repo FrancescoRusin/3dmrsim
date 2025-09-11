@@ -28,6 +28,7 @@ public class UnorderedPair<T> {
   public UnorderedPair(T first, T second) {
     set = Set.of(first, second);
   }
+
   public List<T> elements() {
     return set.stream().toList();
   }

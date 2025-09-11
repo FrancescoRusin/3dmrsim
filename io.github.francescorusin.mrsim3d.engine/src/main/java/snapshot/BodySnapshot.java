@@ -17,19 +17,14 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package sensors;
+package snapshot;
 
-import bodies.SignalDetector;
+import geometry.Vector3D;
 
-public class NearFieldCommunicationSensor extends StatefulSensor {
-  public final int channel;
+public interface BodySnapshot extends ObjectSnapshot {
+  Vector3D position();
 
-  public NearFieldCommunicationSensor(SignalDetector body, int channel) {
-    this.channel = channel;
-    currentState = new double[body.nOfSides()];
-  }
+  double mass();
 
-  public void readSignal(double value, int side) {
-    currentState[side] += value;
-  }
+  Vector3D velocity();
 }

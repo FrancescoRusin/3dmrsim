@@ -32,7 +32,10 @@ public class VolumeRatioSensor implements Sensor {
   @Override
   public double[] sense(Ode4jEngine engine) {
     return new double[] {
-      2 * (body.currentVolume(engine.t()) - body.minVolume()) / (body.maxVolume() - body.minVolume()) - 1d
+      2
+              * (body.currentVolume(engine.t()) - body.minVolume())
+              / (body.maxVolume() - body.minVolume())
+          - 1d
     };
   }
 
