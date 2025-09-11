@@ -19,10 +19,13 @@
  */
 package bodies;
 
+import actions.Action;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.List;
+
+import snapshot.ActionSnapshot;
 import snapshot.BodySnapshot;
 
 public interface SimulationObject {
@@ -40,6 +43,7 @@ public interface SimulationObject {
 
   void assemble(Ode4jEngine engine, Vector3D position);
 
-  // TODO IMPLEMENT
+  default void cacheAction(ActionSnapshot actionSnapshot) {}
+
   BodySnapshot snapshot(Ode4jEngine engine);
 }

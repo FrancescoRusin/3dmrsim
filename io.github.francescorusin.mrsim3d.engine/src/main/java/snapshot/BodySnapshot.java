@@ -27,4 +27,6 @@ public interface BodySnapshot extends AbstractSnapshot {
   double mass();
 
   Vector3D velocity();
+
+  //REMEMBER TO DRAW THE ACTIONS TOO IN THE DRAW FUNCTION!
 }

@@ -22,6 +22,10 @@ package actions;
 import bodies.SignalEmitter;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
+import snapshot.ActionSnapshot;
+import viewer.Viewer;
+
+import java.awt.*;
 
 public class EmitSignal implements Action {
   final SignalEmitter emitter;
@@ -36,8 +40,17 @@ public class EmitSignal implements Action {
     this.value = value;
   }
 
+  private record SignalActionSnapshot(Vector3D origin, Vector3D direction, int channel, double value) implements ActionSnapshot {
+    static final Color SIGNAL_COLOR = Color.YELLOW;
+    @Override
+    public void draw(Viewer viewer) {
+      viewer.drawLine(origin, origin.sum(direction), SIGNAL_COLOR);
+    }
+  }
+
   @Override
   public void execute(Ode4jEngine engine) {
     engine.emitSignal(emitter, direction, channel, value);
+    emitter.cacheAction(new SignalActionSnapshot(emitter.position(engine.t()), direction, channel, value));
   }
 }

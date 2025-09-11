@@ -26,12 +26,14 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import snapshot.InstantSnapshot;
 
+import java.awt.*;
+
 public interface Viewer {
   void initialize();
 
-  void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3);
+  void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color);
 
-  void drawSphere(Vector3D position, double radius);
+  void drawSphere(Vector3D position, double radius, Color color);
 
-  void drawLine(Vector3D p1, Vector3D p2);
+  void drawLine(Vector3D p1, Vector3D p2, Color color);
 }

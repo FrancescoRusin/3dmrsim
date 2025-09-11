@@ -19,14 +19,21 @@
  */
 package snapshot;
 
+import viewer.Viewer;
+
 import java.util.List;
 
-public interface InstantSnapshot extends AbstractSnapshot {
-  List<BodySnapshot> bodies();
-
-  List<JointSnapshot> interbodyJoints();
-
-  List<ActionSnapshot> actions();
-
-  double t();
+public record InstantSnapshot(List<BodySnapshot> bodies, List<JointSnapshot> interbodyJoints, List<ActionSnapshot> actions, double t) implements AbstractSnapshot {
+  @Override
+  public void draw(Viewer viewer) {
+    for (BodySnapshot body : bodies) {
+      body.draw(viewer);
+    }
+    for (JointSnapshot joint : interbodyJoints) {
+      joint.draw(viewer);
+    }
+    for (ActionSnapshot action : actions) {
+      action.draw(viewer);
+    }
+  }
 }

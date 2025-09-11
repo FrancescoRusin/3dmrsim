@@ -28,6 +28,7 @@ import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import java.util.*;
 import sensors.Sensor;
+import snapshot.ActionSnapshot;
 
 public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
   private final double[] previousStepSensorOutputs;
@@ -146,5 +147,10 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
               .toList());
     }
     return outputActions;
+  }
+
+  @Override
+  public void cacheAction(ActionSnapshot actionSnapshot) {
+    throw new IllegalArgumentException("Implementa questa cosa");
   }
 }

@@ -25,6 +25,8 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import snapshot.ActionSnapshot;
 import snapshot.BodySnapshot;
 import utils.UnorderedPair;
 
@@ -271,7 +273,12 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
   }
 
   @Override
+  public void cacheAction(ActionSnapshot actionSnapshot) {
+    throw new IllegalArgumentException("Implementa questa cosa");
+  }
+
+  @Override
   public BodySnapshot snapshot(Ode4jEngine engine) {
-    return null;
+    throw new IllegalArgumentException("Implementa questa cosa");
   }
 }

@@ -24,7 +24,10 @@ import bodies.Body;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import java.util.*;
+
+import snapshot.ActionSnapshot;
 import utils.Pair;
+import viewer.Viewer;
 
 public class RequestAttachment implements Action {
   private final Attachable requester;
@@ -33,6 +36,13 @@ public class RequestAttachment implements Action {
   public RequestAttachment(Attachable requester, List<Body> requesterAttachGroup) {
     this.requester = requester;
     this.requesterAttachGroup = requesterAttachGroup;
+  }
+
+  private record RAActionSnapshot(List<Pair<Vector3D, Vector3D>> involvedPoints, boolean requester) implements ActionSnapshot {
+    @Override
+    public void draw(Viewer viewer) {
+      throw new IllegalArgumentException("Implementa questa cosa");
+    }
   }
 
   @Override
@@ -121,6 +131,7 @@ public class RequestAttachment implements Action {
     int nOfAnchors = Math.min(requesterAttachGroup.size(), bestAnchorBlock.size());
     Body requesterBody, targetBody;
     Pair<Body, Body> targetPair;
+    List<Pair<Vector3D, Vector3D>> involvedPoints = new ArrayList<>();
     for (int i = 0; i < nOfAnchors; ++i) {
       requesterBody =
           requesterAttachGroup.get((minDistanceIndex1 + i) % requesterAttachGroup.size());
@@ -133,6 +144,7 @@ public class RequestAttachment implements Action {
           if (bodyDistances.get(targetPair) > engine.configuration.maxAttractDistance()) {
             break;
           }
+          involvedPoints.add(new Pair<>(requesterBody.position(engine.t()),targetBody.position(engine.t())));
           Vector3D force =
               targetBody.position(engine.t()).vectorDistance(requesterBody.position(engine.t()));
           force =
@@ -150,6 +162,10 @@ public class RequestAttachment implements Action {
               .setDistance(engine.configuration.attachSpringRestDistance());
           requesterAttachedBodies.get(requesterBody).add(targetBody);
           targetAttachedBodies.get(targetBody).add(requesterBody);
+        }
+        if (!involvedPoints.isEmpty()) {
+          requester.cacheAction(new RAActionSnapshot(involvedPoints, true));
+          closestAttachable.cacheAction(new RAActionSnapshot(involvedPoints, false));
         }
       }
     }

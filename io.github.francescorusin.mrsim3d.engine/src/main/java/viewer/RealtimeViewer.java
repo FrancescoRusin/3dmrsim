@@ -26,6 +26,8 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
 
+import java.awt.*;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
 
@@ -37,17 +39,17 @@ public class RealtimeViewer implements Viewer {
     }
 
     @Override
-    public void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3) {
+    public void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color) {
         // TODO
     }
 
     @Override
-    public void drawSphere(Vector3D position, double radius) {
+    public void drawSphere(Vector3D position, double radius, Color color) {
         // TODO
     }
 
     @Override
-    public void drawLine(Vector3D p1, Vector3D p2) {
+    public void drawLine(Vector3D p1, Vector3D p2, Color color) {
         // TODO
     }
 

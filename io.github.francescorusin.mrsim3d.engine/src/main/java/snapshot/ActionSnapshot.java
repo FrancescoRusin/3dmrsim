@@ -2,6 +2,4 @@ package snapshot;
 
 import bodies.AbstractBody;
 
-public interface ActionSnapshot extends AbstractSnapshot {
-    AbstractBody source();
-}
+public interface ActionSnapshot extends AbstractSnapshot {}
