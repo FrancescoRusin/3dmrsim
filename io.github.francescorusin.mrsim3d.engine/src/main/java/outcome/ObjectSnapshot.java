@@ -17,31 +17,13 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package sensors;
+package outcome;
 
-import bodies.AbstractBody;
-import engine.Ode4jEngine;
 import geometry.Vector3D;
+import viewer.Viewer;
 
-public class AngleSensor implements Sensor {
-    private final AbstractBody body;
+public interface ObjectSnapshot {
+    Vector3D position();
 
-    public AngleSensor(AbstractBody body) {
-        this.body = body;
-    }
-
-    @Override
-    public double[] sense(Ode4jEngine engine) {
-        Vector3D vectorAngle = body.angle(engine.t());
-        double[] arrayAngle = new double[3];
-        arrayAngle[0] = vectorAngle.x() / Math.PI;
-        arrayAngle[1] = vectorAngle.y() / Math.PI;
-        arrayAngle[2] = vectorAngle.z() / Math.PI;
-        return arrayAngle;
-    }
-
-    @Override
-    public int outputSize() {
-        return 3;
-    }
+    void draw(Viewer viewer);
 }

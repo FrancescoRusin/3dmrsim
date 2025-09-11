@@ -1,6 +1,6 @@
-/*-
+package outcome; /*-
  * ========================LICENSE_START=================================
- * mrsim3d.engine
+ * core
  * %%
  * Copyright (C) 2024 Francesco Rusin
  * %%
@@ -17,31 +17,20 @@
  * limitations under the License.
  * =========================LICENSE_END==================================
  */
-package sensors;
 
-import bodies.AbstractBody;
-import engine.Ode4jEngine;
+import actions.Action;
+import bodies.Body;
 import geometry.Vector3D;
+import utils.Pair;
+import utils.UnorderedPair;
 
-public class AngleSensor implements Sensor {
-    private final AbstractBody body;
+import java.util.List;
+import java.util.Map;
 
-    public AngleSensor(AbstractBody body) {
-        this.body = body;
-    }
-
-    @Override
-    public double[] sense(Ode4jEngine engine) {
-        Vector3D vectorAngle = body.angle(engine.t());
-        double[] arrayAngle = new double[3];
-        arrayAngle[0] = vectorAngle.x() / Math.PI;
-        arrayAngle[1] = vectorAngle.y() / Math.PI;
-        arrayAngle[2] = vectorAngle.z() / Math.PI;
-        return arrayAngle;
-    }
-
-    @Override
-    public int outputSize() {
-        return 3;
-    }
+public record InstantSnapshot(
+        Map<Integer, AgentSnapshot> agents,
+        Map<Integer, ObjectSnapshot> passiveBodies,
+        List<Action> actions,
+        Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> springJoints,
+        Map<UnorderedPair<Body>, List<Pair<Vector3D, Vector3D>>> fixedJoints) {
 }

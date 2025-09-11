@@ -20,7 +20,10 @@
 package actions;
 
 import engine.Ode4jEngine;
+import viewer.Viewer;
 
 public interface Action {
-  void execute(Ode4jEngine engine);
+    void execute(Ode4jEngine engine);
+
+    void draw(Viewer viewer);
 }

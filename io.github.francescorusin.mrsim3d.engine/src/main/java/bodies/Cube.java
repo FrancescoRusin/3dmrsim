@@ -1,3 +1,22 @@
+/*-
+ * ========================LICENSE_START=================================
+ * mrsim3d.engine
+ * %%
+ * Copyright (C) 2024 Francesco Rusin
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =========================LICENSE_END==================================
+ */
 package bodies;
 
 import engine.Ode4jEngine;
@@ -6,7 +25,7 @@ import geometry.Vector3D;
 import org.ode4j.math.DMatrix3;
 import org.ode4j.math.DMatrix3C;
 import org.ode4j.ode.OdeHelper;
-import snapshot.ObjectSnapshot;
+import outcome.ObjectSnapshot;
 import viewer.Viewer;
 
 import java.util.Arrays;
@@ -18,7 +37,8 @@ public class Cube extends Body {
     private final double sideLength;
 
     private enum Cache {
-        ANGLE, BBOX
+        ANGLE,
+        BBOX
     }
 
     private final EnumMap<Cache, Double> cacheTime;
@@ -47,9 +67,13 @@ public class Cube extends Body {
             cacheTime.put(Cache.BBOX, t);
             Vector3D angle = angle(t);
             List<Vector3D> rotatedVertices =
-                    Stream.of(new Vector3D(1d, 1d, 1d), new Vector3D(-1d, 1d, 1d),
-                                    new Vector3D(1d, -1d, 1d), new Vector3D(1d, 1d, -1d))
-                            .map(v -> v.times(.5 * sideLength).rotate(angle)).toList();
+                    Stream.of(
+                                    new Vector3D(1d, 1d, 1d),
+                                    new Vector3D(-1d, 1d, 1d),
+                                    new Vector3D(1d, -1d, 1d),
+                                    new Vector3D(1d, 1d, -1d))
+                            .map(v -> v.times(.5 * sideLength).rotate(angle))
+                            .toList();
             double[] mins = new double[3];
             double[] maxs = new double[3];
             Arrays.fill(mins, Double.POSITIVE_INFINITY);
@@ -91,10 +115,11 @@ public class Cube extends Body {
         if (cacheTime.get(Cache.ANGLE) != t) {
             cacheTime.put(Cache.ANGLE, t);
             DMatrix3C rotationMatrix = body.getRotation();
-            angleCacher = new Vector3D(
-                    Math.atan2(rotationMatrix.get21(), rotationMatrix.get22()),
-                    Math.asin(-rotationMatrix.get20()),
-                    Math.atan2(rotationMatrix.get10(), rotationMatrix.get00()));
+            angleCacher =
+                    new Vector3D(
+                            Math.atan2(rotationMatrix.get21(), rotationMatrix.get22()),
+                            Math.asin(-rotationMatrix.get20()),
+                            Math.atan2(rotationMatrix.get10(), rotationMatrix.get00()));
         }
         return angleCacher;
     }
@@ -113,22 +138,31 @@ public class Cube extends Body {
 
     @Override
     public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
-        Vector3D[] rotationBase = new Vector3D[]{
-                new Vector3D(1d, 0d, 0d).rotate(eulerAngles),
-                new Vector3D(0d, 1d, 0d).rotate(eulerAngles),
-                new Vector3D(0d, 0d, 1d).rotate(eulerAngles)
-        };
-        DMatrix3 rotationMatrix = new DMatrix3(
-                rotationBase[0].x(), rotationBase[1].x(), rotationBase[2].x(),
-                rotationBase[0].y(), rotationBase[1].y(), rotationBase[2].y(),
-                rotationBase[0].z(), rotationBase[1].z(), rotationBase[2].z());
+        Vector3D[] rotationBase =
+                new Vector3D[]{
+                        new Vector3D(1d, 0d, 0d).rotate(eulerAngles),
+                        new Vector3D(0d, 1d, 0d).rotate(eulerAngles),
+                        new Vector3D(0d, 0d, 1d).rotate(eulerAngles)
+                };
+        DMatrix3 rotationMatrix =
+                new DMatrix3(
+                        rotationBase[0].x(),
+                        rotationBase[1].x(),
+                        rotationBase[2].x(),
+                        rotationBase[0].y(),
+                        rotationBase[1].y(),
+                        rotationBase[2].y(),
+                        rotationBase[0].z(),
+                        rotationBase[1].z(),
+                        rotationBase[2].z());
         body.setRotation(new DMatrix3().eqMul(rotationMatrix, body.getRotation()));
     }
 
-    public record CubeSnapshot(double sideLength, Vector3D position, Vector3D rotation) implements ObjectSnapshot {
+    public record CubeSnapshot(double sideLength, Vector3D position, Vector3D rotation)
+            implements ObjectSnapshot {
         @Override
         public void draw(Viewer viewer) {
-            //TODO IMPLEMENT
+            // TODO IMPLEMENT
         }
     }
 
