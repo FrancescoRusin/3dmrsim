@@ -23,6 +23,7 @@ import geometry.Vector3D;
 
 import java.util.List;
 
+//TEMPORARY! JUST FOR TESTING!
 public interface AgentSnapshot extends ObjectSnapshot {
     List<ObjectSnapshot> components();
 

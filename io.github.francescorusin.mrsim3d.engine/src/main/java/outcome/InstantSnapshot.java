@@ -27,6 +27,7 @@ import utils.UnorderedPair;
 import java.util.List;
 import java.util.Map;
 
+//TEMPORARY! JUST FOR TESTING!
 public record InstantSnapshot(
         Map<Integer, AgentSnapshot> agents,
         Map<Integer, ObjectSnapshot> passiveBodies,

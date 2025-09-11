@@ -21,40 +21,17 @@ package viewer;
 
 import static org.lwjgl.glfw.GLFW.*;
 
+import geometry.Vector3D;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import snapshot.InstantSnapshot;
 
-public class Viewer {
-  private static final GLFWErrorCallback errorCallback = GLFWErrorCallback.createPrint(System.err);
+public interface Viewer {
+  void initialize();
 
-  public Viewer() {
-    glfwSetErrorCallback(errorCallback);
-    if (!glfwInit()) {
-      throw new IllegalStateException("Unable to initialize GLFW");
-    }
-    String title = "HAHA!";
-    boolean resizable = true;
-    int m_width = 1024;
-    int m_height = 768;
+  void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3);
 
-    glfwDefaultWindowHints(); // Loads GLFW's default window settings
-    glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE); // Sets window to be visible
-    glfwWindowHint(
-        GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE); // Sets whether the window is resizable
+  void drawSphere(Vector3D position, double radius);
 
-    long id = glfwCreateWindow(m_width, m_height, title, 0, 0); // Does the actual window creation
-
-    glfwMakeContextCurrent(
-        id); // glfwSwapInterval needs a context on the calling thread, otherwise will cause
-    // NO_CURRENT_CONTEXT error
-    GL.createCapabilities(); // Will let lwjgl know we want to use this context as the context to
-    // draw with
-
-    glfwSwapInterval(1); // How many draws to swap the buffer
-    glfwShowWindow(id); // Shows the window
-  }
-
-  public static void main(String[] args) {
-    new Viewer();
-  }
+  void drawLine(Vector3D p1, Vector3D p2);
 }

@@ -21,7 +21,7 @@ package bodies;
 
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import outcome.ObjectSnapshot;
+import snapshot.BodySnapshot;
 
 public interface AbstractBody extends SimulationObject {
     double mass();
@@ -30,5 +30,5 @@ public interface AbstractBody extends SimulationObject {
 
     Vector3D angle(double t);
 
-    ObjectSnapshot snapshot(Ode4jEngine engine);
+    BodySnapshot snapshot(Ode4jEngine engine);
 }

@@ -22,6 +22,7 @@ package outcome;
 import geometry.Vector3D;
 import viewer.Viewer;
 
+//TEMPORARY! JUST FOR TESTING!
 public interface ObjectSnapshot {
     Vector3D position();
 

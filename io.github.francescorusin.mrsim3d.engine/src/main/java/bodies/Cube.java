@@ -2,7 +2,7 @@
  * ========================LICENSE_START=================================
  * mrsim3d.engine
  * %%
- * Copyright (C) 2024 Francesco Rusin
+ * Copyright (C) 2024 - 2025 Francesco Rusin
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,15 @@ package bodies;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
-import org.ode4j.math.DMatrix3;
-import org.ode4j.math.DMatrix3C;
-import org.ode4j.ode.OdeHelper;
-import outcome.ObjectSnapshot;
-import viewer.Viewer;
-
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.stream.Stream;
+import org.ode4j.math.DMatrix3;
+import org.ode4j.math.DMatrix3C;
+import org.ode4j.ode.OdeHelper;
+import snapshot.BodySnapshot;
+import viewer.Viewer;
 
 public class Cube extends Body {
     private final double sideLength;
@@ -139,7 +138,7 @@ public class Cube extends Body {
     @Override
     public void rotate(Ode4jEngine engine, Vector3D eulerAngles) {
         Vector3D[] rotationBase =
-                new Vector3D[]{
+                new Vector3D[] {
                         new Vector3D(1d, 0d, 0d).rotate(eulerAngles),
                         new Vector3D(0d, 1d, 0d).rotate(eulerAngles),
                         new Vector3D(0d, 0d, 1d).rotate(eulerAngles)
@@ -158,8 +157,9 @@ public class Cube extends Body {
         body.setRotation(new DMatrix3().eqMul(rotationMatrix, body.getRotation()));
     }
 
-    public record CubeSnapshot(double sideLength, Vector3D position, Vector3D rotation)
-            implements ObjectSnapshot {
+    public record CubeSnapshot(
+            double sideLength, double mass, Vector3D position, Vector3D rotation, Vector3D velocity)
+            implements BodySnapshot {
         @Override
         public void draw(Viewer viewer) {
             // TODO IMPLEMENT
@@ -167,7 +167,12 @@ public class Cube extends Body {
     }
 
     @Override
-    public ObjectSnapshot snapshot(Ode4jEngine engine) {
-        return new CubeSnapshot(this.sideLength, this.position(engine.t()), this.angle(engine.t()));
+    public BodySnapshot snapshot(Ode4jEngine engine) {
+        return new CubeSnapshot(
+                this.sideLength,
+                this.mass(),
+                this.position(engine.t()),
+                this.angle(engine.t()),
+                this.velocity(engine.t()));
     }
 }

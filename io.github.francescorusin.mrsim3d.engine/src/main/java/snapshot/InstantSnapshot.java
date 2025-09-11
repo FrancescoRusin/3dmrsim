@@ -21,10 +21,12 @@ package snapshot;
 
 import java.util.List;
 
-public interface InstantSnapshot {
+public interface InstantSnapshot extends AbstractSnapshot {
   List<BodySnapshot> bodies();
 
   List<JointSnapshot> interbodyJoints();
+
+  List<ActionSnapshot> actions();
 
   double t();
 }

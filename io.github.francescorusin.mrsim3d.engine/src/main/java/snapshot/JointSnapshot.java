@@ -21,7 +21,7 @@ package snapshot;
 
 import geometry.Vector3D;
 
-public interface JointSnapshot extends ObjectSnapshot {
+public interface JointSnapshot extends AbstractSnapshot {
   Vector3D point1();
 
   Vector3D point2();

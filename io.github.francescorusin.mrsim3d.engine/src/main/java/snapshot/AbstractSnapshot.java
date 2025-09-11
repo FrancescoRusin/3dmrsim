@@ -21,6 +21,6 @@ package snapshot;
 
 import viewer.Viewer;
 
-public interface ObjectSnapshot {
+public interface AbstractSnapshot {
   void draw(Viewer viewer);
 }

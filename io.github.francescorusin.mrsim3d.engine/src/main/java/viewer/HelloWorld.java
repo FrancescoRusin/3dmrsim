@@ -35,6 +35,7 @@ public class HelloWorld {
 
   // The window handle
   private long window;
+  private long time = 0;
 
   public void run() {
     System.out.println("Hello LWJGL " + Version.getVersion() + "!");
@@ -109,12 +110,13 @@ public class HelloWorld {
     // bindings available for use.
     GL.createCapabilities();
 
-    // Set the clear color
-    glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-
     // Run the rendering loop until the user has attempted to close
     // the window or has pressed the ESCAPE key.
     while (!glfwWindowShouldClose(window)) {
+
+      ++time;
+      // Set the clear color
+      glClearColor(.5f + .5f * (float) Math.sin(time / 100d), .5f + .5f * (float) Math.cos(time / 100d), 1.0f, 0.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
 
       glfwSwapBuffers(window); // swap the color buffers

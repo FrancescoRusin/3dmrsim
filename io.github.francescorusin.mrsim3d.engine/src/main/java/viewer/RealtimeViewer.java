@@ -25,12 +25,6 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
-import outcome.InstantSnapshot;
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Objects;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46C.*;
@@ -55,57 +49,6 @@ public class RealtimeViewer implements Viewer {
     @Override
     public void drawLine(Vector3D p1, Vector3D p2) {
         // TODO
-    }
-
-    @Override
-    public void draw(InstantSnapshot instant) {
-        // TODO
-    }
-
-    private static String[] extractShader(String filepath) throws IOException {
-        final BufferedReader reader = new BufferedReader(new FileReader(filepath));
-        final String[] result = new String[2];
-        String line;
-        reader.readLine();
-        StringBuilder builder = new StringBuilder();
-        while (Objects.nonNull(line = reader.readLine())) {
-            if (line.equals("#shader fragment")) {
-                result[0] = builder.toString();
-                builder.setLength(0);
-            } else {
-                builder.append(line + "\n");
-            }
-        }
-        result[1] = builder.toString();
-        return result;
-    }
-
-    private static int createShader(String[] shaders) throws InstantiationException {
-        final int program = glCreateProgram();
-        final int vShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vShader, shaders[0]);
-        final int[] cacher = new int[1];
-        glCompileShader(vShader);
-        glGetShaderiv(vShader, GL_COMPILE_STATUS, cacher);
-        if (cacher[0] == GL_FALSE) {
-            throw new InstantiationException("Vertex shader fucked up: " + glGetShaderInfoLog(vShader));
-        }
-        final int fShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fShader, shaders[1]);
-        glCompileShader(fShader);
-        glGetShaderiv(fShader, GL_COMPILE_STATUS, cacher);
-        if (cacher[0] == GL_FALSE) {
-            throw new InstantiationException("Fragment shader fucked up: " + glGetShaderInfoLog(fShader));
-        }
-        glAttachShader(program, vShader);
-        glAttachShader(program, fShader);
-        glLinkProgram(program);
-        glValidateProgram(program);
-        glDetachShader(program, vShader);
-        glDetachShader(program, fShader);
-        glDeleteShader(vShader);
-        glDeleteShader(fShader);
-        return program;
     }
 
     private static final GLFWErrorCallback errorCallback = GLFWErrorCallback.createPrint(System.err);
@@ -199,15 +142,6 @@ public class RealtimeViewer implements Viewer {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                 BufferUtils.createByteBuffer(chessboard_pixels.length).put(chessboard_pixels).flip());
 
-        final int shader =
-                createShader(
-                        extractShader(
-                                "io.github.francescorusin.mrsim3d.engine/src/main/java/viewer/shader.txt"));
-        glUseProgram(shader);
-        final int textureLoc = glGetUniformLocation(shader, "uTexture");
-        glUniform1i(textureLoc, 0);
-        checkErrors();
-
         int vao = glGenVertexArrays();
         glBindVertexArray(vao);
 
@@ -233,7 +167,7 @@ public class RealtimeViewer implements Viewer {
 
         while (!glfwWindowShouldClose(windowID)) {
             checkErrors();
-            glClearColor(0f, 0f, 0f, 1f);
+            glClearColor(0f, 0f, 1f, 1f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             glDrawArrays(GL_TRIANGLES, 0, 3);

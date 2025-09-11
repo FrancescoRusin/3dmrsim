@@ -21,7 +21,7 @@ package snapshot;
 
 import geometry.Vector3D;
 
-public interface BodySnapshot extends ObjectSnapshot {
+public interface BodySnapshot extends AbstractSnapshot {
   Vector3D position();
 
   double mass();
