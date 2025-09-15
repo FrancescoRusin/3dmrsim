@@ -40,7 +40,7 @@ public class EmitSignal implements Action {
     this.value = value;
   }
 
-  private record SignalActionSnapshot(Vector3D origin, Vector3D direction, int channel, double value) implements ActionSnapshot {
+  public record SignalActionSnapshot(Vector3D origin, Vector3D direction, int channel, double value) implements ActionSnapshot {
     static final Color SIGNAL_COLOR = Color.YELLOW;
     @Override
     public void draw(Viewer viewer) {

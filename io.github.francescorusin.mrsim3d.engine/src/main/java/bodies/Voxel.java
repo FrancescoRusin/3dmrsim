@@ -26,13 +26,18 @@ import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Stream;
+
+import org.ode4j.math.DVector3;
+import org.ode4j.math.DVector3C;
 import org.ode4j.ode.DDoubleBallJoint;
+import org.ode4j.ode.DFixedJoint;
 import org.ode4j.ode.DJoint;
 import org.ode4j.ode.DRay;
 import sensors.*;
-import snapshot.BodySnapshot;
+import snapshot.*;
 import utils.Pair;
 import utils.UnorderedPair;
+import viewer.Viewer;
 
 public class Voxel extends MultiBody
         implements SoftBody, SensingBody, SignalEmitter, SignalDetector, Attachable {
@@ -899,9 +904,41 @@ public class Voxel extends MultiBody
     }
   }*/
 
+    public record VoxelSnapshot(List<BodySnapshot> bodyParts, List<JointSnapshot> internalJoints) implements MultibodySnapshot {
+        @Override
+        public void draw(Viewer viewer) {
+            throw new IllegalArgumentException("Implementa questa cosa");
+        }
+    }
+
     @Override
     public BodySnapshot snapshot(Ode4jEngine engine) {
-        return null;
+        return new VoxelSnapshot(
+                bodyParts().stream().map(b -> b.snapshot(engine)).toList(),
+                internalJoints().stream().map(j -> {
+                    if (j instanceof DDoubleBallJoint distanceJoint) {
+                        DVector3 placeholder1 = new DVector3();
+                        distanceJoint.getAnchor1(placeholder1);
+                        DVector3 placeholder2 = new DVector3();
+                        distanceJoint.getAnchor2(placeholder2);
+                        return (JointSnapshot) new SoftJointSnapshot(
+                                new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2()),
+                                new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2()),
+                                distanceJoint.getDistance()
+                                );
+                    }
+                    if (j instanceof DFixedJoint fixedJoint) {
+                        DVector3C placeholder1 = fixedJoint.getBody(0).getPosition();
+                        DVector3C placeholder2 = fixedJoint.getBody(0).getPosition();
+                        Vector3D pos1 = new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2());
+                        Vector3D pos2 = new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2());
+                        return (JointSnapshot) new RigidJointSnapshot(
+                                pos1, pos2, pos1.vectorDistance(pos2).norm()
+                        );
+                    }
+                    throw new IllegalArgumentException("Unexpected joint type");
+                }).toList()
+        );
     }
 
     public void actOnInput(EnumMap<Edge, Double> input) {

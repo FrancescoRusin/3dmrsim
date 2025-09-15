@@ -24,9 +24,9 @@ import geometry.Vector3D;
 public interface BodySnapshot extends AbstractSnapshot {
   Vector3D position();
 
-  double mass();
-
   Vector3D velocity();
 
-  //REMEMBER TO DRAW THE ACTIONS TOO IN THE DRAW FUNCTION!
+  double mass();
+
+  //TODO REMEMBER TO DRAW THE ACTIONS TOO IN THE DRAW FUNCTION!
 }
