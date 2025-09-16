@@ -26,10 +26,7 @@ import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import snapshot.ActionSnapshot;
-import snapshot.BodySnapshot;
-import snapshot.JointSnapshot;
-import snapshot.MultibodySnapshot;
+import snapshot.*;
 import utils.UnorderedPair;
 import viewer.Viewer;
 
@@ -37,7 +34,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
   protected final Voxel[][][] grid;
   protected final double voxelSideLength;
   protected final double voxelMass;
-  protected final Set<UnorderedPair<Voxel>> intraVoxelLocks;
+  protected final Set<UnorderedPair<int[]>> intraVoxelLocks;
 
   private enum Cache {
     BBOX,
@@ -138,7 +135,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         for (int z = 0; z < grid[0][0].length; ++z) {
           if (Objects.nonNull(grid[x][y][z])) {
             if (x >= 1 && Objects.nonNull(grid[x - 1][y][z])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y][z], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y, z}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y][z].vertexBody(Voxel.Vertex.V100),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
@@ -153,7 +150,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V011));
             }
             if (y >= 1 && Objects.nonNull(grid[x][y - 1][z])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x][y - 1][z], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x, y - 1, z}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x][y - 1][z].vertexBody(Voxel.Vertex.V010),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
@@ -168,7 +165,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V101));
             }
             if (z >= 1 && Objects.nonNull(grid[x][y][z - 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x][y][z - 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x, y, z - 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x][y][z - 1].vertexBody(Voxel.Vertex.V001),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
@@ -183,7 +180,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V110));
             }
             if (x >= 1 && y >= 1 && Objects.nonNull(grid[x - 1][y - 1][z])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y - 1][z], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y - 1, z}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y - 1][z].vertexBody(Voxel.Vertex.V110),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
@@ -192,7 +189,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V001));
             }
             if (x >= 1 && z >= 1 && Objects.nonNull(grid[x - 1][y][z - 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y][z - 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y, z - 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y][z - 1].vertexBody(Voxel.Vertex.V101),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
@@ -201,7 +198,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V010));
             }
             if (y >= 1 && z >= 1 && Objects.nonNull(grid[x][y - 1][z - 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x][y - 1][z - 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x, y - 1, z - 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x][y - 1][z - 1].vertexBody(Voxel.Vertex.V011),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
@@ -210,13 +207,13 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V100));
             }
             if (x >= 1 && y >= 1 && z >= 1 && Objects.nonNull(grid[x - 1][y - 1][z - 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y - 1][z - 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y - 1, z - 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y - 1][z - 1].vertexBody(Voxel.Vertex.V111),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V000));
             }
             if (x >= 1 && y < grid[0].length - 1 && Objects.nonNull(grid[x - 1][y + 1][z])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y + 1][z], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y + 1, z}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y + 1][z].vertexBody(Voxel.Vertex.V100),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V010));
@@ -225,7 +222,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V011));
             }
             if (x >= 1 && z < grid[0][0].length - 1 && Objects.nonNull(grid[x - 1][y][z + 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y][z + 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y, z + 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y][z + 1].vertexBody(Voxel.Vertex.V100),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V001));
@@ -234,7 +231,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                       grid[x][y][z].vertexBody(Voxel.Vertex.V011));
             }
             if (y >= 1 && z < grid[0][0].length - 1 && Objects.nonNull(grid[x][y - 1][z + 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x][y - 1][z + 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x, y - 1, z + 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x][y - 1][z + 1].vertexBody(Voxel.Vertex.V010),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V001));
@@ -246,7 +243,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                     && y >= 1
                     && z < grid[0][0].length - 1
                     && Objects.nonNull(grid[x - 1][y - 1][z + 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y - 1][z + 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y - 1, z + 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y - 1][z + 1].vertexBody(Voxel.Vertex.V110),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V001));
@@ -255,7 +252,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                     && y < grid[0].length - 1
                     && z < grid[0][0].length - 1
                     && Objects.nonNull(grid[x - 1][y + 1][z + 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x - 1][y + 1][z + 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x - 1, y + 1, z + 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x - 1][y + 1][z + 1].vertexBody(Voxel.Vertex.V100),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V011));
@@ -264,7 +261,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
                     && y < grid[0].length - 1
                     && z < grid[0][0].length - 1
                     && Objects.nonNull(grid[x + 1][y + 1][z + 1])) {
-              intraVoxelLocks.add(new UnorderedPair<>(grid[x + 1][y + 1][z + 1], grid[x][y][z]));
+              intraVoxelLocks.add(new UnorderedPair<>(new int[]{x + 1, y + 1, z + 1}, new int[]{x, y, z}));
               engine.addFixedJoint(
                       grid[x + 1][y + 1][z + 1].vertexBody(Voxel.Vertex.V000),
                       grid[x][y][z].vertexBody(Voxel.Vertex.V111));
@@ -280,7 +277,15 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     throw new IllegalArgumentException("Implementa questa cosa");
   }
 
-  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, List<JointSnapshot> internalJoints) implements MultibodySnapshot {
+  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks) implements MultibodySnapshot {
+    @Override
+    public List<JointSnapshot> internalJoints() {
+      return intraVoxelLocks.stream().map(p -> {
+        List<Voxel.VoxelSnapshot> voxels = p.elements().stream().map(e -> this.grid[e[0]][e[1]][e[2]]).toList();
+        return (JointSnapshot) new RigidJointSnapshot(voxels.get(0).position(), voxels.get(1).position());
+      }).toList();
+    }
+
     @Override
     public List<BodySnapshot> bodyParts() {
       return Arrays.stream(grid)
@@ -307,6 +312,6 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         }
       }
     }
-    return new GridRobotSnapshot(snapshotGrid, //TODO);
+    return new GridRobotSnapshot(snapshotGrid, new HashSet<>(intraVoxelLocks));
   }
 }

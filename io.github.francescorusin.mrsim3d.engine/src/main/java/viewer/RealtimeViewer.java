@@ -20,27 +20,100 @@
 package viewer;
 
 import geometry.Vector3D;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLUtil;
-import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryStack;
 
 import java.awt.*;
+import java.nio.FloatBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.glfw.GLFW.glfwShowWindow;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
-public class RealtimeViewer implements Viewer {
+public class RealtimeViewer extends Viewer {
+    private final long window;
 
-    @Override
-    public void initialize() {
-        // TODO
+    public RealtimeViewer(Mode mode) {
+        super(mode);
+        // Setup an error callback. The default implementation
+        // will print the error message in System.err.
+        GLFWErrorCallback.createPrint(System.err).set();
+
+        // Initialize GLFW. Most GLFW functions will not work before doing this.
+        if (!glfwInit())
+            throw new IllegalStateException("Unable to initialize GLFW");
+
+        // Configure GLFW
+        glfwDefaultWindowHints(); // optional, the current window hints are already the default
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
+
+        // Create the window
+        window = glfwCreateWindow(800, 800, "Hello World!", NULL, NULL);
+        if (window == NULL)
+            throw new RuntimeException("Failed to create the GLFW window");
+
+        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
+        glfwSetKeyCallback(window, (window, key, scancode, action, mods) -> {
+            if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
+                glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
+        });
+
+        // Make the OpenGL context current
+        glfwMakeContextCurrent(window);
+        // Enable v-sync
+        glfwSwapInterval(1);
+
+        // Make the window visible
+        glfwShowWindow(window);
+        GL.createCapabilities();
+    }
+
+    // loop for testing; it should not be here in the final product
+    private void loop() {
+        Vector3D v1 = new Vector3D(-0.5, -0.5, 0);
+        Vector3D v2 = new Vector3D(0.5, -0.5, 0);
+        Vector3D v3 = new Vector3D(0.5, 0.5, 0);
+        Vector3D origin = new Vector3D(0, 0, 0);
+        Vector3D ax1 = new Vector3D(1, 0, 0);
+        Vector3D ax2 = new Vector3D(0, 1, 0);
+        Vector3D ax3 = new Vector3D(0, 0, 1);
+        Vector3D rotationT = new Vector3D(0, 0, 0.016);
+        //TODO ACTUALLY SOLVE THIS ROTATION MATRIX STUFF
+        float[] rotationV = new float[] {1, 0, 0, 0, 0, (float) Math.cos(0.5), -(float) Math.sin(0.5), 0, 0, (float) Math.sin(0.5), (float) Math.cos(0.5), 0, 0, 0, 0, 1};
+        glClearColor(0.9f, 0.9f, 0.9f, 1f);
+        while (!glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                FloatBuffer buffer = stack.mallocFloat(16);
+                buffer.put(rotationV).flip();
+                glLoadMatrixf(buffer);
+            }
+            glMatrixMode(GL_MODELVIEW);
+            drawLine(origin, ax1, Color.RED);
+            drawLine(origin, ax2, Color.BLUE);
+            drawLine(origin, ax3, Color.GREEN);
+            v1 = v1.rotate(rotationT);
+            v2 = v2.rotate(rotationT);
+            v3 = v3.rotate(rotationT);
+            drawTriangle(v1, v2, v3, Color.WHITE);
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
     }
 
     @Override
     public void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color) {
-        // TODO
+        glColor3f(color.getRed(), color.getGreen(), color.getBlue());
+        glBegin(GL_TRIANGLES);
+        glVertex3d(v1.x(), v1.y(), v1.z());
+        glVertex3d(v2.x(), v2.y(), v2.z());
+        glVertex3d(v3.x(), v3.y(), v3.z());
+        glEnd();
     }
 
     @Override
@@ -50,146 +123,15 @@ public class RealtimeViewer implements Viewer {
 
     @Override
     public void drawLine(Vector3D p1, Vector3D p2, Color color) {
-        // TODO
-    }
-
-    private static final GLFWErrorCallback errorCallback = GLFWErrorCallback.createPrint(System.err);
-
-    public RealtimeViewer() throws Exception {
-        glfwSetErrorCallback(errorCallback);
-        if (!glfwInit()) {
-            throw new IllegalStateException("Unable to initialize GLFW");
-        }
-        String title = "HAHA!";
-        int m_width = 800;
-        int m_height = 800;
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE); // Sets window to be visible
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // Sets whether the window is resizable
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-
-        long windowID =
-                glfwCreateWindow(m_width, m_height, title, 0, 0); // Does the actual window creation
-
-        // Setup a key callback. It will be called every time a key is pressed, repeated or released.
-        glfwSetKeyCallback(
-                windowID,
-                (window, key, scancode, action, mods) -> {
-                    if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
-                        glfwSetWindowShouldClose(window, true); // We will detect this in the rendering loop
-                });
-
-        glfwMakeContextCurrent(windowID);
-        glfwSwapInterval(1);
-        glfwShowWindow(windowID);
-        GL.createCapabilities();
-        Callback debugProc = GLUtil.setupDebugMessageCallback();
-
-        final int width = 256;
-        final int height = 256;
-        final int stepW = width / 8;
-        final int stepH = height / 8;
-        final byte[] chessboard_pixels = new byte[width * height * 4];
-        int index = -1;
-        for (int i = 0; i < width; ++i) {
-            for (int j = 0; j < height; ++j) {
-                final byte checker;
-                if ((i / stepW) % 2 != (j / stepH) % 2) {
-                    checker = (byte) 255;
-                } else {
-                    checker = (byte) 127;
-                }
-                chessboard_pixels[++index] = checker;
-                chessboard_pixels[++index] = checker;
-                chessboard_pixels[++index] = checker;
-                chessboard_pixels[++index] = (byte) 255;
-            }
-        }
-
-        /*BufferedImage ruby = ImageIO.read(new FileInputStream("/home/francescorusin/Downloads/Ruby.jpg"));
-        final int width = ruby.getWidth();
-        final int height = ruby.getHeight();
-        final int[] rubyPixels = new int[width * height];
-        ruby.getRGB(0, 0, width, height, rubyPixels, 0, width);
-        ByteBuffer rubyBuffer = BufferUtils.createByteBuffer(width * height * 4);
-        for (int i = 0; i < width; ++i) {
-            for (int j = 0; j < height / 2; ++j) {
-                final int pos1 = j * width + i;
-                final int pos2 = (height - j - 1) * width + i;
-                final int placeholder = rubyPixels[pos1];
-                rubyPixels[pos1] = rubyPixels[pos2];
-                rubyPixels[pos2] = placeholder;
-            }
-        }
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int pixel = rubyPixels[y * width + x];
-                rubyBuffer.put((byte) ((pixel >> 16) & 0xFF));
-                rubyBuffer.put((byte) ((pixel >> 8) & 0xFF));
-                rubyBuffer.put((byte) (pixel & 0xFF));
-                rubyBuffer.put((byte) ((pixel >> 24) & 0xFF));
-            }
-        }*/
-
-        final int texture = glGenTextures();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                BufferUtils.createByteBuffer(chessboard_pixels.length).put(chessboard_pixels).flip());
-
-        int vao = glGenVertexArrays();
-        glBindVertexArray(vao);
-
-        final float[] vertexData =
-                new float[]{
-                        -.75f, -.75f, 0.0f, 0.0f,
-                        -.75f, .75f, 0.0f, 1.0f,
-                        .75f, -.75f, 1.0f, 0.0f,
-                        .75f, .75f, 1.0f, 1.0f
-                };
-        final int[] indexData =
-                new int[] {
-                        0, 1, 2,
-                        1, 2, 3
-                };
-        final int vertexBuffer = glGenBuffers();
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, vertexData, GL_STATIC_DRAW);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 2, GL_FLOAT, false, 16, BufferUtils.createFloatBuffer(0));
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 2, GL_FLOAT, false, 16, BufferUtils.createFloatBuffer(0));
-
-        while (!glfwWindowShouldClose(windowID)) {
-            checkErrors();
-            glClearColor(0f, 0f, 1f, 1f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            glDrawArrays(GL_TRIANGLES, 0, 3);
-            glDrawArrays(GL_TRIANGLES, 1, 4);
-
-            glfwSwapBuffers(windowID);
-            glfwPollEvents();
-        }
-        // glDeleteTextures(texture);
-    }
-
-    private static void checkErrors() {
-        int glError = glGetError();
-        while (glError != GL_NO_ERROR) {
-            System.out.printf("OpenGL error %d\n", glError);
-            glError = glGetError();
-        }
+        glColor3f(color.getRed(), color.getGreen(), color.getBlue());
+        glLineWidth(2f);
+        glBegin(GL_LINES);
+        glVertex3d(p1.x(), p1.y(), p1.z());
+        glVertex3d(p2.x(), p2.y(), p2.z());
+        glEnd();
     }
 
     public static void main(String[] args) throws Exception {
-        new RealtimeViewer();
+        new RealtimeViewer(Mode.DISPLAY).loop();
     }
 }

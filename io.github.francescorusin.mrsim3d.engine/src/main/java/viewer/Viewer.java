@@ -19,21 +19,24 @@
  */
 package viewer;
 
-import static org.lwjgl.glfw.GLFW.*;
-
 import geometry.Vector3D;
-import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.opengl.GL;
-import snapshot.InstantSnapshot;
 
 import java.awt.*;
 
-public interface Viewer {
-  void initialize();
+public abstract class Viewer {
+  public enum Mode {
+    DISPLAY, DEBUG
+  }
 
-  void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color);
+  public final Mode mode;
 
-  void drawSphere(Vector3D position, double radius, Color color);
+  Viewer(Mode mode) {
+    this.mode = mode;
+  }
 
-  void drawLine(Vector3D p1, Vector3D p2, Color color);
+  public abstract void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color);
+
+  public abstract void drawSphere(Vector3D position, double radius, Color color);
+
+  public abstract void drawLine(Vector3D p1, Vector3D p2, Color color);
 }
