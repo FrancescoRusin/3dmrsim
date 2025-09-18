@@ -124,6 +124,17 @@ public record Vector3D(double x, double y, double z) {
             + this.z * cosines.y * cosines.x);
   }
 
+  public Vector3D eulerAngles(double angle) {
+    Vector3D normal = this.normalize();
+    final double cos = Math.cos(angle);
+    final double sin = Math.sin(angle);
+    return new Vector3D(
+            Math.atan2(normal.y * normal.z * (1 - cos) + x * sin, cos + z * z * (1 - cos)),
+            -Math.asin(-normal.x * normal.z * (1 - cos) - normal.y * sin),
+            Math.atan2(normal.x * normal.y * (1 - cos) + normal.z * sin, cos + normal.x * normal.x * (1 - cos))
+            );
+  }
+
   public Vector3D forEach(Function<Double, Double> function) {
     return new Vector3D(function.apply(this.x), function.apply(this.y), function.apply(this.z));
   }

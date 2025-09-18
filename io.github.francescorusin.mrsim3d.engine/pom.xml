@@ -26,6 +26,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lwjgl.version>3.3.6</lwjgl.version>
         <lwjgl.natives>natives-windows</lwjgl.natives>
+        <joml.version>1.10.5</joml.version>
     </properties>
 
     <dependencyManagement>
@@ -135,6 +136,12 @@
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-openxr</artifactId>
             <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>${joml.version}</version>
         </dependency>
     </dependencies>
 </project>
