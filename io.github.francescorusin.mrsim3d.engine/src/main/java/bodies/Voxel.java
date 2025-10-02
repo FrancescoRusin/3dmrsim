@@ -24,7 +24,10 @@ import ad.Attachable;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
+
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.ode4j.math.DVector3;
@@ -884,31 +887,25 @@ public class Voxel extends MultiBody
         cacheTime.put(Cache.SIDECPOSITIONS, -1d);
     }
 
-  /*@Override
-  public void draw(VisualTest test) {
-    dsSetColor(0, 0, 1);
-    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
-    rigidBodies.values().forEach(body -> body.draw(test));
-    dsSetColor(1, 0, 0);
-    ulteriorBodies.values().forEach(body -> body.draw(test));
-    DVector3 anchor1 = new DVector3();
-    DVector3 anchor2 = new DVector3();
-    dsSetColor(0, 0, 0);
-    dsSetTexture(DS_TEXTURE_NUMBER.DS_WOOD);
-    for (DJoint joint : internalJoints()) {
-      if (joint instanceof DDoubleBallJoint doubleBallJoint) {
-        doubleBallJoint.getAnchor1(anchor1);
-        doubleBallJoint.getAnchor2(anchor2);
-        dsDrawLine(anchor1, anchor2);
-      }
-    }
-  }*/
-
-    public record VoxelSnapshot(List<BodySnapshot> bodyParts, List<JointSnapshot> internalJoints) implements MultibodySnapshot {
+    public record VoxelSnapshot(List<BodySnapshot> bodyParts, List<JointSnapshot> internalJoints, double volumeRatio) implements MultibodySnapshot {
+        private static final Color VOXEL_E_COLOR = Color.CYAN;
+        private static final Color VOXEL_C_COLOR = Color.YELLOW;
         //TODO MAYBE CHANGE THE INTERNAL JOINT STUFF TO DISTINGUISH BETWEEN THE VARIOUS JOINTS?
         @Override
         public void draw(Viewer viewer) {
-            throw new IllegalArgumentException("Implementa questa cosa");
+            switch (viewer.mode) {
+                case DEBUG:
+                bodyParts.forEach(body -> body.draw(viewer));
+                internalJoints.forEach(joint -> joint.draw(viewer));
+                break;
+                case DISPLAY:
+                    final Color drawColor = new Color(
+                            (int) (VOXEL_E_COLOR.getRed() * volumeRatio + VOXEL_C_COLOR.getRed() * (1 - volumeRatio)),
+                            (int) (VOXEL_E_COLOR.getGreen() * volumeRatio + VOXEL_C_COLOR.getGreen() * (1 - volumeRatio)),
+                            (int) (VOXEL_E_COLOR.getBlue() * volumeRatio + VOXEL_C_COLOR.getBlue() * (1 - volumeRatio))
+                    );
+                    throw new IllegalArgumentException("Implementa questa cosa");
+            }
         }
     }
 
@@ -936,7 +933,8 @@ public class Voxel extends MultiBody
                         return (JointSnapshot) new RigidJointSnapshot(pos1, pos2);
                     }
                     throw new IllegalArgumentException("Unexpected joint type");
-                }).toList()
+                }).toList(),
+                (currentVolume(engine.t()) - minVolume()) / (maxVolume() - minVolume())
         );
     }
 

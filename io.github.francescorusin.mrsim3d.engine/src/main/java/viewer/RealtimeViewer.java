@@ -19,6 +19,7 @@
  */
 package viewer;
 
+import bodies.Cube;
 import geometry.Vector3D;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
@@ -128,17 +129,17 @@ public class RealtimeViewer extends Viewer {
 
     // loop for testing; it should not be here in the final product
     private void loop() {
-        Vector3D v1 = new Vector3D(-0.5, -0.5, 0);
-        Vector3D v2 = new Vector3D(0.5, -0.5, 0);
-        Vector3D v3 = new Vector3D(0.5, 0.5, 0);
         Vector3D origin = new Vector3D(0, 0, 0);
         Vector3D ax1 = new Vector3D(1, 0, 0);
         Vector3D ax2 = new Vector3D(0, 1, 0);
         Vector3D ax3 = new Vector3D(0, 0, 1);
+        Cube.CubeSnapshot cube;
         Vector3D rotationT = new Vector3D(0, 0, 0.016);
         final FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
         glClearColor(0.9f, 0.9f, 0.9f, 1f);
         while (!glfwWindowShouldClose(window)) {
+            rotationT = rotationT.sum(new Vector3D(0, 0, 0.016));
+            cube = new Cube.CubeSnapshot(0.3, 1, new Vector3D(0.1, 0.1, 0.5), rotationT, new Vector3D(0, 0, 0));
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
@@ -151,10 +152,7 @@ public class RealtimeViewer extends Viewer {
             drawLine(origin, ax1, Color.RED);
             drawLine(origin, ax2, Color.BLUE);
             drawLine(origin, ax3, Color.GREEN);
-            v1 = v1.rotate(rotationT);
-            v2 = v2.rotate(rotationT);
-            v3 = v3.rotate(rotationT);
-            drawTriangle(v1, v2, v3, Color.BLACK);
+            cube.draw(this);
             glfwSwapBuffers(window);
             glfwPollEvents();
         }

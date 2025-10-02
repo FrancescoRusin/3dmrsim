@@ -22,6 +22,8 @@ package bodies;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
+
+import java.awt.*;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
@@ -160,9 +162,49 @@ public class Cube extends Body {
     public record CubeSnapshot(
             double sideLength, double mass, Vector3D position, Vector3D rotation, Vector3D velocity)
             implements BodySnapshot {
+        private final static Color CUBE_COLOR = Color.RED;
         @Override
         public void draw(Viewer viewer) {
-            // TODO IMPLEMENT
+            Vector3D[] vs = new Vector3D[8];
+            int index = -1;
+            for (Vector3D v : List.of(
+                    new Vector3D(-1d, -1d, -1d),
+                    new Vector3D(-1d, 1d, -1d),
+                    new Vector3D(1d, 1d, -1d),
+                    new Vector3D(1d, -1d, -1d),
+                    new Vector3D(-1d, -1d, 1d),
+                    new Vector3D(-1d, 1d, 1d),
+                    new Vector3D(1d, 1d, 1d),
+                    new Vector3D(1d, -1d, 1d)
+            )) {
+                vs[++index] = v.times(.5 * sideLength).rotate(rotation).sum(position);
+            }
+            viewer.drawTriangle(vs[0], vs[1], vs[2], CUBE_COLOR);
+            viewer.drawTriangle(vs[0], vs[2], vs[3], CUBE_COLOR);
+            viewer.drawTriangle(vs[0], vs[3], vs[7], CUBE_COLOR);
+            viewer.drawTriangle(vs[0], vs[4], vs[7], CUBE_COLOR);
+            viewer.drawTriangle(vs[0], vs[1], vs[5], CUBE_COLOR);
+            viewer.drawTriangle(vs[0], vs[4], vs[5], CUBE_COLOR);
+            viewer.drawTriangle(vs[1], vs[2], vs[5], CUBE_COLOR);
+            viewer.drawTriangle(vs[2], vs[5], vs[6], CUBE_COLOR);
+            viewer.drawTriangle(vs[2], vs[3], vs[7], CUBE_COLOR);
+            viewer.drawTriangle(vs[2], vs[6], vs[7], CUBE_COLOR);
+            viewer.drawTriangle(vs[4], vs[5], vs[6], CUBE_COLOR);
+            viewer.drawTriangle(vs[4], vs[6], vs[7], CUBE_COLOR);
+            if (viewer.mode == Viewer.Mode.DEBUG) {
+                viewer.drawLine(vs[0], vs[1], Color.BLACK);
+                viewer.drawLine(vs[1], vs[2], Color.BLACK);
+                viewer.drawLine(vs[2], vs[3], Color.BLACK);
+                viewer.drawLine(vs[0], vs[3], Color.BLACK);
+                viewer.drawLine(vs[0], vs[4], Color.BLACK);
+                viewer.drawLine(vs[1], vs[5], Color.BLACK);
+                viewer.drawLine(vs[2], vs[6], Color.BLACK);
+                viewer.drawLine(vs[3], vs[7], Color.BLACK);
+                viewer.drawLine(vs[4], vs[5], Color.BLACK);
+                viewer.drawLine(vs[5], vs[6], Color.BLACK);
+                viewer.drawLine(vs[6], vs[7], Color.BLACK);
+                viewer.drawLine(vs[4], vs[7], Color.BLACK);
+            }
         }
     }
 
