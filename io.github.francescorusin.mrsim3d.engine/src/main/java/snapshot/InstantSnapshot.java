@@ -19,11 +19,12 @@
  */
 package snapshot;
 
+import engine.Ode4jEngine;
 import viewer.Viewer;
 
 import java.util.List;
 
-public record InstantSnapshot(List<BodySnapshot> bodies, List<JointSnapshot> interbodyJoints, List<ActionSnapshot> actions, double t) implements AbstractSnapshot {
+public record InstantSnapshot(Ode4jEngine.Configuration configuration, List<BodySnapshot> bodies, List<JointSnapshot> interbodyJoints, List<ActionSnapshot> actions, double t) implements AbstractSnapshot {
   @Override
   public void draw(Viewer viewer) {
     for (BodySnapshot body : bodies) {

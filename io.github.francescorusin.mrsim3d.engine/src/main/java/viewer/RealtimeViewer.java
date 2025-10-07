@@ -19,15 +19,23 @@
  */
 package viewer;
 
+import agents.SingleVoxelAgent;
 import bodies.Cube;
+import bodies.Voxel;
+import engine.Ode4jEngine;
 import geometry.Vector3D;
+import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import terrains.FlatTerrain;
 
 import java.awt.*;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -74,16 +82,16 @@ public class RealtimeViewer extends Viewer {
                     }
                     break;
                 case GLFW_KEY_W:
-                    this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, 0.1));
+                    this.cameraPos = this.cameraPos.sum(new Vector3D(this.cameraDir.x(), this.cameraDir.y(), 0).normalize().times(0.1));
                     break;
                 case GLFW_KEY_A:
-                    this.cameraPos = this.cameraPos.sum(new Vector3D(-0.1, 0, 0));
+                    this.cameraPos = this.cameraPos.sum(this.cameraDir.vectorProduct(this.cameraUp).normalize().times(-0.1));
                     break;
                 case GLFW_KEY_S:
-                    this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, -0.1));
+                    this.cameraPos = this.cameraPos.sum(new Vector3D(this.cameraDir.x(), this.cameraDir.y(), 0).normalize().times(-0.1));
                     break;
                 case GLFW_KEY_D:
-                    this.cameraPos = this.cameraPos.sum(new Vector3D(0.1, 0, 0));
+                    this.cameraPos = this.cameraPos.sum(this.cameraDir.vectorProduct(this.cameraUp).normalize().times(0.1));
                     break;
                 case GLFW_KEY_UP:
                     this.cameraDir = this.cameraDir.rotate(this.cameraDir.vectorProduct(this.cameraUp).eulerAngles(0.1));
@@ -112,6 +120,9 @@ public class RealtimeViewer extends Viewer {
         // Make the window visible
         glfwShowWindow(window);
         GL.createCapabilities();
+
+        // Make sure objects hide each other properly
+        glEnable(GL_DEPTH_TEST);
     }
 
     public RealtimeViewer(Mode mode) {
@@ -133,13 +144,14 @@ public class RealtimeViewer extends Viewer {
         Vector3D ax1 = new Vector3D(1, 0, 0);
         Vector3D ax2 = new Vector3D(0, 1, 0);
         Vector3D ax3 = new Vector3D(0, 0, 1);
-        Cube.CubeSnapshot cube;
-        Vector3D rotationT = new Vector3D(0, 0, 0.016);
+        FlatTerrain terrain = new FlatTerrain();
         final FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
-        glClearColor(0.9f, 0.9f, 0.9f, 1f);
+        glClearColor(0.9f, 0.9f, 0.9f, 0f);
+        Ode4jEngine engine = new Ode4jEngine();
+        SingleVoxelAgent voxel = new SingleVoxelAgent("", NumericalStatelessSystem.from(0, 12, (a, b) -> new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
+        engine.addAgent(voxel, new Vector3D(1.5, 1.5, 0.75));
         while (!glfwWindowShouldClose(window)) {
-            rotationT = rotationT.sum(new Vector3D(0, 0, 0.016));
-            cube = new Cube.CubeSnapshot(0.3, 1, new Vector3D(0.1, 0.1, 0.5), rotationT, new Vector3D(0, 0, 0));
+            engine.tick();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
@@ -149,10 +161,11 @@ public class RealtimeViewer extends Viewer {
             buffer.clear();
             viewMatrix().get(buffer);
             glLoadMatrixf(buffer);
+            terrain.draw(this);
             drawLine(origin, ax1, Color.RED);
             drawLine(origin, ax2, Color.BLUE);
             drawLine(origin, ax3, Color.GREEN);
-            cube.draw(this);
+            voxel.snapshot(engine).draw(this);
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
@@ -160,7 +173,7 @@ public class RealtimeViewer extends Viewer {
 
     @Override
     public void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color) {
-        glColor3f(color.getRed(), color.getGreen(), color.getBlue());
+        glColor3f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f);
         glBegin(GL_TRIANGLES);
         glVertex3d(v1.x(), v1.y(), v1.z());
         glVertex3d(v2.x(), v2.y(), v2.z());
@@ -175,7 +188,7 @@ public class RealtimeViewer extends Viewer {
 
     @Override
     public void drawLine(Vector3D p1, Vector3D p2, Color color) {
-        glColor3f(color.getRed(), color.getGreen(), color.getBlue());
+        glColor3f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f);
         glLineWidth(4f);
         glBegin(GL_LINES);
         glVertex3d(p1.x(), p1.y(), p1.z());
@@ -184,6 +197,6 @@ public class RealtimeViewer extends Viewer {
     }
 
     public static void main(String[] args) throws Exception {
-        new RealtimeViewer(Mode.DISPLAY).loop();
+        new RealtimeViewer(Mode.DEBUG).loop();
     }
 }

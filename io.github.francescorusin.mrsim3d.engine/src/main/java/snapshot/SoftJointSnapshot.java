@@ -10,6 +10,6 @@ public record SoftJointSnapshot(Vector3D point1, Vector3D point2, double restLen
 
     @Override
     public void draw(Viewer viewer) {
-        throw new IllegalArgumentException("Implementa questa roba");
+        viewer.drawLine(point1, point2, SOFT_JOINT_COLOR);
     }
 }

@@ -23,6 +23,7 @@ import actions.Action;
 import actions.RequestAttachment;
 import actions.RequestDetachment;
 import bodies.AbstractBody;
+import bodies.Body;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
@@ -137,13 +138,13 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
       outputActions.addAll(
           Arrays.stream(Side.values())
               .map(Side::vertices)
-              .map(l -> new RequestAttachment(this, l.stream().map(rigidBodies::get).toList()))
+              .map(l -> new RequestAttachment(this, l.stream().map(s -> (Body) rigidBodies.get(s)).toList()))
               .toList());
     } else {
       outputActions.addAll(
           Arrays.stream(Side.values())
               .map(Side::vertices)
-              .map(l -> new RequestDetachment(this, l.stream().map(rigidBodies::get).toList()))
+              .map(l -> new RequestDetachment(this, l.stream().map(s -> (Body) rigidBodies.get(s)).toList()))
               .toList());
     }
     return outputActions;

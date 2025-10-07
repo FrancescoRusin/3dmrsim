@@ -24,7 +24,6 @@ import agents.EmbodiedAgent;
 import bodies.*;
 import geometry.Vector3D;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Stream;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
@@ -32,31 +31,41 @@ import org.ode4j.ode.*;
 import sensors.ContactSensor;
 import sensors.Sensor;
 import snapshot.InstantSnapshot;
+import terrains.FlatTerrain;
+import terrains.Terrain;
 import utils.UnorderedPair;
 
 public class Ode4jEngine {
   public record Configuration(
       Vector3D gravity,
-      Function<DSpace, DGeom> terrainSupplier,
+      Terrain terrain,
       double maxAttachDistance,
       double maxAttractDistance,
       double attachSpringRestDistance,
       double attractForceModule,
       double attachSpringConstant,
       double attachDampingConstant,
-      double nfcRange) {}
+      double nfcRange) {
 
-  public static final Configuration DEFAULT_CONFIGURATION =
-      new Configuration(
-          new Vector3D(0d, 0d, -9.81),
-          dSpace -> OdeHelper.createPlane(dSpace, 0, 0, 1, 0),
-          Voxel.DEFAULT_SIDE_LENGTH * .3,
-          Voxel.DEFAULT_SIDE_LENGTH * 2,
-          Voxel.DEFAULT_RIGID_BODY_LENGTH * 1.01,
-          8d,
-          Voxel.DEFAULT_SPRING_CONSTANT * 10,
-          Voxel.DEFAULT_DAMPING_CONSTANT * 10,
-          Voxel.DEFAULT_SIDE_LENGTH * 1.5);
+    public Configuration(Terrain terrain) {
+      this(
+              new Vector3D(0d, 0d, -9.81),
+              terrain,
+              Voxel.DEFAULT_SIDE_LENGTH * .3,
+              Voxel.DEFAULT_SIDE_LENGTH * 2,
+              Voxel.DEFAULT_RIGID_BODY_LENGTH * 1.01,
+              8d,
+              Voxel.DEFAULT_SPRING_CONSTANT * 10,
+              Voxel.DEFAULT_DAMPING_CONSTANT * 10,
+              Voxel.DEFAULT_SIDE_LENGTH * 1.5
+      );
+    }
+
+    public Configuration() {
+      this(new FlatTerrain());
+    }
+  }
+
   public final Configuration configuration;
   private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
@@ -74,7 +83,6 @@ public class Ode4jEngine {
   private final Map<DGeom, List<DGeom>> collisionExceptions;
   public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
   public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
-  private final DGeom terrain;
 
   public Ode4jEngine(Configuration configuration) {
     this.configuration = configuration;
@@ -95,8 +103,7 @@ public class Ode4jEngine {
     springJoints = new HashMap<>();
     fixedJoints = new HashMap<>();
     collisionExceptions = new HashMap<>();
-    // TODO ADD TERRAINS
-    terrain = configuration.terrainSupplier.apply(bodySpace);
+    configuration.terrain.generate(bodySpace);
     time = 0d;
     timeStep = 1d / 60d;
     timeTickEngine = 0L;
@@ -105,7 +112,7 @@ public class Ode4jEngine {
   }
 
   public Ode4jEngine() {
-    this(DEFAULT_CONFIGURATION);
+    this(new Configuration());
   }
 
   public double ERP(double springConstant, double dampingConstant) {
@@ -209,7 +216,7 @@ public class Ode4jEngine {
     }*/
     long startTime = System.currentTimeMillis();
     long secondTime;
-    world.quickStep(timeStep);
+    /*world.quickStep(timeStep);
     collisionGroup.clear();
     bodySpace.collide(0, this::bodyCollision);
     secondTime = System.currentTimeMillis();
@@ -230,7 +237,10 @@ public class Ode4jEngine {
     for (Action action : actions) {
       action.execute(this);
     }
-    timeTickOther += System.currentTimeMillis() - secondTime;
+    timeTickOther += System.currentTimeMillis() - secondTime;*/
+    for (EmbodiedAgent agent : agents) {
+      agent.rotate(this, new Vector3D(0, 0, 0.01));
+    }
     // TODO SNAPSHOT
     return null;
   }

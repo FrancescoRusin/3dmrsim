@@ -156,7 +156,7 @@ public class Voxel extends MultiBody
     }
 
     private final EnumSet<JointOption> jointOptions;
-    protected EnumMap<Vertex, Body> rigidBodies;
+    protected EnumMap<Vertex, Cube> rigidBodies;
     protected Map<UnorderedPair<Vertex>, List<DDoubleBallJoint>> vertexToVertexJoints;
     protected Map<Pair<Vertex, UlteriorBody>, DDoubleBallJoint> ulteriorJoints;
     protected Map<DDoubleBallJoint, Double> jointMaxLength;
@@ -436,7 +436,7 @@ public class Voxel extends MultiBody
     public List<List<Body>> attachPossibilities() {
         return Arrays.stream(Side.values())
                 .map(Side::vertices)
-                .map(vl -> vl.stream().map(rigidBodies::get).toList())
+                .map(vl -> vl.stream().map(s -> (Body) rigidBodies.get(s)).toList())
                 .toList();
     }
 
@@ -887,53 +887,117 @@ public class Voxel extends MultiBody
         cacheTime.put(Cache.SIDECPOSITIONS, -1d);
     }
 
-    public record VoxelSnapshot(List<BodySnapshot> bodyParts, List<JointSnapshot> internalJoints, double volumeRatio) implements MultibodySnapshot {
+    public record VoxelSnapshot(
+            EnumMap<Vertex, Cube.CubeSnapshot> vertices,
+            EnumMap<UlteriorBody, BodySnapshot> otherBodyParts,
+            Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJoints,
+            Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJoints,
+            double volumeRatio
+    ) implements MultibodySnapshot {
         private static final Color VOXEL_E_COLOR = Color.CYAN;
         private static final Color VOXEL_C_COLOR = Color.YELLOW;
-        //TODO MAYBE CHANGE THE INTERNAL JOINT STUFF TO DISTINGUISH BETWEEN THE VARIOUS JOINTS?
+
+        @Override
+        public List<BodySnapshot> bodyParts() {
+            return Stream.concat(vertices.values().stream(), otherBodyParts.values().stream()).toList();
+        }
+
+        @Override
+        public List<JointSnapshot> internalJoints() {
+            return Stream.concat(
+                            vertexToVertexJoints.values().stream().flatMap(List::stream),
+                            ulteriorJoints.values().stream())
+                    .toList();
+        }
+
         @Override
         public void draw(Viewer viewer) {
             switch (viewer.mode) {
                 case DEBUG:
-                bodyParts.forEach(body -> body.draw(viewer));
-                internalJoints.forEach(joint -> joint.draw(viewer));
-                break;
+                    Stream.concat(vertices.values().stream(), otherBodyParts.values().stream()).forEach(body -> body.draw(viewer));
+                    internalJoints().forEach(joint -> joint.draw(viewer));
+                    break;
                 case DISPLAY:
                     final Color drawColor = new Color(
                             (int) (VOXEL_E_COLOR.getRed() * volumeRatio + VOXEL_C_COLOR.getRed() * (1 - volumeRatio)),
                             (int) (VOXEL_E_COLOR.getGreen() * volumeRatio + VOXEL_C_COLOR.getGreen() * (1 - volumeRatio)),
                             (int) (VOXEL_E_COLOR.getBlue() * volumeRatio + VOXEL_C_COLOR.getBlue() * (1 - volumeRatio))
                     );
-                    throw new IllegalArgumentException("Implementa questa cosa");
+                    EnumMap<Vertex, Vector3D> vPos = new EnumMap<>(Vertex.class);
+                    final Vector3D[] normalVertices = new Vector3D[]{
+                            new Vector3D(-1d, -1d, -1d),
+                            new Vector3D(-1d, -1d, 1d),
+                            new Vector3D(-1d, 1d, -1d),
+                            new Vector3D(-1d, 1d, 1d),
+                            new Vector3D(1d, -1d, -1d),
+                            new Vector3D(1d, -1d, 1d),
+                            new Vector3D(1d, 1d, -1d),
+                            new Vector3D(1d, 1d, 1d)
+                    };
+                    //TODO DEBUG!
+                    final Vertex[] vertexList = Vertex.values();
+                    for (int i = 0; i < 8; ++i) {
+                        Cube.CubeSnapshot cube = vertices.get(vertexList[i]);
+                        vPos.put(vertexList[i], normalVertices[i].times(.5 * cube.sideLength()).rotate(cube.rotation()).sum(cube.position()));
+                    }
+                    System.out.println(vPos);
+                    for (Side side : Side.values()) {
+                        viewer.drawTriangle(vPos.get(side.v1), vPos.get(side.v2), vPos.get(side.v3), drawColor);
+                        viewer.drawTriangle(vPos.get(side.v1), vPos.get(side.v3), vPos.get(side.v4), drawColor);
+                    }
+                    for (Edge edge : Edge.values()) {
+                        viewer.drawLine(vPos.get(edge.v1), vPos.get(edge.v2), Color.BLACK);
+                    }
             }
         }
     }
 
+    private static JointSnapshot jointSnapshot(DJoint joint) {
+        if (joint instanceof DDoubleBallJoint distanceJoint) {
+            DVector3 placeholder1 = new DVector3();
+            distanceJoint.getAnchor1(placeholder1);
+            DVector3 placeholder2 = new DVector3();
+            distanceJoint.getAnchor2(placeholder2);
+            return new SoftJointSnapshot(
+                    new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2()),
+                    new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2()),
+                    distanceJoint.getDistance()
+            );
+        }
+        if (joint instanceof DFixedJoint fixedJoint) {
+            DVector3C placeholder1 = fixedJoint.getBody(0).getPosition();
+            DVector3C placeholder2 = fixedJoint.getBody(0).getPosition();
+            Vector3D pos1 = new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2());
+            Vector3D pos2 = new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2());
+            return new RigidJointSnapshot(pos1, pos2);
+        }
+        throw new IllegalArgumentException("Unexpected joint type");
+
+    }
+
     @Override
     public BodySnapshot snapshot(Ode4jEngine engine) {
+        EnumMap<Vertex, Cube.CubeSnapshot> vertexSnapshots = new EnumMap<>(Vertex.class);
+        for (Vertex v : Vertex.values()) {
+            vertexSnapshots.put(v, (Cube.CubeSnapshot) rigidBodies.get(v).snapshot(engine));
+        }
+        EnumMap<UlteriorBody, BodySnapshot> otherBodiesSnapshots = new EnumMap<>(UlteriorBody.class);
+        for (UlteriorBody b : ulteriorBodies.keySet()) {
+            otherBodiesSnapshots.put(b, ulteriorBodies.get(b).snapshot(engine));
+        }
+        Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJointSnapshots = new HashMap<>();
+        Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJointSnapshots = new HashMap<>();
+        for (UnorderedPair<Vertex> v : vertexToVertexJoints.keySet()) {
+            vertexToVertexJointSnapshots.put(v, vertexToVertexJoints.get(v).stream().map(Voxel::jointSnapshot).toList());
+        }
+        for (Pair<Vertex, UlteriorBody> v : ulteriorJoints.keySet()) {
+            ulteriorJointSnapshots.put(v, jointSnapshot(ulteriorJoints.get(v)));
+        }
         return new VoxelSnapshot(
-                bodyParts().stream().map(b -> b.snapshot(engine)).toList(),
-                internalJoints().stream().map(j -> {
-                    if (j instanceof DDoubleBallJoint distanceJoint) {
-                        DVector3 placeholder1 = new DVector3();
-                        distanceJoint.getAnchor1(placeholder1);
-                        DVector3 placeholder2 = new DVector3();
-                        distanceJoint.getAnchor2(placeholder2);
-                        return (JointSnapshot) new SoftJointSnapshot(
-                                new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2()),
-                                new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2()),
-                                distanceJoint.getDistance()
-                                );
-                    }
-                    if (j instanceof DFixedJoint fixedJoint) {
-                        DVector3C placeholder1 = fixedJoint.getBody(0).getPosition();
-                        DVector3C placeholder2 = fixedJoint.getBody(0).getPosition();
-                        Vector3D pos1 = new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2());
-                        Vector3D pos2 = new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2());
-                        return (JointSnapshot) new RigidJointSnapshot(pos1, pos2);
-                    }
-                    throw new IllegalArgumentException("Unexpected joint type");
-                }).toList(),
+                vertexSnapshots,
+                otherBodiesSnapshots,
+                vertexToVertexJointSnapshots,
+                ulteriorJointSnapshots,
                 (currentVolume(engine.t()) - minVolume()) / (maxVolume() - minVolume())
         );
     }
