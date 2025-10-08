@@ -20,8 +20,6 @@
 package viewer;
 
 import agents.SingleVoxelAgent;
-import bodies.Cube;
-import bodies.Voxel;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
@@ -33,9 +31,7 @@ import terrains.FlatTerrain;
 
 import java.awt.*;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.stream.Collectors;
+import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -43,12 +39,12 @@ import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class RealtimeViewer extends Viewer {
-    private static final Vector3D DEFAULT_CAMERA_POS = new Vector3D(1, -1, 1);
-    private static final Vector3D DEFAULT_CAMERA_DIR = new Vector3D(-1, 1, -1);
+    private static final Vector3D DEFAULT_CAMERA_POS = new Vector3D(1, -2, 1);
+    private static final Vector3D DEFAULT_CAMERA_DIR = new Vector3D(-0.3, 1.2, -0.6);
     private static final Vector3D DEFAULT_CAMERA_UP = new Vector3D(0, 0, 1);
     private Vector3D cameraPos;
     private Vector3D cameraDir;
-    private Vector3D cameraUp;
+    private final Vector3D cameraUp;
     private final long window;
 
     public RealtimeViewer(Mode mode, Vector3D cameraPos, Vector3D cameraDir, Vector3D cameraUp) {
@@ -112,6 +108,11 @@ public class RealtimeViewer extends Viewer {
             }
         });
 
+        glfwSetScrollCallback(window, (window, x, y) -> {
+            this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, 0.1 * Math.signum(y)));
+            System.out.printf("scroll: %f %f\n", x, y);
+        });
+
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
@@ -148,8 +149,14 @@ public class RealtimeViewer extends Viewer {
         final FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
         glClearColor(0.9f, 0.9f, 0.9f, 0f);
         Ode4jEngine engine = new Ode4jEngine();
-        SingleVoxelAgent voxel = new SingleVoxelAgent("", NumericalStatelessSystem.from(0, 12, (a, b) -> new double[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
-        engine.addAgent(voxel, new Vector3D(1.5, 1.5, 0.75));
+        Random rng = new Random();
+        SingleVoxelAgent voxel = new SingleVoxelAgent("", NumericalStatelessSystem.from(0, 12,
+                (t, a) -> new double[]{
+                        Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2,
+                        Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2,
+                        Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2
+        }));
+        engine.addAgent(voxel, new Vector3D(0.6, 0.6, 0.75));
         while (!glfwWindowShouldClose(window)) {
             engine.tick();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -197,6 +204,6 @@ public class RealtimeViewer extends Viewer {
     }
 
     public static void main(String[] args) throws Exception {
-        new RealtimeViewer(Mode.DEBUG).loop();
+        new RealtimeViewer(Mode.DISPLAY).loop();
     }
 }

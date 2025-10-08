@@ -934,13 +934,11 @@ public class Voxel extends MultiBody
                             new Vector3D(1d, 1d, -1d),
                             new Vector3D(1d, 1d, 1d)
                     };
-                    //TODO DEBUG!
                     final Vertex[] vertexList = Vertex.values();
                     for (int i = 0; i < 8; ++i) {
                         Cube.CubeSnapshot cube = vertices.get(vertexList[i]);
                         vPos.put(vertexList[i], normalVertices[i].times(.5 * cube.sideLength()).rotate(cube.rotation()).sum(cube.position()));
                     }
-                    System.out.println(vPos);
                     for (Side side : Side.values()) {
                         viewer.drawTriangle(vPos.get(side.v1), vPos.get(side.v2), vPos.get(side.v3), drawColor);
                         viewer.drawTriangle(vPos.get(side.v1), vPos.get(side.v3), vPos.get(side.v4), drawColor);
@@ -1005,7 +1003,7 @@ public class Voxel extends MultiBody
     public void actOnInput(EnumMap<Edge, Double> input) {
         EnumMap<Edge, Double> denormalizedInput = new EnumMap<>(Edge.class);
         for (Edge edge : Edge.values()) {
-            denormalizedInput.put(edge, Math.max(Math.min(input.get(edge) * .5 + .5, 1d), -1d));
+            denormalizedInput.put(edge, Math.max(Math.min(input.get(edge) * .5 + .5, 1d), 0d));
         }
 
         // apply on edges

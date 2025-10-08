@@ -216,7 +216,7 @@ public class Ode4jEngine {
     }*/
     long startTime = System.currentTimeMillis();
     long secondTime;
-    /*world.quickStep(timeStep);
+    world.quickStep(timeStep);
     collisionGroup.clear();
     bodySpace.collide(0, this::bodyCollision);
     secondTime = System.currentTimeMillis();
@@ -237,7 +237,7 @@ public class Ode4jEngine {
     for (Action action : actions) {
       action.execute(this);
     }
-    timeTickOther += System.currentTimeMillis() - secondTime;*/
+    timeTickOther += System.currentTimeMillis() - secondTime;
     for (EmbodiedAgent agent : agents) {
       agent.rotate(this, new Vector3D(0, 0, 0.01));
     }
