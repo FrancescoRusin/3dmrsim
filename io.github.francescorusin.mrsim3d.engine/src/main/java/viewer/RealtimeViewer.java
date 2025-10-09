@@ -19,7 +19,9 @@
  */
 package viewer;
 
+import agents.CentralizedGridRobot;
 import agents.SingleVoxelAgent;
+import bodies.Voxel;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
@@ -31,6 +33,8 @@ import terrains.FlatTerrain;
 
 import java.awt.*;
 import java.nio.FloatBuffer;
+import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Random;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -39,8 +43,8 @@ import static org.lwjgl.glfw.GLFW.glfwShowWindow;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class RealtimeViewer extends Viewer {
-    private static final Vector3D DEFAULT_CAMERA_POS = new Vector3D(1, -2, 1);
-    private static final Vector3D DEFAULT_CAMERA_DIR = new Vector3D(-0.3, 1.2, -0.6);
+    private static final Vector3D DEFAULT_CAMERA_POS = new Vector3D(5, -5, 5);
+    private static final Vector3D DEFAULT_CAMERA_DIR = new Vector3D(-5, 5, -3);
     private static final Vector3D DEFAULT_CAMERA_UP = new Vector3D(0, 0, 1);
     private Vector3D cameraPos;
     private Vector3D cameraDir;
@@ -78,13 +82,13 @@ public class RealtimeViewer extends Viewer {
                     }
                     break;
                 case GLFW_KEY_W:
-                    this.cameraPos = this.cameraPos.sum(new Vector3D(this.cameraDir.x(), this.cameraDir.y(), 0).normalize().times(0.1));
+                    this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, 0.1));
                     break;
                 case GLFW_KEY_A:
                     this.cameraPos = this.cameraPos.sum(this.cameraDir.vectorProduct(this.cameraUp).normalize().times(-0.1));
                     break;
                 case GLFW_KEY_S:
-                    this.cameraPos = this.cameraPos.sum(new Vector3D(this.cameraDir.x(), this.cameraDir.y(), 0).normalize().times(-0.1));
+                    this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, -0.1));
                     break;
                 case GLFW_KEY_D:
                     this.cameraPos = this.cameraPos.sum(this.cameraDir.vectorProduct(this.cameraUp).normalize().times(0.1));
@@ -109,8 +113,7 @@ public class RealtimeViewer extends Viewer {
         });
 
         glfwSetScrollCallback(window, (window, x, y) -> {
-            this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, 0.1 * Math.signum(y)));
-            System.out.printf("scroll: %f %f\n", x, y);
+            this.cameraPos = this.cameraPos.sum(new Vector3D(this.cameraDir.x(), this.cameraDir.y(), 0).normalize().times(0.1 * Math.signum(y)));
         });
 
         // Make the OpenGL context current
@@ -139,6 +142,27 @@ public class RealtimeViewer extends Viewer {
         );
     }
 
+    private Voxel[][][] testGrid(String shape) {
+        return switch (shape) {
+            case "biped" -> {
+                Voxel[][][] grid = new Voxel[4][3][3];
+                for (int i = 0; i < 4; i++) {
+                    for (int j = 0; j < 3; j++) {
+                        for (int k = 1; k < 3; k++) {
+                            grid[i][j][k] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
+                        }
+                    }
+                }
+                grid[0][0][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
+                grid[3][0][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
+                grid[0][2][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
+                grid[3][2][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
+                yield grid;
+            }
+            default -> null;
+        };
+    }
+
     // loop for testing; it should not be here in the final product
     private void loop() {
         Vector3D origin = new Vector3D(0, 0, 0);
@@ -150,13 +174,18 @@ public class RealtimeViewer extends Viewer {
         glClearColor(0.9f, 0.9f, 0.9f, 0f);
         Ode4jEngine engine = new Ode4jEngine();
         Random rng = new Random();
-        SingleVoxelAgent voxel = new SingleVoxelAgent("", NumericalStatelessSystem.from(0, 12,
-                (t, a) -> new double[]{
-                        Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2,
-                        Math.sin(t) + rng.nextGaussian() * 0.2, Math.sin(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2,
-                        Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2, Math.cos(t) + rng.nextGaussian() * 0.2
-        }));
-        engine.addAgent(voxel, new Vector3D(0.6, 0.6, 0.75));
+        CentralizedGridRobot robot = new CentralizedGridRobot(testGrid("biped"), NumericalStatelessSystem.from(0, 336, (t, a) -> {
+            double[] output = new double[336];
+            for (int i = 0; i < 2; ++i) {
+                for (int j = 0; j < 4; ++j) {
+                    Arrays.fill(output, 132 * i + 36 * j, 132 * i + 36 * (j + 1), Math.sin(t + Math.PI * j * 0.5));
+                }
+            }
+            Arrays.fill(output, 264, 300, Math.sin(t));
+            Arrays.fill(output, 300, 336, Math.sin(t - Math.PI * 0.5));
+            return output;
+                }));
+        engine.addAgent(robot, new Vector3D(0.6, 0.6, 4.75));
         while (!glfwWindowShouldClose(window)) {
             engine.tick();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -172,7 +201,7 @@ public class RealtimeViewer extends Viewer {
             drawLine(origin, ax1, Color.RED);
             drawLine(origin, ax2, Color.BLUE);
             drawLine(origin, ax3, Color.GREEN);
-            voxel.snapshot(engine).draw(this);
+            robot.snapshot(engine).draw(this);
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
@@ -203,7 +232,7 @@ public class RealtimeViewer extends Viewer {
         glEnd();
     }
 
-    public static void main(String[] args) throws Exception {
-        new RealtimeViewer(Mode.DISPLAY).loop();
+    public static void main(String[] args) {
+        new RealtimeViewer(Mode.DEBUG).loop();
     }
 }

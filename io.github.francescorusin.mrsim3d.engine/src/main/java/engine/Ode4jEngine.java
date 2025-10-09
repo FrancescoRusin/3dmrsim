@@ -238,9 +238,6 @@ public class Ode4jEngine {
       action.execute(this);
     }
     timeTickOther += System.currentTimeMillis() - secondTime;
-    for (EmbodiedAgent agent : agents) {
-      agent.rotate(this, new Vector3D(0, 0, 0.01));
-    }
     // TODO SNAPSHOT
     return null;
   }

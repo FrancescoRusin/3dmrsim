@@ -277,7 +277,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     throw new IllegalArgumentException("Implementa questa cosa");
   }
 
-  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks) implements MultibodySnapshot {
+  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks, List<ActionSnapshot> actions) implements MultibodySnapshot {
     @Override
     public List<JointSnapshot> internalJoints() {
       return intraVoxelLocks.stream().map(p -> {
@@ -296,7 +296,16 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
 
     @Override
     public void draw(Viewer viewer) {
-      throw new IllegalArgumentException("Implementa questa cosa");
+      for (Voxel.VoxelSnapshot[][] voxelPlane : grid) {
+        for (Voxel.VoxelSnapshot[] row : voxelPlane) {
+          for (Voxel.VoxelSnapshot voxel : row) {
+            if (Objects.nonNull(voxel)) {
+              voxel.draw(viewer);
+            }
+          }
+        }
+      }
+      //TODO ACTIONS!
     }
   }
 
@@ -312,6 +321,6 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
         }
       }
     }
-    return new GridRobotSnapshot(snapshotGrid, new HashSet<>(intraVoxelLocks));
+    return new GridRobotSnapshot(snapshotGrid, new HashSet<>(intraVoxelLocks), List.of()); //TODO ACTIONS!
   }
 }
