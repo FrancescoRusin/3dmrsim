@@ -34,7 +34,11 @@ public abstract class Viewer {
     this.mode = mode;
   }
 
+  public abstract int loadTexture(String filename);
+
   public abstract void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color);
+
+  public abstract void drawTexture(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, int texID, int hReps, int vReps);
 
   public abstract void drawSphere(Vector3D position, double radius, Color color);
 

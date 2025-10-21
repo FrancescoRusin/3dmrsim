@@ -20,7 +20,6 @@
 package viewer;
 
 import agents.CentralizedGridRobot;
-import agents.SingleVoxelAgent;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
@@ -29,10 +28,14 @@ import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryStack;
 import terrains.FlatTerrain;
 
 import java.awt.*;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Random;
@@ -40,6 +43,7 @@ import java.util.Random;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.glfw.GLFW.glfwShowWindow;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class RealtimeViewer extends Viewer {
@@ -127,6 +131,8 @@ public class RealtimeViewer extends Viewer {
 
         // Make sure objects hide each other properly
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_TEXTURE_2D);
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
     }
 
     public RealtimeViewer(Mode mode) {
@@ -208,6 +214,35 @@ public class RealtimeViewer extends Viewer {
     }
 
     @Override
+    public int loadTexture(String filename) {
+        int texID = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texID);
+
+        try (MemoryStack stack = stackPush()) {
+            IntBuffer width = stack.mallocInt(1);
+            IntBuffer height = stack.mallocInt(1);
+            IntBuffer channels = stack.mallocInt(1);
+
+            STBImage.stbi_set_flip_vertically_on_load(true);
+            System.out.println(filename);
+            ByteBuffer image = STBImage.stbi_load(filename, width, height, channels, 4);
+            if (image == null)
+                throw new RuntimeException("Image cannot be loaded: " + STBImage.stbi_failure_reason());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width.get(0), height.get(0), 0,
+                    GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+            STBImage.stbi_image_free(image);
+        }
+
+        return texID;
+    }
+
+    @Override
     public void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color) {
         glColor3f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f);
         glBegin(GL_TRIANGLES);
@@ -215,6 +250,29 @@ public class RealtimeViewer extends Viewer {
         glVertex3d(v2.x(), v2.y(), v2.z());
         glVertex3d(v3.x(), v3.y(), v3.z());
         glEnd();
+    }
+
+    double t = 0;
+
+    @Override
+    public void drawTexture(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, int texID, int hReps, int vReps) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+        t += .1f;
+        float sin = (float) (Math.sin(t) + 1) * .5f;
+        glColor3f(sin, sin, sin);
+        glBindTexture(GL_TEXTURE_2D, texID);
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0);
+        glVertex3d(v1.x(), v1.y(), v1.z());
+        glTexCoord2f(hReps, 0);
+        glVertex3d(v2.x(), v2.y(), v2.z());
+        glTexCoord2f(hReps, vReps);
+        glVertex3d(v3.x(), v3.y(), v3.z());
+        glTexCoord2f(0, vReps);
+        glVertex3d(v4.x(), v3.y(), v4.z());
+        glEnd();
+        glDisable(GL_BLEND);
     }
 
     @Override
@@ -233,6 +291,6 @@ public class RealtimeViewer extends Viewer {
     }
 
     public static void main(String[] args) {
-        new RealtimeViewer(Mode.DEBUG).loop();
+        new RealtimeViewer(Mode.DISPLAY).loop();
     }
 }
