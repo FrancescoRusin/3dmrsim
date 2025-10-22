@@ -96,8 +96,7 @@ public class Ode4jEngine {
     bodySpace = OdeHelper.createHashSpace();
     signalSpace = OdeHelper.createHashSpace();
     collisionGroup = OdeHelper.createJointGroup();
-    world.setGravity(
-        configuration.gravity.x(), configuration.gravity.y(), configuration.gravity.z());
+    world.setGravity(configuration.gravity.x(), configuration.gravity.y(), configuration.gravity.z());
     world.setERP(1d - 1e-5);
     world.setCFM(1e-5);
     agents = new ArrayList<>();
@@ -112,9 +111,6 @@ public class Ode4jEngine {
     configuration.terrain.generate(bodySpace);
     time = 0d;
     timeStep = 1d / 60d;
-    timeTickEngine = 0L;
-    timeTickSignals = 0L;
-    timeTickOther = 0L;
     IDCounter = 0;
   }
 
@@ -204,26 +200,15 @@ public class Ode4jEngine {
     return time;
   }
 
-  public long timeTickEngine;
-  public long timeTickSignals;
-  public long timeTickOther;
-
   public InstantSnapshot tick() {
-    long startTime = System.currentTimeMillis();
-    long secondTime;
     world.quickStep(timeStep);
     collisionGroup.clear();
     bodySpace.collide(0, this::bodyCollision);
-    secondTime = System.currentTimeMillis();
-    timeTickEngine += secondTime - startTime;
-    startTime = secondTime;
     OdeHelper.spaceCollide2(bodySpace, signalSpace, 0, this::signalCollision);
     for (DGeom signal : signalSpace.getGeoms()) {
       signal.destroy();
     }
     signalEmitters.clear();
-    secondTime = System.currentTimeMillis();
-    timeTickSignals += secondTime - startTime;
     time += timeStep;
     List<Action> actions = new ArrayList<>();
     for (EmbodiedAgent agent : agents) {
@@ -232,7 +217,6 @@ public class Ode4jEngine {
     for (Action action : actions) {
       action.execute(this);
     }
-    timeTickOther += System.currentTimeMillis() - secondTime;
     return new InstantSnapshot(
             this.configuration,
             this.agents.stream().map(a -> a.snapshot(this)).toList(),
