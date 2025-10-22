@@ -61,7 +61,7 @@ public class RequestAttachment implements Action {
     double planeC = basePos.scalarProduct(planeNormal);
     double correctSign =
         -Math.signum(requester.position(engine.t()).scalarProduct(planeNormal) - planeC);
-    /*Vector3D maxBasePos = basePos.sum(new Vector3D(
+    Vector3D maxBasePos = basePos.sum(new Vector3D(
             engine.configuration.maxAttractDistance(),
             engine.configuration.maxAttractDistance(),
             engine.configuration.maxAttractDistance())
@@ -70,19 +70,19 @@ public class RequestAttachment implements Action {
             -engine.configuration.maxAttractDistance(),
             -engine.configuration.maxAttractDistance(),
             -engine.configuration.maxAttractDistance())
-    );*/
+    );
     Attachable closestAttachable =
         engine
             .allObjectsStream()
             // cull attachment possibilities by filtering out anything that is not in range by using
             // cached bounding box
-            /*.filter(sb -> sb.boundingBox(engine.t()).min().x() < maxBasePos.x() &&
+            .filter(sb -> sb.boundingBox(engine.t()).min().x() < maxBasePos.x() &&
                     sb.boundingBox(engine.t()).max().x() > minBasePos.x() &&
                     sb.boundingBox(engine.t()).min().y() < maxBasePos.y() &&
                     sb.boundingBox(engine.t()).max().y() > minBasePos.y() &&
                     sb.boundingBox(engine.t()).min().z() < maxBasePos.z() &&
                     sb.boundingBox(engine.t()).max().z() > minBasePos.z()
-            )*/
+            )
             .filter(
                 sb ->
                     sb instanceof Attachable
@@ -159,6 +159,7 @@ public class RequestAttachment implements Action {
                   targetBody,
                   engine.configuration.attachSpringConstant(),
                   engine.configuration.attachDampingConstant())
+                  .joint()
               .setDistance(engine.configuration.attachSpringRestDistance());
           requesterAttachedBodies.get(requesterBody).add(targetBody);
           targetAttachedBodies.get(targetBody).add(requesterBody);

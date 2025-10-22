@@ -22,7 +22,8 @@ import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
 import java.util.List;
-import org.ode4j.ode.DJoint;
+
+import joints.Joint;
 
 public abstract class MultiBody implements AbstractBody {
   @Override
@@ -36,7 +37,7 @@ public abstract class MultiBody implements AbstractBody {
   @Override
   public abstract List<Body> bodyParts();
 
-  public abstract List<? extends DJoint> internalJoints();
+  public abstract List<? extends Joint> internalJoints();
 
   @Override
   public double mass() {

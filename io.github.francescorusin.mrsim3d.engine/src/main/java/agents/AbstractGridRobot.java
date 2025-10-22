@@ -26,6 +26,7 @@ import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import joints.FixedJoint;
 import snapshot.*;
 import utils.UnorderedPair;
 import viewer.Viewer;
@@ -282,7 +283,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     public List<JointSnapshot> internalJoints() {
       return intraVoxelLocks.stream().map(p -> {
         List<Voxel.VoxelSnapshot> voxels = p.elements().stream().map(e -> this.grid[e[0]][e[1]][e[2]]).toList();
-        return (JointSnapshot) new RigidJointSnapshot(voxels.get(0).position(), voxels.get(1).position());
+        return (JointSnapshot) new FixedJoint.FixedJointSnapshot(voxels.get(0).position(), voxels.get(1).position());
       }).toList();
     }
 

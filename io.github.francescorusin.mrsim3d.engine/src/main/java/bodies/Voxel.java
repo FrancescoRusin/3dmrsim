@@ -30,11 +30,8 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.ode4j.math.DVector3;
-import org.ode4j.math.DVector3C;
-import org.ode4j.ode.DDoubleBallJoint;
-import org.ode4j.ode.DFixedJoint;
-import org.ode4j.ode.DJoint;
+import joints.Joint;
+import joints.SpringJoint;
 import org.ode4j.ode.DRay;
 import sensors.*;
 import snapshot.*;
@@ -157,10 +154,10 @@ public class Voxel extends MultiBody
 
     private final EnumSet<JointOption> jointOptions;
     protected EnumMap<Vertex, Cube> rigidBodies;
-    protected Map<UnorderedPair<Vertex>, List<DDoubleBallJoint>> vertexToVertexJoints;
-    protected Map<Pair<Vertex, UlteriorBody>, DDoubleBallJoint> ulteriorJoints;
-    protected Map<DDoubleBallJoint, Double> jointMaxLength;
-    protected Map<DDoubleBallJoint, Double> jointMinLength;
+    protected Map<UnorderedPair<Vertex>, List<SpringJoint>> vertexToVertexJoints;
+    protected Map<Pair<Vertex, UlteriorBody>, SpringJoint> ulteriorJoints;
+    protected Map<SpringJoint, Double> jointMaxLength;
+    protected Map<SpringJoint, Double> jointMinLength;
     protected Map<UlteriorBody, Body> ulteriorBodies;
     protected final List<Sensor> internalSensors;
     protected final List<NearFieldCommunicationSensor> commSensors;
@@ -280,7 +277,7 @@ public class Voxel extends MultiBody
     }
 
     @Override
-    public List<? extends DJoint> internalJoints() {
+    public List<? extends Joint> internalJoints() {
         return Stream.concat(
                         vertexToVertexJoints.values().stream().flatMap(List::stream),
                         ulteriorJoints.values().stream())
@@ -486,7 +483,7 @@ public class Voxel extends MultiBody
         final double centralSphereMass = centralMassRatio * mass;
         final double rigidSphereMass = (mass - centralSphereMass) / 8d;
 
-        // building rigid bodies
+        // building rigid activeBodies
         for (Vertex v : Vertex.values()) {
             rigidBodies.put(v, new Cube(rigidBodyLength, rigidSphereMass));
             attachedBodies.put(rigidBodies.get(v), new HashSet<>());
@@ -573,7 +570,7 @@ public class Voxel extends MultiBody
         }
         double squareTick = rigidBodyLength / 2;
         double maxLength, minLength;
-        DDoubleBallJoint joint;
+        SpringJoint joint;
         if (jointOptions.contains(JointOption.EDGES_PARALLEL)) {
             maxLength = (bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[1];
             minLength = (bodyCenterToBodyCenterLength - rigidBodyLength) * edgeLengthControlRatio[0];
@@ -950,29 +947,6 @@ public class Voxel extends MultiBody
         }
     }
 
-    private static JointSnapshot jointSnapshot(DJoint joint) {
-        if (joint instanceof DDoubleBallJoint distanceJoint) {
-            DVector3 placeholder1 = new DVector3();
-            distanceJoint.getAnchor1(placeholder1);
-            DVector3 placeholder2 = new DVector3();
-            distanceJoint.getAnchor2(placeholder2);
-            return new SoftJointSnapshot(
-                    new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2()),
-                    new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2()),
-                    distanceJoint.getDistance()
-            );
-        }
-        if (joint instanceof DFixedJoint fixedJoint) {
-            DVector3C placeholder1 = fixedJoint.getBody(0).getPosition();
-            DVector3C placeholder2 = fixedJoint.getBody(0).getPosition();
-            Vector3D pos1 = new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2());
-            Vector3D pos2 = new Vector3D(placeholder2.get0(), placeholder2.get1(), placeholder2.get2());
-            return new RigidJointSnapshot(pos1, pos2);
-        }
-        throw new IllegalArgumentException("Unexpected joint type");
-
-    }
-
     @Override
     public BodySnapshot snapshot(Ode4jEngine engine) {
         EnumMap<Vertex, Cube.CubeSnapshot> vertexSnapshots = new EnumMap<>(Vertex.class);
@@ -986,10 +960,10 @@ public class Voxel extends MultiBody
         Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJointSnapshots = new HashMap<>();
         Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJointSnapshots = new HashMap<>();
         for (UnorderedPair<Vertex> v : vertexToVertexJoints.keySet()) {
-            vertexToVertexJointSnapshots.put(v, vertexToVertexJoints.get(v).stream().map(Voxel::jointSnapshot).toList());
+            vertexToVertexJointSnapshots.put(v, vertexToVertexJoints.get(v).stream().map(j -> j.snapshot(engine)).toList());
         }
         for (Pair<Vertex, UlteriorBody> v : ulteriorJoints.keySet()) {
-            ulteriorJointSnapshots.put(v, jointSnapshot(ulteriorJoints.get(v)));
+            ulteriorJointSnapshots.put(v, ulteriorJoints.get(v).snapshot(engine));
         }
         return new VoxelSnapshot(
                 vertexSnapshots,
@@ -1008,9 +982,9 @@ public class Voxel extends MultiBody
 
         // apply on edges
         for (Edge edge : Edge.values()) {
-            for (DDoubleBallJoint joint :
+            for (SpringJoint joint :
                     vertexToVertexJoints.get(new UnorderedPair<>(edge.v1, edge.v2))) {
-                joint.setDistance(
+                joint.joint().setDistance(
                         jointMinLength.get(joint)
                                 + denormalizedInput.get(edge)
                                 * (jointMaxLength.get(joint) - jointMinLength.get(joint)));
@@ -1022,15 +996,15 @@ public class Voxel extends MultiBody
             for (Side side : Side.values()) {
                 final double sideValue =
                         side.edges.stream().mapToDouble(denormalizedInput::get).average().orElse(0d);
-                for (DDoubleBallJoint joint :
+                for (SpringJoint joint :
                         vertexToVertexJoints.get(new UnorderedPair<>(side.v1, side.v3))) {
-                    joint.setDistance(
+                    joint.joint().setDistance(
                             jointMinLength.get(joint)
                                     + sideValue * (jointMaxLength.get(joint) - jointMinLength.get(joint)));
                 }
-                for (DDoubleBallJoint joint :
+                for (SpringJoint joint :
                         vertexToVertexJoints.get(new UnorderedPair<>(side.v2, side.v4))) {
-                    joint.setDistance(
+                    joint.joint().setDistance(
                             jointMinLength.get(joint)
                                     + sideValue * (jointMaxLength.get(joint) - jointMinLength.get(joint)));
                 }
@@ -1047,33 +1021,33 @@ public class Voxel extends MultiBody
 
         // apply on internal
         if (jointOptions.contains(JointOption.INTERNAL)) {
-            for (DDoubleBallJoint joint :
+            for (SpringJoint joint :
                     vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V000, Vertex.V111))) {
-                joint.setDistance(
+                joint.joint().setDistance(
                         jointMinLength.get(joint)
                                 + (vertexSum.get(Vertex.V000) + vertexSum.get(Vertex.V111))
                                 * (jointMaxLength.get(joint) - jointMinLength.get(joint))
                                 / 6);
             }
-            for (DDoubleBallJoint joint :
+            for (SpringJoint joint :
                     vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V001, Vertex.V110))) {
-                joint.setDistance(
+                joint.joint().setDistance(
                         jointMinLength.get(joint)
                                 + (vertexSum.get(Vertex.V001) + vertexSum.get(Vertex.V110))
                                 * (jointMaxLength.get(joint) - jointMinLength.get(joint))
                                 / 6);
             }
-            for (DDoubleBallJoint joint :
+            for (SpringJoint joint :
                     vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V010, Vertex.V101))) {
-                joint.setDistance(
+                joint.joint().setDistance(
                         jointMinLength.get(joint)
                                 + (vertexSum.get(Vertex.V010) + vertexSum.get(Vertex.V101))
                                 * (jointMaxLength.get(joint) - jointMinLength.get(joint))
                                 / 6);
             }
-            for (DDoubleBallJoint joint :
+            for (SpringJoint joint :
                     vertexToVertexJoints.get(new UnorderedPair<>(Vertex.V011, Vertex.V100))) {
-                joint.setDistance(
+                joint.joint().setDistance(
                         jointMinLength.get(joint)
                                 + (vertexSum.get(Vertex.V011) + vertexSum.get(Vertex.V100))
                                 * (jointMaxLength.get(joint) - jointMinLength.get(joint))
@@ -1083,8 +1057,8 @@ public class Voxel extends MultiBody
 
         // apply on central body
         for (Vertex v : Vertex.values()) {
-            DDoubleBallJoint joint = ulteriorJoints.get(new Pair<>(v, UlteriorBody.CENTRAL_MASS));
-            joint.setDistance(
+            SpringJoint joint = ulteriorJoints.get(new Pair<>(v, UlteriorBody.CENTRAL_MASS));
+            joint.joint().setDistance(
                     jointMinLength.get(joint)
                             + vertexSum.get(v) * (jointMaxLength.get(joint) - jointMinLength.get(joint)) / 3);
         }

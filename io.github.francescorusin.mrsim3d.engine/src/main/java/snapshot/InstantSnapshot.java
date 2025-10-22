@@ -24,17 +24,18 @@ import viewer.Viewer;
 
 import java.util.List;
 
-public record InstantSnapshot(Ode4jEngine.Configuration configuration, List<BodySnapshot> bodies, List<JointSnapshot> interbodyJoints, List<ActionSnapshot> actions, double t) implements AbstractSnapshot {
+public record InstantSnapshot(Ode4jEngine.Configuration configuration, List<BodySnapshot> activeBodies, List<BodySnapshot> passiveBodies, List<JointSnapshot> interbodyJoints, double t) implements AbstractSnapshot {
   @Override
   public void draw(Viewer viewer) {
-    for (BodySnapshot body : bodies) {
+    configuration.terrain().draw(viewer);
+    for (BodySnapshot body : activeBodies) {
+      body.draw(viewer);
+    }
+    for (BodySnapshot body : passiveBodies) {
       body.draw(viewer);
     }
     for (JointSnapshot joint : interbodyJoints) {
       joint.draw(viewer);
-    }
-    for (ActionSnapshot action : actions) {
-      action.draw(viewer);
     }
   }
 }

@@ -25,6 +25,10 @@ import bodies.*;
 import geometry.Vector3D;
 import java.util.*;
 import java.util.stream.Stream;
+
+import joints.FixedJoint;
+import joints.Joint;
+import joints.SpringJoint;
 import org.ode4j.math.DVector3;
 import org.ode4j.math.DVector3C;
 import org.ode4j.ode.*;
@@ -81,8 +85,10 @@ public class Ode4jEngine {
   private final Map<DRay, SignalEmitter> signalEmitters;
   private final Map<DGeom, Boolean> signalDetectors;
   private final Map<DGeom, List<DGeom>> collisionExceptions;
-  public Map<UnorderedPair<Body>, List<DDoubleBallJoint>> springJoints;
-  public Map<UnorderedPair<Body>, List<DFixedJoint>> fixedJoints;
+  private final Map<UnorderedPair<Body>, List<SpringJoint>> springJoints;
+  private final Map<UnorderedPair<Body>, List<FixedJoint>> fixedJoints;
+  private int IDCounter;
+
 
   public Ode4jEngine(Configuration configuration) {
     this.configuration = configuration;
@@ -109,6 +115,7 @@ public class Ode4jEngine {
     timeTickEngine = 0L;
     timeTickSignals = 0L;
     timeTickOther = 0L;
+    IDCounter = 0;
   }
 
   public Ode4jEngine() {
@@ -123,7 +130,7 @@ public class Ode4jEngine {
     return 1d / (timeStep * springConstant + dampingConstant);
   }
 
-  public void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
+  private void moveAnchors(DDoubleBallJoint joint, Vector3D position1, Vector3D position2) {
     DVector3 anchor1Position = new DVector3();
     DVector3 anchor2Position = new DVector3();
     joint.getAnchor1(anchor1Position);
@@ -202,18 +209,6 @@ public class Ode4jEngine {
   public long timeTickOther;
 
   public InstantSnapshot tick() {
-    /*if (t() % 4 < 1d / 60d) {
-      System.out.printf("Current time: %.4f\n", t());
-      System.out.printf("Current execution time: %.4f\n", (timeTickEngine + timeTickSignals + timeTickOther) / 1000d);
-      System.out.printf("World number of non-internal springs: %d\n", agents.stream().map(EmbodiedAgent::bodyParts).flatMap(List::stream)
-              .map(Body::dBody).mapToLong(b -> IntStream.range(0, b.getNumJoints()).boxed().map(b::getJoint)
-                      .filter(j -> j instanceof DDoubleBallJoint).count()).sum() / 2 - 216L * agents.size());
-      System.out.println("Unholy groups: ");
-      springJoints.keySet().stream().filter(p -> springJoints.get(p).size() > 16)
-              .forEach(p -> System.out.printf("%s ", new Pair<>(agents.indexOf(agentMapper.get(p.elements().get(0))),
-                      agents.indexOf(agentMapper.get(p.elements().get(1))))));
-      System.out.println();
-    }*/
     long startTime = System.currentTimeMillis();
     long secondTime;
     world.quickStep(timeStep);
@@ -238,8 +233,22 @@ public class Ode4jEngine {
       action.execute(this);
     }
     timeTickOther += System.currentTimeMillis() - secondTime;
-    // TODO SNAPSHOT
-    return null;
+    return new InstantSnapshot(
+            this.configuration,
+            this.agents.stream().map(a -> a.snapshot(this)).toList(),
+            this.passiveBodies.stream().map(b -> b.snapshot(this)).toList(),
+            Stream.concat(
+                    springJoints.keySet().stream().filter(p -> {
+              List<Body> bodies = p.elements();
+              return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
+            }).map(p -> (Joint) springJoints.get(p)),
+                    fixedJoints.keySet().stream().filter(p -> {
+                      List<Body> bodies = p.elements();
+                      return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
+                    }).map(p -> (Joint) fixedJoints.get(p))
+            ).map(j -> j.snapshot(this)).toList(),
+            this.time
+    );
   }
 
   public DWorld world() {
@@ -276,7 +285,7 @@ public class Ode4jEngine {
     passiveBodies.add(body);
   }
 
-  public DDoubleBallJoint addSpringJoint(
+  public SpringJoint addSpringJoint(
       Body body1,
       Body body2,
       double springConstant,
@@ -289,20 +298,21 @@ public class Ode4jEngine {
     joint.setParam(DJoint.PARAM_N.dParamERP1, ERP(springConstant, dampingConstant));
     joint.setParam(DJoint.PARAM_N.dParamCFM1, CFM(springConstant, dampingConstant));
     moveAnchors(joint, position1, position2);
+    SpringJoint springJoint = new SpringJoint(IDCounter++, joint);
     if (Objects.isNull(springJoints.get(bodyPair))) {
       springJoints.put(bodyPair, new ArrayList<>());
     }
-    springJoints.get(bodyPair).add(joint);
-    return joint;
+    springJoints.get(bodyPair).add(springJoint);
+    return springJoint;
   }
 
-  public DDoubleBallJoint addSpringJoint(
+  public SpringJoint addSpringJoint(
       Body body1, Body body2, double springConstant, double dampingConstant) {
     return addSpringJoint(
         body1, body2, springConstant, dampingConstant, new Vector3D(), new Vector3D());
   }
 
-  public DFixedJoint addFixedJoint(Body body1, Body body2) {
+  public FixedJoint addFixedJoint(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     DFixedJoint joint = OdeHelper.createFixedJoint(world);
     joint.attach(body1.dBody(), body2.dBody());
@@ -312,15 +322,16 @@ public class Ode4jEngine {
     if (Objects.isNull(fixedJoints.get(bodyPair))) {
       fixedJoints.put(bodyPair, new ArrayList<>());
     }
-    fixedJoints.get(bodyPair).add(joint);
-    return joint;
+    FixedJoint fixedJoint = new FixedJoint(IDCounter++, joint);
+    fixedJoints.get(bodyPair).add(fixedJoint);
+    return fixedJoint;
   }
 
   public void removeSpringJoints(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     if (Objects.nonNull(springJoints.get(bodyPair))) {
-      for (DDoubleBallJoint joint : springJoints.get(bodyPair)) {
-        joint.destroy();
+      for (SpringJoint joint : springJoints.get(bodyPair)) {
+        joint.joint().destroy();
       }
       springJoints.remove(bodyPair);
     }
@@ -329,8 +340,8 @@ public class Ode4jEngine {
   public void removeFixedJoints(Body body1, Body body2) {
     UnorderedPair<Body> bodyPair = new UnorderedPair<>(body1, body2);
     if (Objects.nonNull(fixedJoints.get(bodyPair))) {
-      for (DFixedJoint joint : fixedJoints.get(bodyPair)) {
-        joint.destroy();
+      for (FixedJoint joint : fixedJoints.get(bodyPair)) {
+        joint.joint().destroy();
       }
       fixedJoints.remove(bodyPair);
     }

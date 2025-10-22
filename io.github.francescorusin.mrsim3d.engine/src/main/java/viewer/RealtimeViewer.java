@@ -193,7 +193,6 @@ public class RealtimeViewer extends Viewer {
                 }));
         engine.addAgent(robot, new Vector3D(0.6, 0.6, 4.75));
         while (!glfwWindowShouldClose(window)) {
-            engine.tick();
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glMatrixMode(GL_PROJECTION);
             glLoadIdentity();
@@ -203,11 +202,10 @@ public class RealtimeViewer extends Viewer {
             buffer.clear();
             viewMatrix().get(buffer);
             glLoadMatrixf(buffer);
-            terrain.draw(this);
             drawLine(origin, ax1, Color.RED);
             drawLine(origin, ax2, Color.BLUE);
             drawLine(origin, ax3, Color.GREEN);
-            robot.snapshot(engine).draw(this);
+            engine.tick().draw(this);
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
@@ -224,7 +222,6 @@ public class RealtimeViewer extends Viewer {
             IntBuffer channels = stack.mallocInt(1);
 
             STBImage.stbi_set_flip_vertically_on_load(true);
-            System.out.println(filename);
             ByteBuffer image = STBImage.stbi_load(filename, width, height, channels, 4);
             if (image == null)
                 throw new RuntimeException("Image cannot be loaded: " + STBImage.stbi_failure_reason());
@@ -258,9 +255,7 @@ public class RealtimeViewer extends Viewer {
     public void drawTexture(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, int texID, int hReps, int vReps) {
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
-        t += .1f;
-        float sin = (float) (Math.sin(t) + 1) * .5f;
-        glColor3f(sin, sin, sin);
+        glColor3f(1f, 1f, 1f);
         glBindTexture(GL_TEXTURE_2D, texID);
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0);
