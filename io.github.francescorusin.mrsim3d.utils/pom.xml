@@ -9,7 +9,16 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>utils</artifactId>
+    <artifactId>mrsim3d.utils</artifactId>
+    <packaging>jar</packaging>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+    </build>
 
     <properties>
         <maven.compiler.source>19</maven.compiler.source>

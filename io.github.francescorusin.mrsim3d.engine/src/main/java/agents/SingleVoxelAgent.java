@@ -152,6 +152,6 @@ public class SingleVoxelAgent extends Voxel implements EmbodiedAgent {
 
   @Override
   public void cacheAction(ActionSnapshot actionSnapshot) {
-    throw new IllegalArgumentException("Implementa questa cosa");
+    //TODO IMPLEMENT
   }
 }

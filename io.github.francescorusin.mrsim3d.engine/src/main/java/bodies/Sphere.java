@@ -27,6 +27,8 @@ import org.ode4j.ode.OdeHelper;
 import snapshot.BodySnapshot;
 import viewer.Viewer;
 
+import java.awt.*;
+
 public class Sphere extends Body {
   private final double radius;
 
@@ -72,9 +74,10 @@ public class Sphere extends Body {
 
   public record SphereSnapshot(double radius, double mass, Vector3D position, Vector3D velocity)
       implements BodySnapshot {
+    private static final Color SPHERE_COLOR = Color.CYAN;
     @Override
     public void draw(Viewer viewer) {
-      // TODO IMPLEMENT
+      viewer.drawSphere(position, radius, SPHERE_COLOR);
     }
   }
 

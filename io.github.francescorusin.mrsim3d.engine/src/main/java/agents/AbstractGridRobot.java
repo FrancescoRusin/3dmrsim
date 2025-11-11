@@ -275,7 +275,7 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
 
   @Override
   public void cacheAction(ActionSnapshot actionSnapshot) {
-    throw new IllegalArgumentException("Implementa questa cosa");
+    //TODO IMPLEMENT
   }
 
   public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks, List<ActionSnapshot> actions) implements MultibodySnapshot {

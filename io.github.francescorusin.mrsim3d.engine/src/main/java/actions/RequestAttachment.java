@@ -41,7 +41,7 @@ public class RequestAttachment implements Action {
   public record RAActionSnapshot(List<Pair<Vector3D, Vector3D>> involvedPoints, boolean requester) implements ActionSnapshot {
     @Override
     public void draw(Viewer viewer) {
-      throw new IllegalArgumentException("Implementa questa cosa");
+      //TODO IMPLEMENT
     }
   }
 
