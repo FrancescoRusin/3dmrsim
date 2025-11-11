@@ -278,7 +278,8 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     //TODO IMPLEMENT
   }
 
-  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks, List<ActionSnapshot> actions) implements MultibodySnapshot {
+  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks,
+                                  List<ActionSnapshot> actions) implements MultibodySnapshot {
     @Override
     public List<JointSnapshot> internalJoints() {
       return intraVoxelLocks.stream().map(p -> {
