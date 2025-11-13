@@ -200,6 +200,25 @@ public class Ode4jEngine {
     return time;
   }
 
+  public InstantSnapshot currentState() {
+    return new InstantSnapshot(
+            configuration,
+            agents.stream().map(a -> a.snapshot(this)).toList(),
+            passiveBodies.stream().map(b -> b.snapshot(this)).toList(),
+            Stream.concat(
+                    springJoints.keySet().stream().filter(p -> {
+                      List<Body> bodies = p.elements();
+                      return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
+                    }).map(p -> (Joint) springJoints.get(p)),
+                    fixedJoints.keySet().stream().filter(p -> {
+                      List<Body> bodies = p.elements();
+                      return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
+                    }).map(p -> (Joint) fixedJoints.get(p))
+            ).map(j -> j.snapshot(this)).toList(),
+            time
+    );
+  }
+
   public InstantSnapshot tick() {
     world.quickStep(timeStep);
     collisionGroup.clear();
@@ -217,22 +236,7 @@ public class Ode4jEngine {
     for (Action action : actions) {
       action.execute(this);
     }
-    return new InstantSnapshot(
-            this.configuration,
-            this.agents.stream().map(a -> a.snapshot(this)).toList(),
-            this.passiveBodies.stream().map(b -> b.snapshot(this)).toList(),
-            Stream.concat(
-                    springJoints.keySet().stream().filter(p -> {
-              List<Body> bodies = p.elements();
-              return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
-            }).map(p -> (Joint) springJoints.get(p)),
-                    fixedJoints.keySet().stream().filter(p -> {
-                      List<Body> bodies = p.elements();
-                      return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
-                    }).map(p -> (Joint) fixedJoints.get(p))
-            ).map(j -> j.snapshot(this)).toList(),
-            this.time
-    );
+    return currentState();
   }
 
   public DWorld world() {

@@ -2,6 +2,7 @@ package tasks;
 
 import geometry.Vector3D;
 import io.github.ericmedvet.jnb.datastructure.DoubleRange;
+import snapshot.BodySnapshot;
 import snapshot.InstantSnapshot;
 
 import java.util.*;
@@ -19,48 +20,57 @@ public class Outcome {
     }
 
     public double averageDistanceFromTarget(Vector3D target) {
-        return get(new Key(Function.SA_DISTANCE_FROM_TARGET, Operator.AVERAGE));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.AVERAGE));
     }
 
     public double finalDistanceFromTarget(Vector3D target) {
-        return get(new Key(Function.SA_DISTANCE_FROM_TARGET, Operator.FINAL));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.FINAL));
     }
 
     public double maxDistanceFromTarget(Vector3D target) {
-        return get(new Key(Function.SA_DISTANCE_FROM_TARGET, Operator.MAX));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.MAX));
     }
 
     public double minDistanceFromTarget(Vector3D target) {
-        return get(new Key(Function.SA_DISTANCE_FROM_TARGET, Operator.MIN));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.MIN));
     }
 
-    // not every function makes sense for both singleagent and multiagent cases so singleagent functions have a SA prefix while multiagent have MA
     private enum Function {
-        SA_DISTANCE_FROM_TARGET
+        DISTANCE_FROM_TARGET
     }
 
-    private enum Operator {
+    private enum AgentSelector {
+        SINGLE_AGENT, ALL_AGENTS_AVERAGE, ALL_AGENTS_MIN, ALL_AGENTS_MAX
+    }
+
+    private enum TimeOperator {
         AVERAGE, FINAL, MIN, MAX
     }
 
-    private record Key(Function function, Operator operator) {}
+    private record Key(AgentSelector agentSelector, Function function, TimeOperator timeOperator) {}
 
-    private Double get(InstantSnapshot snapshot, Function function, Object... args) {
-        switch (function) {
-            case SA_DISTANCE_FROM_TARGET:
-                Vector3D target = (Vector3D) args[0];
-                return snapshot.activeBodies().get(0).position().vectorDistance(target).norm();
-        }
-        return 0d;
+    private Double get(BodySnapshot body, Function function, Object... args) {
+        return switch (function) {
+            case DISTANCE_FROM_TARGET -> body.position().vectorDistance((Vector3D) args[0]).norm();
+        };
+    }
+
+    private Double get(InstantSnapshot snapshot, AgentSelector agentSelector, Function function, Object... args) {
+        return switch (agentSelector) {
+            case SINGLE_AGENT -> get(snapshot.activeBodies().get(0), function, args);
+            case ALL_AGENTS_AVERAGE -> snapshot.activeBodies().stream().mapToDouble(b -> get(b, function, args)).average().orElse(0d);
+            case ALL_AGENTS_MIN -> snapshot.activeBodies().stream().mapToDouble(b -> get(b, function, args)).min().orElse(0d);
+            case ALL_AGENTS_MAX -> snapshot.activeBodies().stream().mapToDouble(b -> get(b, function, args)).max().orElse(0d);
+        };
     }
 
     private Double get(Key key, Object... args) {
         if (!resultsCacher.containsKey(key)) {
-            resultsCacher.put(key, switch (key.operator) {
-                case AVERAGE -> observations.values().stream().mapToDouble(s -> get(s, key.function, args)).average().orElse(0d);
-                case FINAL -> get(observations.lastEntry().getValue(), key.function, args);
-                case MIN -> observations.values().stream().mapToDouble(s -> get(s, key.function, args)).min().orElse(0d);
-                case MAX -> observations.values().stream().mapToDouble(s -> get(s, key.function, args)).max().orElse(0d);
+            resultsCacher.put(key, switch (key.timeOperator) {
+                case AVERAGE -> observations.values().stream().mapToDouble(s -> get(s, key.agentSelector, key.function, args)).average().orElse(0d);
+                case FINAL -> get(observations.lastEntry().getValue(), key.agentSelector, key.function, args);
+                case MIN -> observations.values().stream().mapToDouble(s -> get(s, key.agentSelector, key.function, args)).min().orElse(0d);
+                case MAX -> observations.values().stream().mapToDouble(s -> get(s, key.agentSelector, key.function, args)).max().orElse(0d);
             });
         }
         return resultsCacher.get(key);
