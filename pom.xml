@@ -18,7 +18,7 @@
         <maven.compiler.source>19</maven.compiler.source>
         <maven.compiler.target>19</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jdk.version>19</jdk.version>
+        <jdk.version>23</jdk.version>
         <revision>0.0.1</revision>
         <jsdynsym.version>1.0.0</jsdynsym.version>
     </properties>

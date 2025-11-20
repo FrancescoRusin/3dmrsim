@@ -20,10 +20,12 @@
 package viewer;
 
 import geometry.Vector3D;
+import snapshot.InstantSnapshot;
 
 import java.awt.*;
+import java.util.function.Consumer;
 
-public abstract class Viewer {
+public abstract class Viewer implements Consumer<InstantSnapshot> {
   public enum Mode {
     DISPLAY, DEBUG
   }
