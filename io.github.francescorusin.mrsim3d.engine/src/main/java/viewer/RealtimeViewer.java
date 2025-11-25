@@ -60,6 +60,7 @@ public class RealtimeViewer extends OpenGLViewer {
             }
         });
 
+        // Setup a callback for the mouse scroll.
         glfwSetScrollCallback(window, (window, x, y) -> {
             this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, 5 * MOVEMENT_TICK * Math.signum(y)));
         });
