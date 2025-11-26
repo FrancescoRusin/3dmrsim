@@ -79,24 +79,24 @@ public class Cube extends Body {
             double[] maxs = new double[3];
             Arrays.fill(mins, Double.POSITIVE_INFINITY);
             Arrays.fill(maxs, Double.NEGATIVE_INFINITY);
-            for (Vector3D(double x, double y, double z) : rotatedVertices) {
-                if (Math.abs(x) > maxs[0]) {
-                    maxs[0] = Math.abs(x);
+            for (Vector3D v : rotatedVertices) {
+                if (Math.abs(v.x()) > maxs[0]) {
+                    maxs[0] = Math.abs(v.x());
                 }
-                if (Math.abs(y) > maxs[1]) {
-                    maxs[1] = Math.abs(y);
+                if (Math.abs(v.y()) > maxs[1]) {
+                    maxs[1] = Math.abs(v.y());
                 }
-                if (Math.abs(z) > maxs[2]) {
-                    maxs[2] = Math.abs(z);
+                if (Math.abs(v.z()) > maxs[2]) {
+                    maxs[2] = Math.abs(v.z());
                 }
-                if (-Math.abs(x) < mins[0]) {
-                    mins[0] = -Math.abs(x);
+                if (-Math.abs(v.x()) < mins[0]) {
+                    mins[0] = -Math.abs(v.x());
                 }
-                if (-Math.abs(y) < mins[1]) {
-                    mins[1] = -Math.abs(y);
+                if (-Math.abs(v.y()) < mins[1]) {
+                    mins[1] = -Math.abs(v.y());
                 }
-                if (-Math.abs(z) < mins[2]) {
-                    mins[2] = -Math.abs(z);
+                if (-Math.abs(v.z()) < mins[2]) {
+                    mins[2] = -Math.abs(v.z());
                 }
             }
             Vector3D center = position(t);
