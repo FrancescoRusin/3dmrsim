@@ -148,7 +148,7 @@ public class Voxel extends MultiBody
         INTERNAL
     }
 
-    protected enum UlteriorBody {
+    public enum UlteriorBody {
         CENTRAL_MASS
     }
 
@@ -884,37 +884,25 @@ public class Voxel extends MultiBody
         cacheTime.put(Cache.SIDECPOSITIONS, -1d);
     }
 
-    public record VoxelSnapshot(
+    public interface VoxelSnapshot extends MultibodySnapshot {
+        Color VOXEL_E_COLOR = Color.CYAN;
+        Color VOXEL_C_COLOR = Color.YELLOW;
+        EnumMap<Vertex, Cube.CubeSnapshot> vertices();
+        EnumMap<UlteriorBody, BodySnapshot> otherBodyParts();
+
+        @Override
+        default List<BodySnapshot> bodyParts() {
+            return Stream.concat(vertices().values().stream(), otherBodyParts().values().stream()).toList();
+        }
+    }
+
+    public record VoxelSnapshotBase(
             EnumMap<Vertex, Cube.CubeSnapshot> vertices,
-            EnumMap<UlteriorBody, BodySnapshot> otherBodyParts,
-            Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJoints,
-            Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJoints,
+    EnumMap<UlteriorBody, BodySnapshot> otherBodyParts,
             double volumeRatio
-    ) implements MultibodySnapshot {
-        private static final Color VOXEL_E_COLOR = Color.CYAN;
-        private static final Color VOXEL_C_COLOR = Color.YELLOW;
-
-        @Override
-        public List<BodySnapshot> bodyParts() {
-            return Stream.concat(vertices.values().stream(), otherBodyParts.values().stream()).toList();
-        }
-
-        @Override
-        public List<JointSnapshot> internalJoints() {
-            return Stream.concat(
-                            vertexToVertexJoints.values().stream().flatMap(List::stream),
-                            ulteriorJoints.values().stream())
-                    .toList();
-        }
-
+    ) implements VoxelSnapshot {
         @Override
         public void draw(Viewer viewer) {
-            switch (viewer.mode) {
-                case DEBUG:
-                    Stream.concat(vertices.values().stream(), otherBodyParts.values().stream()).forEach(body -> body.draw(viewer));
-                    internalJoints().forEach(joint -> joint.draw(viewer));
-                    break;
-                case DISPLAY:
                     final Color drawColor = new Color(
                             (int) (VOXEL_E_COLOR.getRed() * volumeRatio + VOXEL_C_COLOR.getRed() * (1 - volumeRatio)),
                             (int) (VOXEL_E_COLOR.getGreen() * volumeRatio + VOXEL_C_COLOR.getGreen() * (1 - volumeRatio)),
@@ -944,34 +932,60 @@ public class Voxel extends MultiBody
                         viewer.drawLine(vPos.get(edge.v1), vPos.get(edge.v2), Color.BLACK);
                     }
             }
+    }
+
+    public record VoxelSnapshotDebug(
+            EnumMap<Vertex, Cube.CubeSnapshot> vertices,
+            EnumMap<UlteriorBody, BodySnapshot> otherBodyParts,
+            Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJoints,
+            Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJoints,
+            double volumeRatio
+    ) implements VoxelSnapshot {
+        @Override
+        public void draw(Viewer viewer) {
+            Stream.concat(vertices.values().stream(), otherBodyParts.values().stream()).forEach(body -> body.draw(viewer));
+            Stream.concat(
+                    vertexToVertexJoints.values().stream().flatMap(List::stream),
+                    ulteriorJoints.values().stream()
+            ).forEach(joint -> joint.draw(viewer));
         }
     }
 
     @Override
-    public BodySnapshot snapshot(Ode4jEngine engine) {
+    public BodySnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode) {
         EnumMap<Vertex, Cube.CubeSnapshot> vertexSnapshots = new EnumMap<>(Vertex.class);
         for (Vertex v : Vertex.values()) {
-            vertexSnapshots.put(v, (Cube.CubeSnapshot) rigidBodies.get(v).snapshot(engine));
+            vertexSnapshots.put(v, (Cube.CubeSnapshot) rigidBodies.get(v).snapshot(engine, mode));
         }
         EnumMap<UlteriorBody, BodySnapshot> otherBodiesSnapshots = new EnumMap<>(UlteriorBody.class);
         for (UlteriorBody b : ulteriorBodies.keySet()) {
-            otherBodiesSnapshots.put(b, ulteriorBodies.get(b).snapshot(engine));
+            otherBodiesSnapshots.put(b, ulteriorBodies.get(b).snapshot(engine, mode));
         }
-        Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJointSnapshots = new HashMap<>();
-        Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJointSnapshots = new HashMap<>();
-        for (UnorderedPair<Vertex> v : vertexToVertexJoints.keySet()) {
-            vertexToVertexJointSnapshots.put(v, vertexToVertexJoints.get(v).stream().map(j -> j.snapshot(engine)).toList());
+        switch (mode) {
+            case COMPUTATION, DISPLAY:
+                return new VoxelSnapshotBase(
+                        vertexSnapshots,
+                        otherBodiesSnapshots,
+                        (currentVolume(engine.t()) - minVolume()) / (maxVolume() - minVolume())
+                );
+            case DEBUG:
+                Map<UnorderedPair<Vertex>, List<JointSnapshot>> vertexToVertexJointSnapshots = new HashMap<>();
+                Map<Pair<Vertex, UlteriorBody>, JointSnapshot> ulteriorJointSnapshots = new HashMap<>();
+                for (UnorderedPair<Vertex> v : vertexToVertexJoints.keySet()) {
+                    vertexToVertexJointSnapshots.put(v, vertexToVertexJoints.get(v).stream().map(j -> j.snapshot(engine, mode)).toList());
+                }
+                for (Pair<Vertex, UlteriorBody> v : ulteriorJoints.keySet()) {
+                    ulteriorJointSnapshots.put(v, ulteriorJoints.get(v).snapshot(engine, mode));
+                }
+                return new VoxelSnapshotDebug(
+                        vertexSnapshots,
+                        otherBodiesSnapshots,
+                        vertexToVertexJointSnapshots,
+                        ulteriorJointSnapshots,
+                        (currentVolume(engine.t()) - minVolume()) / (maxVolume() - minVolume())
+                );
         }
-        for (Pair<Vertex, UlteriorBody> v : ulteriorJoints.keySet()) {
-            ulteriorJointSnapshots.put(v, ulteriorJoints.get(v).snapshot(engine));
-        }
-        return new VoxelSnapshot(
-                vertexSnapshots,
-                otherBodiesSnapshots,
-                vertexToVertexJointSnapshots,
-                ulteriorJointSnapshots,
-                (currentVolume(engine.t()) - minVolume()) / (maxVolume() - minVolume())
-        );
+        throw new AssertionError("Problem with a switch: this point should be unreachable");
     }
 
     public void actOnInput(EnumMap<Edge, Double> input) {

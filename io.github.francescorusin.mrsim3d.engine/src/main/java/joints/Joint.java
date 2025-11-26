@@ -5,5 +5,5 @@ import snapshot.JointSnapshot;
 
 public interface Joint {
     int id();
-    JointSnapshot snapshot(Ode4jEngine engine);
+    JointSnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode);
 }

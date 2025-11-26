@@ -20,19 +20,19 @@ public class Outcome {
     }
 
     public double averageDistanceFromTarget(Vector3D target) {
-        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.AVERAGE));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.AVERAGE), target);
     }
 
     public double finalDistanceFromTarget(Vector3D target) {
-        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.FINAL));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.FINAL), target);
     }
 
     public double maxDistanceFromTarget(Vector3D target) {
-        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.MAX));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.MAX), target);
     }
 
     public double minDistanceFromTarget(Vector3D target) {
-        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.MIN));
+        return get(new Key(AgentSelector.SINGLE_AGENT, Function.DISTANCE_FROM_TARGET, TimeOperator.MIN), target);
     }
 
     private enum Function {
@@ -57,7 +57,7 @@ public class Outcome {
 
     private Double get(InstantSnapshot snapshot, AgentSelector agentSelector, Function function, Object... args) {
         return switch (agentSelector) {
-            case SINGLE_AGENT -> get(snapshot.activeBodies().get(0), function, args);
+            case SINGLE_AGENT -> get(snapshot.activeBodies().getFirst(), function, args);
             case ALL_AGENTS_AVERAGE -> snapshot.activeBodies().stream().mapToDouble(b -> get(b, function, args)).average().orElse(0d);
             case ALL_AGENTS_MIN -> snapshot.activeBodies().stream().mapToDouble(b -> get(b, function, args)).min().orElse(0d);
             case ALL_AGENTS_MAX -> snapshot.activeBodies().stream().mapToDouble(b -> get(b, function, args)).max().orElse(0d);

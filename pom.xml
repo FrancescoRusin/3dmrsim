@@ -21,6 +21,7 @@
         <jdk.version>23</jdk.version>
         <revision>0.0.1</revision>
         <jsdynsym.version>1.2.0</jsdynsym.version>
+        <jgea.version>2.7.0</jgea.version>
     </properties>
 
     <build>

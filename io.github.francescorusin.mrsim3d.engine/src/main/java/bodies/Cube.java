@@ -79,24 +79,24 @@ public class Cube extends Body {
             double[] maxs = new double[3];
             Arrays.fill(mins, Double.POSITIVE_INFINITY);
             Arrays.fill(maxs, Double.NEGATIVE_INFINITY);
-            for (Vector3D v : rotatedVertices) {
-                if (Math.abs(v.x()) > maxs[0]) {
-                    maxs[0] = Math.abs(v.x());
+            for (Vector3D(double x, double y, double z) : rotatedVertices) {
+                if (Math.abs(x) > maxs[0]) {
+                    maxs[0] = Math.abs(x);
                 }
-                if (Math.abs(v.y()) > maxs[1]) {
-                    maxs[1] = Math.abs(v.y());
+                if (Math.abs(y) > maxs[1]) {
+                    maxs[1] = Math.abs(y);
                 }
-                if (Math.abs(v.z()) > maxs[2]) {
-                    maxs[2] = Math.abs(v.z());
+                if (Math.abs(z) > maxs[2]) {
+                    maxs[2] = Math.abs(z);
                 }
-                if (-Math.abs(v.x()) < mins[0]) {
-                    mins[0] = -Math.abs(v.x());
+                if (-Math.abs(x) < mins[0]) {
+                    mins[0] = -Math.abs(x);
                 }
-                if (-Math.abs(v.y()) < mins[1]) {
-                    mins[1] = -Math.abs(v.y());
+                if (-Math.abs(y) < mins[1]) {
+                    mins[1] = -Math.abs(y);
                 }
-                if (-Math.abs(v.z()) < mins[2]) {
-                    mins[2] = -Math.abs(v.z());
+                if (-Math.abs(z) < mins[2]) {
+                    mins[2] = -Math.abs(z);
                 }
             }
             Vector3D center = position(t);
@@ -160,7 +160,8 @@ public class Cube extends Body {
     }
 
     public record CubeSnapshot(
-            double sideLength, double mass, Vector3D position, Vector3D rotation, Vector3D velocity)
+            double sideLength, double mass, Vector3D position, Vector3D rotation, Vector3D velocity, Ode4jEngine.Mode mode
+    )
             implements BodySnapshot {
         private final static Color CUBE_COLOR = Color.RED;
         @Override
@@ -191,7 +192,7 @@ public class Cube extends Body {
             viewer.drawTriangle(vs[2], vs[6], vs[7], CUBE_COLOR);
             viewer.drawTriangle(vs[4], vs[5], vs[6], CUBE_COLOR);
             viewer.drawTriangle(vs[4], vs[6], vs[7], CUBE_COLOR);
-            if (viewer.mode == Viewer.Mode.DEBUG) {
+            if (mode == Ode4jEngine.Mode.DEBUG) {
                 viewer.drawLine(vs[0], vs[1], Color.BLACK);
                 viewer.drawLine(vs[1], vs[2], Color.BLACK);
                 viewer.drawLine(vs[2], vs[3], Color.BLACK);
@@ -209,12 +210,14 @@ public class Cube extends Body {
     }
 
     @Override
-    public BodySnapshot snapshot(Ode4jEngine engine) {
+    public BodySnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode) {
         return new CubeSnapshot(
                 this.sideLength,
                 this.mass(),
                 this.position(engine.t()),
                 this.angle(engine.t()),
-                this.velocity(engine.t()));
+                this.velocity(engine.t()),
+                mode
+        );
     }
 }

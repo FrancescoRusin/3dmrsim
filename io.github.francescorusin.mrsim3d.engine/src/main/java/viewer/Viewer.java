@@ -25,24 +25,15 @@ import snapshot.InstantSnapshot;
 import java.awt.*;
 import java.util.function.Consumer;
 
-public abstract class Viewer implements Consumer<InstantSnapshot> {
-  public enum Mode {
-    DISPLAY, DEBUG
-  }
+public interface Viewer extends Consumer<InstantSnapshot> {
 
-  public final Mode mode;
+  int loadTexture(String filename);
 
-  Viewer(Mode mode) {
-    this.mode = mode;
-  }
+  void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color);
 
-  public abstract int loadTexture(String filename);
+  void drawTexture(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, int texID, int hReps, int vReps);
 
-  public abstract void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color);
+  void drawSphere(Vector3D position, double radius, Color color);
 
-  public abstract void drawTexture(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4, int texID, int hReps, int vReps);
-
-  public abstract void drawSphere(Vector3D position, double radius, Color color);
-
-  public abstract void drawLine(Vector3D p1, Vector3D p2, Color color);
+  void drawLine(Vector3D p1, Vector3D p2, Color color);
 }

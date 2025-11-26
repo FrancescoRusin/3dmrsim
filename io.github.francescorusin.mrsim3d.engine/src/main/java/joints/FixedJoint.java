@@ -24,7 +24,7 @@ public record FixedJoint(int id, DFixedJoint joint) implements Joint {
         }
     }
     @Override
-    public JointSnapshot snapshot(Ode4jEngine engine) {
+    public JointSnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode) {
         DVector3C placeholder1 = joint.getBody(0).getPosition();
         DVector3C placeholder2 = joint.getBody(0).getPosition();
         Vector3D pos1 = new Vector3D(placeholder1.get0(), placeholder1.get1(), placeholder1.get2());

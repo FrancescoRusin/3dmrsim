@@ -10,14 +10,13 @@ import org.lwjgl.system.MemoryStack;
 
 import java.awt.*;
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
-public abstract class OpenGLViewer extends Viewer {
+public abstract class OpenGLViewer implements Viewer {
     protected static final Vector3D DEFAULT_CAMERA_POS = new Vector3D(5, -5, 5);
     protected static final Vector3D DEFAULT_CAMERA_DIR = new Vector3D(-5, 5, -3);
     protected static final Vector3D DEFAULT_CAMERA_UP = new Vector3D(0, 0, 1);
@@ -25,8 +24,7 @@ public abstract class OpenGLViewer extends Viewer {
     protected Vector3D cameraDir;
     protected final Vector3D cameraUp;
 
-    public OpenGLViewer(Mode mode, Vector3D cameraPos, Vector3D cameraDir, Vector3D cameraUp) {
-        super(mode);
+    public OpenGLViewer(Vector3D cameraPos, Vector3D cameraDir, Vector3D cameraUp) {
         this.cameraPos = cameraPos;
         this.cameraDir = cameraDir.normalize();
         this.cameraUp = cameraUp;
@@ -39,8 +37,8 @@ public abstract class OpenGLViewer extends Viewer {
             throw new IllegalStateException("Unable to initialize GLFW");
     }
 
-    public OpenGLViewer(Mode mode) {
-        this(mode, DEFAULT_CAMERA_POS, DEFAULT_CAMERA_DIR, DEFAULT_CAMERA_UP);
+    public OpenGLViewer() {
+        this(DEFAULT_CAMERA_POS, DEFAULT_CAMERA_DIR, DEFAULT_CAMERA_UP);
     }
 
     // This needs to be called after an OpenGL window is created to initialize stuff correctly

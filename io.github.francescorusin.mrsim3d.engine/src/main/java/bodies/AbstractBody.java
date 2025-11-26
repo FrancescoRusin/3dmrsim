@@ -30,5 +30,5 @@ public interface AbstractBody extends SimulationObject {
 
     Vector3D angle(double t);
 
-    BodySnapshot snapshot(Ode4jEngine engine);
+    BodySnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode);
 }

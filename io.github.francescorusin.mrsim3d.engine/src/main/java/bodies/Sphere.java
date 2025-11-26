@@ -82,7 +82,7 @@ public class Sphere extends Body {
   }
 
   @Override
-  public BodySnapshot snapshot(Ode4jEngine engine) {
+  public BodySnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode) {
     return new SphereSnapshot(
         this.radius, this.mass(), this.position(engine.t()), this.velocity(engine.t()));
   }

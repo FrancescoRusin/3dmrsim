@@ -6,8 +6,6 @@ import java.util.List;
 
 public interface MultibodySnapshot extends BodySnapshot {
     List<BodySnapshot> bodyParts();
-
-    List<JointSnapshot> internalJoints();
     @Override
     default Vector3D position() {
         return bodyParts().stream().map(b -> b.position().times(b.mass())).reduce(Vector3D::sum).orElseThrow().times(1d / mass());

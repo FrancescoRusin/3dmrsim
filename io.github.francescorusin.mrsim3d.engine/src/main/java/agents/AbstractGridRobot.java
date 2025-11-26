@@ -278,27 +278,19 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
     //TODO IMPLEMENT
   }
 
-  public record GridRobotSnapshot(Voxel.VoxelSnapshot[][][] grid, HashSet<UnorderedPair<int[]>> intraVoxelLocks,
-                                  List<ActionSnapshot> actions) implements MultibodySnapshot {
-    @Override
-    public List<JointSnapshot> internalJoints() {
-      return intraVoxelLocks.stream().map(p -> {
-        List<Voxel.VoxelSnapshot> voxels = p.elements().stream().map(e -> this.grid[e[0]][e[1]][e[2]]).toList();
-        return (JointSnapshot) new FixedJoint.FixedJointSnapshot(voxels.get(0).position(), voxels.get(1).position());
-      }).toList();
-    }
+  public interface GridRobotSnapshot extends MultibodySnapshot {
+    Voxel.VoxelSnapshot[][][] grid();
 
     @Override
-    public List<BodySnapshot> bodyParts() {
-      return Arrays.stream(grid)
+    default List<BodySnapshot> bodyParts() {
+      return Arrays.stream(grid())
               .flatMap(aa -> Arrays.stream(aa).flatMap(Arrays::stream))
               .filter(Objects::nonNull)
               .collect(Collectors.toList());
     }
 
-    @Override
-    public void draw(Viewer viewer) {
-      for (Voxel.VoxelSnapshot[][] voxelPlane : grid) {
+    default void drawGrid(Viewer viewer) {
+      for (Voxel.VoxelSnapshot[][] voxelPlane : grid()) {
         for (Voxel.VoxelSnapshot[] row : voxelPlane) {
           for (Voxel.VoxelSnapshot voxel : row) {
             if (Objects.nonNull(voxel)) {
@@ -307,22 +299,86 @@ public abstract class AbstractGridRobot implements EmbodiedAgent {
           }
         }
       }
+    }
+  }
+
+  public record GridRobotSnapshotComputation(Voxel.VoxelSnapshotBase[][][] grid) implements GridRobotSnapshot {
+    @Override
+    public void draw(Viewer viewer) {
+      throw new RuntimeException("Attempted to draw using computation only class");
+    }
+  }
+
+  public record GridRobotSnapshotDebug(
+          Voxel.VoxelSnapshotDebug[][][] grid,
+          HashSet<UnorderedPair<int[]>> intraVoxelLocks,
+          List<ActionSnapshot> actions
+  ) implements GridRobotSnapshot {
+    public List<JointSnapshot> internalJoints() {
+      return intraVoxelLocks.stream().map(p -> {
+        List<Voxel.VoxelSnapshotDebug> voxels = p.elements().stream().map(e -> this.grid[e[0]][e[1]][e[2]]).toList();
+        return (JointSnapshot) new FixedJoint.FixedJointSnapshot(voxels.get(0).position(), voxels.get(1).position());
+      }).toList();
+    }
+
+    @Override
+    public void draw(Viewer viewer) {
+      drawGrid(viewer);
+      //TODO ACTIONS!
+    }
+  }
+
+  public record GridRobotSnapshotDisplay(Voxel.VoxelSnapshotBase[][][] grid, List<ActionSnapshot> actions) implements GridRobotSnapshot {
+    @Override
+    public void draw(Viewer viewer) {
+      drawGrid(viewer);
       //TODO ACTIONS!
     }
   }
 
   @Override
-  public BodySnapshot snapshot(Ode4jEngine engine) {
-    Voxel.VoxelSnapshot[][][] snapshotGrid = new Voxel.VoxelSnapshot[grid.length][grid[0].length][grid[0][0].length];
-    for (int x = 0; x < grid.length; ++x) {
-      for (int y = 0; y < grid[0].length; ++y) {
-        for (int z = 0; z < grid[0][0].length; ++z) {
-          if (Objects.nonNull(grid[x][y][z])) {
-            snapshotGrid[x][y][z] = (Voxel.VoxelSnapshot) grid[x][y][z].snapshot(engine);
+  public BodySnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode) {
+    switch (mode) {
+      case COMPUTATION: {
+        Voxel.VoxelSnapshotBase[][][] snapshotGrid = new Voxel.VoxelSnapshotBase[grid.length][grid[0].length][grid[0][0].length];
+        for (int x = 0; x < grid.length; ++x) {
+          for (int y = 0; y < grid[0].length; ++y) {
+            for (int z = 0; z < grid[0][0].length; ++z) {
+              if (Objects.nonNull(grid[x][y][z])) {
+                snapshotGrid[x][y][z] = (Voxel.VoxelSnapshotBase) grid[x][y][z].snapshot(engine, Ode4jEngine.Mode.COMPUTATION);
+              }
+            }
           }
         }
+        return new GridRobotSnapshotComputation(snapshotGrid);
+      }
+      case DISPLAY: {
+        Voxel.VoxelSnapshotBase[][][] snapshotGrid = new Voxel.VoxelSnapshotBase[grid.length][grid[0].length][grid[0][0].length];
+        for (int x = 0; x < grid.length; ++x) {
+          for (int y = 0; y < grid[0].length; ++y) {
+            for (int z = 0; z < grid[0][0].length; ++z) {
+              if (Objects.nonNull(grid[x][y][z])) {
+                snapshotGrid[x][y][z] = (Voxel.VoxelSnapshotBase) grid[x][y][z].snapshot(engine, Ode4jEngine.Mode.DISPLAY);
+              }
+            }
+          }
+        }
+        return new GridRobotSnapshotDisplay(snapshotGrid, List.of()); // TODO ACTIONS!
+      }
+      case DEBUG: {
+        Voxel.VoxelSnapshotDebug[][][] snapshotGrid = new Voxel.VoxelSnapshotDebug[grid.length][grid[0].length][grid[0][0].length];
+        for (int x = 0; x < grid.length; ++x) {
+          for (int y = 0; y < grid[0].length; ++y) {
+            for (int z = 0; z < grid[0][0].length; ++z) {
+              if (Objects.nonNull(grid[x][y][z])) {
+                snapshotGrid[x][y][z] = (Voxel.VoxelSnapshotDebug) grid[x][y][z].snapshot(engine, Ode4jEngine.Mode.DEBUG);
+              }
+            }
+          }
+        }
+        return new GridRobotSnapshotDebug(snapshotGrid, new HashSet<>(intraVoxelLocks), List.of()); // TODO ACTIONS!
       }
     }
-    return new GridRobotSnapshot(snapshotGrid, new HashSet<>(intraVoxelLocks), List.of()); //TODO ACTIONS!
+    throw new AssertionError("Problem with a switch: this point should be unreachable");
   }
 }

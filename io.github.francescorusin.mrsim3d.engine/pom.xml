@@ -59,6 +59,16 @@
             <artifactId>jsdynsym.core</artifactId>
             <version>${jsdynsym.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.ericmedvet</groupId>
+            <artifactId>jgea.experimenter</artifactId>
+            <version>${jgea.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.ericmedvet</groupId>
+            <artifactId>jgea.problem</artifactId>
+            <version>${jgea.version}</version>
+        </dependency>
 
 
         <dependency>

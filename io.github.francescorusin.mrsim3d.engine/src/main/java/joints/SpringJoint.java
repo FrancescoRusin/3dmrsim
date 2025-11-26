@@ -18,8 +18,9 @@ public record SpringJoint(int id, DDoubleBallJoint joint) implements Joint {
             viewer.drawLine(point1, point2, SOFT_JOINT_COLOR);
         }
     }
+
     @Override
-    public JointSnapshot snapshot(Ode4jEngine engine) {
+    public JointSnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode) {
         DVector3 placeholder1 = new DVector3();
         joint.getAnchor1(placeholder1);
         DVector3 placeholder2 = new DVector3();

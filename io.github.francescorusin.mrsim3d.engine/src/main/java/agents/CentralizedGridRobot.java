@@ -24,6 +24,7 @@ import bodies.Voxel;
 import engine.Ode4jEngine;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
 import java.util.*;
+
 import sensors.Sensor;
 
 public class CentralizedGridRobot extends AbstractGridRobot {
@@ -73,6 +74,11 @@ public class CentralizedGridRobot extends AbstractGridRobot {
 
   public CentralizedGridRobot(Voxel[][][] grid, NumericalDynamicalSystem<?> controller) {
     this(grid, Voxel.DEFAULT_SIDE_LENGTH, Voxel.DEFAULT_MASS, controller);
+  }
+
+  // TEMPORARY! TODO REMOVE THIS ABOMINATION!
+  public NumericalDynamicalSystem<?> getController() {
+    return this.controller;
   }
 
   @Override

@@ -25,7 +25,6 @@ import engine.Ode4jEngine;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import snapshot.InstantSnapshot;
-import terrains.FlatTerrain;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -41,8 +40,8 @@ public class RealtimeViewer extends OpenGLViewer {
     private final double MOVEMENT_TICK = 0.05;
     private final double ROTATION_TICK = 0.01;
 
-    public RealtimeViewer(Mode mode, Vector3D cameraPos, Vector3D cameraDir, Vector3D cameraUp) {
-        super(mode, cameraPos, cameraDir, cameraUp);
+    public RealtimeViewer(Vector3D cameraPos, Vector3D cameraDir, Vector3D cameraUp) {
+        super(cameraPos, cameraDir, cameraUp);
 
         // Configure GLFW
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
@@ -76,8 +75,8 @@ public class RealtimeViewer extends OpenGLViewer {
         GLCapabilities();
     }
 
-    public RealtimeViewer(Mode mode) {
-        this(mode, DEFAULT_CAMERA_POS, DEFAULT_CAMERA_DIR, DEFAULT_CAMERA_UP);
+    public RealtimeViewer() {
+        this(DEFAULT_CAMERA_POS, DEFAULT_CAMERA_DIR, DEFAULT_CAMERA_UP);
     }
 
     private void handleEvents() {
@@ -128,9 +127,8 @@ public class RealtimeViewer extends OpenGLViewer {
         Vector3D ax1 = new Vector3D(1, 0, 0);
         Vector3D ax2 = new Vector3D(0, 1, 0);
         Vector3D ax3 = new Vector3D(0, 0, 1);
-        FlatTerrain terrain = new FlatTerrain();
         glClearColor(0.9f, 0.9f, 0.9f, 0f);
-        Ode4jEngine engine = new Ode4jEngine();
+        Ode4jEngine engine = new Ode4jEngine(Ode4jEngine.Mode.COMPUTATION);
         CentralizedGridRobot robot = new CentralizedGridRobot(testGrid("biped"), NumericalStatelessSystem.from(0, 336, (t, a) -> {
             double[] output = new double[336];
             for (int i = 0; i < 2; ++i) {
@@ -177,6 +175,6 @@ public class RealtimeViewer extends OpenGLViewer {
     }
 
     public static void main(String[] args) {
-        new RealtimeViewer(Mode.DISPLAY).loop();
+        new RealtimeViewer().loop();
     }
 }

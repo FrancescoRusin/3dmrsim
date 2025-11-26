@@ -43,6 +43,7 @@ public class Ode4jEngine {
   public record Configuration(
       Vector3D gravity,
       Terrain terrain,
+      Mode mode,
       double maxAttachDistance,
       double maxAttractDistance,
       double attachSpringRestDistance,
@@ -51,10 +52,11 @@ public class Ode4jEngine {
       double attachDampingConstant,
       double nfcRange) {
 
-    public Configuration(Terrain terrain) {
+    public Configuration(Terrain terrain, Mode mode) {
       this(
               new Vector3D(0d, 0d, -9.81),
               terrain,
+              mode,
               Voxel.DEFAULT_SIDE_LENGTH * .3,
               Voxel.DEFAULT_SIDE_LENGTH * 2,
               Voxel.DEFAULT_RIGID_BODY_LENGTH * 1.01,
@@ -65,13 +67,20 @@ public class Ode4jEngine {
       );
     }
 
-    public Configuration() {
-      this(new FlatTerrain());
+    public Configuration(Mode mode) {
+      this(new FlatTerrain(), mode);
     }
   }
 
+  // The mode defines what is saved in the snapshots: debug mode saves everything, display mode saves what is needed to draw, computation mode the bare minimum
+  public enum Mode {
+    DEBUG, DISPLAY, COMPUTATION
+  }
+
+  static {
+    OdeHelper.initODE2(0);
+  }
   public final Configuration configuration;
-  private static final int initialize = OdeHelper.initODE2(0);
   private final DWorld world;
   private final DSpace bodySpace;
   private final DSpace signalSpace;
@@ -111,11 +120,10 @@ public class Ode4jEngine {
     configuration.terrain.generate(bodySpace);
     time = 0d;
     timeStep = 1d / 60d;
-    IDCounter = 0;
   }
 
-  public Ode4jEngine() {
-    this(new Configuration());
+  public Ode4jEngine(Mode mode) {
+    this(new Configuration(mode));
   }
 
   public double ERP(double springConstant, double dampingConstant) {
@@ -203,8 +211,8 @@ public class Ode4jEngine {
   public InstantSnapshot currentState() {
     return new InstantSnapshot(
             configuration,
-            agents.stream().map(a -> a.snapshot(this)).toList(),
-            passiveBodies.stream().map(b -> b.snapshot(this)).toList(),
+            agents.stream().map(a -> a.snapshot(this, this.configuration.mode)).toList(),
+            passiveBodies.stream().map(b -> b.snapshot(this, this.configuration.mode)).toList(),
             Stream.concat(
                     springJoints.keySet().stream().filter(p -> {
                       List<Body> bodies = p.elements();
@@ -214,7 +222,7 @@ public class Ode4jEngine {
                       List<Body> bodies = p.elements();
                       return !agentMapper.get(bodies.get(0)).equals(agentMapper.get(bodies.get(1)));
                     }).map(p -> (Joint) fixedJoints.get(p))
-            ).map(j -> j.snapshot(this)).toList(),
+            ).map(j -> j.snapshot(this, this.configuration.mode)).toList(),
             time
     );
   }

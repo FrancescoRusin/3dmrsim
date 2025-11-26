@@ -27,12 +27,14 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
         this(new FlatTerrain(), duration, new Vector3D(0, 0, 1));
     }
 
+    static int runCounter = 0;
     @Override
-    public Outcome run(Supplier<EmbodiedAgent> embodiedAgentSupplier, Consumer<InstantSnapshot> snapshotConsumer) {
-        Ode4jEngine engine = new Ode4jEngine(new Ode4jEngine.Configuration(terrain));
+    public Outcome run(Supplier<EmbodiedAgent> embodiedAgentSupplier, Ode4jEngine.Mode mode, Consumer<InstantSnapshot> snapshotConsumer) {
+        Ode4jEngine engine = new Ode4jEngine(new Ode4jEngine.Configuration(terrain, mode));
         EmbodiedAgent agent = embodiedAgentSupplier.get();
         engine.addAgent(agent, new Vector3D(0, 0, 0));
-        agent.translate(engine, new Vector3D(initialPosition.x(), initialPosition.y(), initialPosition.z() + Math.max(agent.boundingBox(0).min().z(), 0)));
+        // align the agent so that its lowest point has height initialPosition.z
+        agent.translate(engine, new Vector3D(initialPosition.x(), initialPosition.y(), initialPosition.z() - agent.boundingBox(0).min().z()));
         SortedMap<Double, InstantSnapshot> observations = new TreeMap<>();
         InstantSnapshot state = engine.currentState();
         observations.put(0d, state);
@@ -42,6 +44,7 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
             observations.put(engine.t(), state);
             snapshotConsumer.accept(state);
         }
+        System.out.printf("RUN %d DONE!\n", runCounter++);
         return new Outcome(observations);
     }
 }

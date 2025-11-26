@@ -19,7 +19,6 @@
  */
 package bodies;
 
-import actions.Action;
 import engine.Ode4jEngine;
 import geometry.BoundingBox;
 import geometry.Vector3D;
@@ -45,5 +44,5 @@ public interface SimulationObject {
 
   default void cacheAction(ActionSnapshot actionSnapshot) {}
 
-  BodySnapshot snapshot(Ode4jEngine engine);
+  BodySnapshot snapshot(Ode4jEngine engine, Ode4jEngine.Mode mode);
 }
