@@ -27,7 +27,6 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
         this(new FlatTerrain(), duration, new Vector3D(0, 0, 1));
     }
 
-    static int runCounter = 0;
     @Override
     public Outcome run(Supplier<EmbodiedAgent> embodiedAgentSupplier, Ode4jEngine.Mode mode, Consumer<InstantSnapshot> snapshotConsumer) {
         Ode4jEngine engine = new Ode4jEngine(new Ode4jEngine.Configuration(terrain, mode));
@@ -44,7 +43,6 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
             observations.put(engine.t(), state);
             snapshotConsumer.accept(state);
         }
-        System.out.printf("RUN %d DONE!\n", runCounter++);
         return new Outcome(observations);
     }
 }

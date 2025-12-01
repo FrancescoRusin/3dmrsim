@@ -24,8 +24,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public static void main(String[] args) {
-    final int nPop = 10;
-    final int nEval = 100;
+    final int nPop = Integer.parseInt(args[1]);
+    final int nEval = Integer.parseInt(args[2]);
     StandardEvolver<List<Double>, Supplier<EmbodiedAgent>, Outcome> solver = new StandardEvolver<>(
             g -> {
                 MultiLayerPerceptron mlp = new MultiLayerPerceptron(
