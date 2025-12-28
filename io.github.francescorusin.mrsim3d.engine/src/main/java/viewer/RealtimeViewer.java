@@ -23,12 +23,18 @@ import agents.CentralizedGridRobot;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
-import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
+import io.github.ericmedvet.jsdynsym.core.composed.OutStepped;
+import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
+import io.github.ericmedvet.jsdynsym.core.numerical.ann.MultiLayerPerceptron;
 import snapshot.InstantSnapshot;
 
 import java.awt.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.function.Function;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -122,24 +128,14 @@ public class RealtimeViewer extends OpenGLViewer {
     }
 
     // loop for testing; it should not be here in the final product
-    private void loop() {
+    private void loop(int index) {
         Vector3D origin = new Vector3D(0, 0, 0);
         Vector3D ax1 = new Vector3D(1, 0, 0);
         Vector3D ax2 = new Vector3D(0, 1, 0);
         Vector3D ax3 = new Vector3D(0, 0, 1);
         glClearColor(0.9f, 0.9f, 0.9f, 0f);
-        Ode4jEngine engine = new Ode4jEngine(Ode4jEngine.Mode.COMPUTATION);
-        CentralizedGridRobot robot = new CentralizedGridRobot(testGrid("biped"), NumericalStatelessSystem.from(0, 336, (t, a) -> {
-            double[] output = new double[336];
-            for (int i = 0; i < 2; ++i) {
-                for (int j = 0; j < 4; ++j) {
-                    Arrays.fill(output, 132 * i + 36 * j, 132 * i + 36 * (j + 1), Math.sin(t + Math.PI * j * 0.5));
-                }
-            }
-            Arrays.fill(output, 264, 300, Math.sin(t));
-            Arrays.fill(output, 300, 336, Math.sin(t - Math.PI * 0.5));
-            return output;
-        }));
+        Ode4jEngine engine = new Ode4jEngine(Ode4jEngine.Mode.DISPLAY);
+        CentralizedGridRobot robot = getRobot(index);
         engine.addAgent(robot, new Vector3D(0.6, 0.6, 4.75));
         while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -153,7 +149,39 @@ public class RealtimeViewer extends OpenGLViewer {
         }
     }
 
-    private Voxel[][][] testGrid(String shape) {
+    private final Function<double[], CentralizedGridRobot> agentBuilder = g -> {
+        MultiLayerPerceptron mlp = new MultiLayerPerceptron(
+                MultiLayerPerceptron.ActivationFunction.TANH,
+                80,
+                new int[]{80},
+                336
+        );
+        mlp.setParams(g);
+        return new CentralizedGridRobot(
+                testGrid("biped"),
+                NumericalDynamicalSystem.from(
+                        new OutStepped<>(mlp, 0.1),
+                        80,
+                        336
+                )
+        );
+    };
+
+    private CentralizedGridRobot getRobot(int index) {
+        double[] genotype = new double[0];
+        try {
+            final BufferedReader reader = new BufferedReader(new FileReader("C:\\Users\\Francesco\\Desktop\\Università\\Dottorato\\Ricerca\\3dsim\\base-exp.txt"));
+            for (int i = 0; i < index; ++i) {
+                reader.readLine();
+            }
+            genotype = Arrays.stream(reader.readLine().replace("[", "").replace("]", "").split(", ")).mapToDouble(Double::parseDouble).toArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return agentBuilder.apply(genotype);
+    }
+
+    private static Voxel[][][] testGrid(String shape) {
         return switch (shape) {
             case "biped" -> {
                 Voxel[][][] grid = new Voxel[4][3][3];
@@ -164,10 +192,10 @@ public class RealtimeViewer extends OpenGLViewer {
                         }
                     }
                 }
-                grid[0][0][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
-                grid[3][0][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
-                grid[0][2][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
-                grid[3][2][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "");
+                grid[0][0][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "ang-vlm-vlc-scr-cnt");
+                grid[3][0][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "ang-vlm-vlc-scr-cnt");
+                grid[0][2][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "ang-vlm-vlc-scr-cnt");
+                grid[3][2][0] = new Voxel(EnumSet.allOf(Voxel.JointOption.class), "ang-vlm-vlc-scr-cnt");
                 yield grid;
             }
             default -> null;
@@ -175,6 +203,8 @@ public class RealtimeViewer extends OpenGLViewer {
     }
 
     public static void main(String[] args) {
-        new RealtimeViewer().loop();
+        for (int i = 0; i < 10; ++i) {
+            new RealtimeViewer().loop(i);
+        }
     }
 }
