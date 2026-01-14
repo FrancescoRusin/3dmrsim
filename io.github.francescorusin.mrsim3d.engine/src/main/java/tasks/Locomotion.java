@@ -43,6 +43,7 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
             observations.put(engine.t(), state);
             snapshotConsumer.accept(state);
         }
+        engine.destroy();
         return new Outcome(observations);
     }
 }
