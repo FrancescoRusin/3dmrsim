@@ -109,14 +109,14 @@ public class Ode4jEngine {
     world.setERP(1d - 1e-5);
     world.setCFM(1e-5);
     agents = new ArrayList<>();
-    agentGeometryMapper = new HashMap<>();
-    agentMapper = new HashMap<>();
+    agentGeometryMapper = new LinkedHashMap<>();
+    agentMapper = new LinkedHashMap<>();
     passiveBodies = new ArrayList<>();
-    signalEmitters = new HashMap<>();
-    signalDetectors = new HashMap<>();
-    springJoints = new HashMap<>();
-    fixedJoints = new HashMap<>();
-    collisionExceptions = new HashMap<>();
+    signalEmitters = new LinkedHashMap<>();
+    signalDetectors = new LinkedHashMap<>();
+    springJoints = new LinkedHashMap<>();
+    fixedJoints = new LinkedHashMap<>();
+    collisionExceptions = new LinkedHashMap<>();
     configuration.terrain.generate(bodySpace);
     time = 0d;
     timeStep = 1d / 60d;
@@ -392,7 +392,7 @@ public class Ode4jEngine {
 
   public void destroy() {
     bodySpace.destroy();
-    world.destroy();
     collisionGroup.destroy();
+    world.destroy();
   }
 }
