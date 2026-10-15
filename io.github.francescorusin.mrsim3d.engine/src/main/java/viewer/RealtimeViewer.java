@@ -20,20 +20,32 @@
 package viewer;
 
 import agents.CentralizedGridRobot;
+import agents.SingleVoxelAgent;
 import bodies.Voxel;
 import engine.Ode4jEngine;
 import geometry.Vector3D;
 import io.github.ericmedvet.jsdynsym.core.composed.OutStepped;
+import io.github.ericmedvet.jsdynsym.core.numerical.MultivariateRealFunction;
 import io.github.ericmedvet.jsdynsym.core.numerical.NumericalDynamicalSystem;
+import io.github.ericmedvet.jsdynsym.core.numerical.NumericalStatelessSystem;
 import io.github.ericmedvet.jsdynsym.core.numerical.ann.MultiLayerPerceptron;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.stb.STBImageWrite;
+import org.lwjgl.system.MemoryStack;
 import snapshot.InstantSnapshot;
+import tasks.Locomotion;
 
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -63,9 +75,12 @@ public class RealtimeViewer extends OpenGLViewer {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(window, true);
             }
+            if (key == GLFW_KEY_P && action == GLFW_RELEASE) {
+                screenshot();
+            }
         });
 
-        // Setup a callback for the mouse scroll.
+        // Setup a callback for the mouse scroll
         glfwSetScrollCallback(window, (window, x, y) -> {
             this.cameraPos = this.cameraPos.sum(new Vector3D(0, 0, 5 * MOVEMENT_TICK * Math.signum(y)));
         });
@@ -79,6 +94,22 @@ public class RealtimeViewer extends OpenGLViewer {
         glfwShowWindow(window);
 
         GLCapabilities();
+    }
+
+    int counter = 0;
+
+    public void screenshot() {
+        ByteBuffer pixels = BufferUtils.createByteBuffer(800 * 800 * 4);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadBuffer(GL_BACK);
+        glReadPixels(0, 0,800, 800, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        STBImageWrite.stbi_flip_vertically_on_write(true);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            boolean success = STBImageWrite.stbi_write_png("screenshot_%d.png".formatted(counter), 800, 800, 4, pixels, 3200);
+            if (!success) {
+                throw new RuntimeException("PNG saving error");
+            }
+        }
     }
 
     public RealtimeViewer() {
@@ -135,9 +166,10 @@ public class RealtimeViewer extends OpenGLViewer {
         Vector3D ax3 = new Vector3D(0, 0, 1);
         glClearColor(0.9f, 0.9f, 0.9f, 0f);
         Ode4jEngine engine = new Ode4jEngine(Ode4jEngine.Mode.DISPLAY);
-        CentralizedGridRobot robot = getRobot(index);
-        engine.addAgent(robot, new Vector3D(0.6, 0.6, 4.75));
-        while (!glfwWindowShouldClose(window)) {
+        CentralizedGridRobot robot = fullCRobot(index);
+        engine.addAgent(robot, new Vector3D(0, 0, 0));
+        robot.translate(engine, new Vector3D(0, 0, 1 - robot.boundingBox(0).min().z()));
+        while (engine.t() < 30 && !glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             setView();
             drawLine(origin, ax1, Color.RED);
@@ -147,16 +179,77 @@ public class RealtimeViewer extends OpenGLViewer {
             glfwSwapBuffers(window);
             handleEvents();
         }
+        while (!glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            setView();
+            drawLine(origin, ax1, Color.RED);
+            drawLine(origin, ax2, Color.BLUE);
+            drawLine(origin, ax3, Color.GREEN);
+            engine.currentState().draw(this);
+            glfwSwapBuffers(window);
+            handleEvents();
+        }
     }
 
-    private final Function<double[], CentralizedGridRobot> agentBuilder = g -> {
+    // loop for testing; it should not be here in the final product
+    private void stupidloop() {
+        Ode4jEngine engine = new Ode4jEngine(Ode4jEngine.Mode.DEBUG);
+        SingleVoxelAgent agent = new SingleVoxelAgent("", NumericalStatelessSystem.from(0, 12,
+                (t, a) -> new double[]{
+                        Math.sin(t), 0, 0, 0,
+                        Math.sin(t), 0d, 0d, 0d,
+                        Math.sin(t), Math.sin(t), 0d, 0d})
+        );
+        engine.addAgent(agent, new Vector3D(0, 0, 0));
+        agent.translate(engine, new Vector3D(0, 0, 1 - agent.boundingBox(0).min().z()));
+        while (engine.t() < 30 && !glfwWindowShouldClose(window)) {
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClearColor(0.9f, 0.9f, 0.9f, 0f);
+            setView();
+            engine.tick().draw(this);
+            glfwSwapBuffers(window);
+            handleEvents();
+        }
+    }
+
+    private static final Function<List<Double>, CentralizedGridRobot> cubeCAgentBuilder = g -> {
+        MultiLayerPerceptron mlp = new MultiLayerPerceptron(
+                MultiLayerPerceptron.ActivationFunction.TANH,
+                80,
+                new int[]{80},
+                28
+        );
+        mlp.setParams(g.stream().mapToDouble(d -> d).toArray());
+        return new CentralizedGridRobot(
+                testGrid("biped"),
+                NumericalDynamicalSystem.from(
+                        new OutStepped<>(
+                                MultivariateRealFunction.from(
+                                        i -> {
+                                            final double[] mlpOutput = mlp.apply(i);
+                                            final double[] output = new double[mlpOutput.length * 12];
+                                            for (int j = 0; j < mlpOutput.length; ++j) {
+                                                for (int k = 0; k < 12; ++k) {
+                                                    output[j * 12 + k] = mlpOutput[j];
+                                                }
+                                            }
+                                            return output;
+                                        },
+                                        80, 336), 0.1),
+                        80,
+                        336
+                )
+        );
+    };
+
+    private static final Function<List<Double>, CentralizedGridRobot> fullCAgentBuilder = g -> {
         MultiLayerPerceptron mlp = new MultiLayerPerceptron(
                 MultiLayerPerceptron.ActivationFunction.TANH,
                 80,
                 new int[]{80},
                 336
         );
-        mlp.setParams(g);
+        mlp.setParams(g.stream().mapToDouble(d -> d).toArray());
         return new CentralizedGridRobot(
                 testGrid("biped"),
                 NumericalDynamicalSystem.from(
@@ -167,18 +260,32 @@ public class RealtimeViewer extends OpenGLViewer {
         );
     };
 
-    private CentralizedGridRobot getRobot(int index) {
-        double[] genotype = new double[0];
+    private CentralizedGridRobot cubeCRobot(int index) {
+        List<Double> genotype = new ArrayList<>();
         try {
-            final BufferedReader reader = new BufferedReader(new FileReader("C:\\Users\\Francesco\\Desktop\\Università\\Dottorato\\Ricerca\\3dsim\\base-exp.txt"));
-            for (int i = 0; i < index; ++i) {
-                reader.readLine();
-            }
-            genotype = Arrays.stream(reader.readLine().replace("[", "").replace("]", "").split(", ")).mapToDouble(Double::parseDouble).toArray();
+            final BufferedReader reader = new BufferedReader(new FileReader("C:\\Users\\Francesco\\Desktop\\Università\\Dottorato\\Ricerca\\3dsim\\Res\\cube-exp-%d.txt".formatted(index)));
+            genotype = Arrays.stream(reader.readLine().split(";")[1]
+                            .replace("[", "").replace("]", "")
+                            .split(", "))
+                    .mapToDouble(Double::parseDouble).boxed().toList();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return agentBuilder.apply(genotype);
+        return cubeCAgentBuilder.apply(genotype);
+    }
+
+    private CentralizedGridRobot fullCRobot(int index) {
+        List<Double> genotype = new ArrayList<>();
+        try {
+            final BufferedReader reader = new BufferedReader(new FileReader("C:\\Users\\Francesco\\Desktop\\Università\\Dottorato\\Ricerca\\3dsim\\Res\\full-exp-%d.txt".formatted(index)));
+            genotype = Arrays.stream(reader.readLine().split(";")[1]
+                            .replace("[", "").replace("]", "")
+                            .split(", "))
+                    .mapToDouble(Double::parseDouble).boxed().toList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return fullCAgentBuilder.apply(genotype);
     }
 
     private static Voxel[][][] testGrid(String shape) {
@@ -203,8 +310,6 @@ public class RealtimeViewer extends OpenGLViewer {
     }
 
     public static void main(String[] args) {
-        for (int i = 0; i < 10; ++i) {
-            new RealtimeViewer().loop(i);
-        }
+        new RealtimeViewer().stupidloop();
     }
 }

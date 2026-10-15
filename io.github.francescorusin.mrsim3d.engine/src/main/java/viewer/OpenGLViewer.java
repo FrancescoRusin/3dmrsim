@@ -119,6 +119,7 @@ public abstract class OpenGLViewer implements Viewer {
         glTexCoord2f(0, vReps);
         glVertex3d(v4.x(), v3.y(), v4.z());
         glEnd();
+        glBindTexture(GL_TEXTURE_2D, 0);
         glDisable(GL_BLEND);
     }
 

@@ -99,9 +99,9 @@ public class Ode4jEngine {
   private int IDCounter;
 
 
-  public Ode4jEngine(Configuration configuration) {
+  public Ode4jEngine(Configuration configuration, long seed) {
     this.configuration = configuration;
-    world = OdeHelper.createWorld();
+    world = OdeHelper.createWorld(seed);
     bodySpace = OdeHelper.createHashSpace();
     signalSpace = OdeHelper.createHashSpace();
     collisionGroup = OdeHelper.createJointGroup();
@@ -122,8 +122,16 @@ public class Ode4jEngine {
     timeStep = 1d / 60d;
   }
 
+  public Ode4jEngine(Configuration configuration) {
+    this(configuration, 0);
+  }
+
+  public Ode4jEngine(Mode mode, long seed) {
+    this(new Configuration(mode), seed);
+  }
+
   public Ode4jEngine(Mode mode) {
-    this(new Configuration(mode));
+    this(mode, 0);
   }
 
   public double ERP(double springConstant, double dampingConstant) {
