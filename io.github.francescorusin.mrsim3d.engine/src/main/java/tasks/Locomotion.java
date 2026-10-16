@@ -16,15 +16,17 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
     private final Terrain terrain;
     private final double duration;
     private final Vector3D initialPosition;
+    private final boolean saveAll;
 
-    public Locomotion(Terrain terrain, double duration, Vector3D initialPosition) {
+    public Locomotion(Terrain terrain, double duration, Vector3D initialPosition, boolean saveAll) {
         this.terrain = terrain;
         this.duration = duration;
         this.initialPosition = initialPosition;
+        this.saveAll = saveAll;
     }
 
     public Locomotion(double duration) {
-        this(new FlatTerrain(), duration, new Vector3D(0, 0, 1));
+        this(new FlatTerrain(), duration, new Vector3D(0, 0, 1), false);
     }
 
     @Override
@@ -36,12 +38,19 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
         agent.translate(engine, new Vector3D(initialPosition.x(), initialPosition.y(), initialPosition.z() - agent.boundingBox(0).min().z()));
         SortedMap<Double, InstantSnapshot> observations = new TreeMap<>();
         InstantSnapshot state = engine.currentState();
-        observations.put(0d, state);
+        if (saveAll) {
+            observations.put(0d, state);
+        }
         snapshotConsumer.accept(state);
         while (engine.t() < duration) {
             state = engine.tick();
-            observations.put(engine.t(), state);
+            if (saveAll) {
+                observations.put(engine.t(), state);
+            }
             snapshotConsumer.accept(state);
+        }
+        if (!saveAll) {
+            observations.put(engine.t(), state);
         }
         engine.destroy();
         return new Outcome(observations);

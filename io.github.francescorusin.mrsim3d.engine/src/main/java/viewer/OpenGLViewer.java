@@ -95,7 +95,7 @@ public abstract class OpenGLViewer implements Viewer {
 
     @Override
     public void drawTriangle(Vector3D v1, Vector3D v2, Vector3D v3, Color color) {
-        glColor3f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f);
+        glColor4f(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, .3f);
         glBegin(GL_TRIANGLES);
         glVertex3d(v1.x(), v1.y(), v1.z());
         glVertex3d(v2.x(), v2.y(), v2.z());

@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -101,7 +102,7 @@ public class RealtimeViewer extends OpenGLViewer {
     public void screenshot() {
         ByteBuffer pixels = BufferUtils.createByteBuffer(800 * 800 * 4);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadBuffer(GL_BACK);
+        glReadBuffer(GL_FRONT);
         glReadPixels(0, 0,800, 800, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         STBImageWrite.stbi_flip_vertically_on_write(true);
         try (MemoryStack stack = MemoryStack.stackPush()) {
@@ -193,20 +194,35 @@ public class RealtimeViewer extends OpenGLViewer {
 
     // loop for testing; it should not be here in the final product
     private void stupidloop() {
-        Ode4jEngine engine = new Ode4jEngine(Ode4jEngine.Mode.DEBUG);
-        SingleVoxelAgent agent = new SingleVoxelAgent("", NumericalStatelessSystem.from(0, 12,
-                (t, a) -> new double[]{
-                        Math.sin(t), 0, 0, 0,
-                        Math.sin(t), 0d, 0d, 0d,
-                        Math.sin(t), Math.sin(t), 0d, 0d})
-        );
-        engine.addAgent(agent, new Vector3D(0, 0, 0));
-        agent.translate(engine, new Vector3D(0, 0, 1 - agent.boundingBox(0).min().z()));
-        while (engine.t() < 30 && !glfwWindowShouldClose(window)) {
+        int texID = loadTexture("C:\\Users\\Francesco\\IdeaProjects\\3dmrsim\\io.github.francescorusin.mrsim3d.engine\\src\\main\\resources\\textures\\Chessboard.jpg");
+        while (!glfwWindowShouldClose(window)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glClearColor(0.9f, 0.9f, 0.9f, 0f);
             setView();
-            engine.tick().draw(this);
+            drawTexture(
+                    new Vector3D(-100, -100, 0), new Vector3D(100, -100, 0),
+                    new Vector3D(100, 100, 0), new Vector3D(-100, 100, 0),
+                    texID, 1, 1);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_BLEND);
+            for (Voxel.Tetrahedron tetrahedron : Voxel.Tetrahedron.values()) {
+                for (int i = 0; i < 4; ++i) {
+                    List<Vector3D> vertexPosCopy = new ArrayList<>(Stream.of(tetrahedron.v1, tetrahedron.v2, tetrahedron.v3, tetrahedron.v4)
+                            .map(v -> new Vector3D(v.ordinal() % 2, Math.floor(v.ordinal() / 2d) % 2, Math.floor(v.ordinal() / 4d) + 1))
+                            .toList());
+                    vertexPosCopy.remove(i);
+                    if (vertexPosCopy.stream().filter(v -> v.x() == vertexPosCopy.getFirst().x()).toList().size() != 3 ||
+                            vertexPosCopy.stream().filter(v -> v.y() == vertexPosCopy.getFirst().y()).toList().size() != 3 ||
+                            vertexPosCopy.stream().filter(v -> v.z() == vertexPosCopy.getFirst().z()).toList().size() != 3) {
+                        drawTriangle(vertexPosCopy.get(0), vertexPosCopy.get(1), vertexPosCopy.get(2), Color.RED);
+                    }
+                    for (int j = 0; j < 3; ++j) {
+                        for (int k = 0; k < j; ++k) {
+                            drawLine(vertexPosCopy.get(j), vertexPosCopy.get(k), Color.DARK_GRAY);
+                        }
+                    }
+                }
+            }
             glfwSwapBuffers(window);
             handleEvents();
         }
