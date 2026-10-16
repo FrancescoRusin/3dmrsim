@@ -38,9 +38,7 @@ public class Locomotion implements Task<Supplier<EmbodiedAgent>, Outcome> {
         agent.translate(engine, new Vector3D(initialPosition.x(), initialPosition.y(), initialPosition.z() - agent.boundingBox(0).min().z()));
         SortedMap<Double, InstantSnapshot> observations = new TreeMap<>();
         InstantSnapshot state = engine.currentState();
-        if (saveAll) {
-            observations.put(0d, state);
-        }
+        observations.put(0d, state);
         snapshotConsumer.accept(state);
         while (engine.t() < duration) {
             state = engine.tick();
